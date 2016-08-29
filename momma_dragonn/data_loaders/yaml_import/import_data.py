@@ -1,6 +1,5 @@
 import sys
 import os
-import pdb 
 from collections import namedtuple
 from collections import OrderedDict
 import numpy as np
@@ -155,13 +154,99 @@ SplitKeys = Keys(Key("split_name_to_split_files"),
                      default=SplitOptsKeys.fill_in_defaults_for_keys({})))
 
 
+class AbstractDataForSplitProcessor(object):
+
+    def __init__(self, split_name, ids_in_split):
+        self.split_name = split_name
+        self.ids_in_split = ids_in_split
+
+    def add_features(self, the_id, features, input_mode):
+        raise NotImplementedError() 
+
+    def add_labels(self, the_id, labels, output_mode):
+        raise NotImplementedError()
+
+    def add_weights(self, the_id, sample_weights, output_mode): 
+        raise NotImplementedError()
+
+
+class InMemoryDataForSplitProcessor(object):
+
+    def __init__(self, **kwargs):
+        super(InMemoryDataForSplitProcessor, self).__init__(**kwargs)
+        self.input_mode_to_id_to_features =\
+            avutils.DefaultOrderedDictWrapper(factory={})
+        self.output_mode_to_id_to_features =\
+            avutils.DefaultOrderedDictWrapper(factory={})
+        self.output_mode_to_id_to_weights =\
+            avutils.DefaultOrderedDictWrapper(factor={})
+
+    def add_features(self, the_id, features, input_mode):
+        self.input_mode_to_id_to_features[input_mode][the_id] = features
+
+    def add_labels(self, the_id, labels, output_mode):
+        self.output_mode_to_id_to_labels[output_mode][the_id] = labels
+
+    def add_weights(self, the_id, weights, output_mode):
+        self.output_mode_to_id_to_weights[output_mode][the_id] = weights
+
+    def finalize(self):
+        for attr in ['X','Y','weights']:
+            setattr(self, attr, DefaultOrderedDictWrapper(factory=[]))
+
+        for an_id in self.ids_in_split:
+            if (self.check_in_everything(an_id)):
+                for arr_storer, dict_storer in [
+                    (self.X, self.input_mode_to_id_to_features),
+                    (self.Y, self.output_mode_name_to_id_to_labels),
+                    (self.weights, self.output_mode_to_id_to_weights)]:
+                self.append_to_array_using_id(an_id, arr_storer, dict_storer)
+
+        for attr in ['X','Y','weights']:
+            #set the attributes to the underlying ordered_dict of
+            #DefaultOrderedDictWrapper
+            setattr(self, attr, getattr(self, attr).ordered_dict)
+        
+
+    @staticmethod
+    def append_to_array_using_id(an_id, mode_to_array, mode_to_id_to_val):
+        #conveniently enough, this loop doesn't throw an error
+        #if mode_to_id_to_val is empty (as could happen if the
+        #weights are not specified)
+        for mode in mode_to_id_to_val:
+            mode_to_array[mode].append(mode_to_id_to_val[mode][an_id]) 
+ 
+    def check_in_everything(self, an_id):
+        for parent_dict, parent_dict_name in (
+            (self.input_mode_to_id_to_features, 'features'),
+            (self.output_mode_to_id_to_features, 'outputs'),
+            (self.output_mode_to_id_to_weights, 'weights')):
+            #conveniently enough, this loop doesn't throw an error
+            #if parent_dict is completely empty (as may happen if
+            #weights are not specified)
+            for mode in parent_dict:
+                if an_id not in parent_dict[mode]:
+                    print("Warning:",an_id,"absent from",
+                          parent_dict_name,"mode",mode) 
+                    return False
+        return True
+
 def process_combined_yamls_for_input_datas(combined_yamls):
     #get the splits info 
     id_to_split_names, distinct_split_names = get_id_to_split_names(
                                           combined_yamls[RootKeys.keys.splits])
-    output_mode_name_to_id_to_labels, output_mode_name_to_label_names =\
-        get_id_to_labels(combined_yamls[RootKeys.keys.labels])
-    output_mode_names = output_mode_name_to_id_to_labels.keys()
+
+    #initialize the data for split compiler objects using
+    #the split information and the output info
+
+    #define the action that will get applied to a new *set* of
+    #generated features to feed it into the compiler
+
+    #define the action that will get applied to a new *set* of
+    #generated labels to feed it to the compiler
+
+    #call "process inputs with input action"
+    #call "process outputs with output action"
     
 
 def get_id_to_split_names(split_object):
