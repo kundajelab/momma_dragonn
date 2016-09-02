@@ -4,95 +4,7 @@ from collections import namedtuple
 from collections import OrderedDict
 import numpy as np
 import avutils.file_processing as fp
-
-
-class DynamicEnum(object):
-    """
-        just a wrapper around a dictionary, so that the keys are
-        accessible using the object attribute syntax rather
-        than the dictionary syntax.
-    """
-    def __init__(self, *keys):
-        self._vals_dict = OrderedDict()
-
-    def add_key(self, key_name, val):
-        setattr(self, key_name, val)
-        self._vals_dict[key_name] = val
-
-    def get_key(self, key_name):
-        return self._vals_dict[key_name]
-
-    def has_key(self, key_name):
-        if key_name not in self._vals_dict:
-            return False;
-        return True;
-
-    def get_keys(self):
-        return self._vals_dict.keys()
-
-
-class UNDEF(object):
-    pass
-
-
-class Key(object):
-    def __init__(self, key_name_internal,
-                       key_name_external=None, default=UNDEF):
-        self.key_name_internal = key_name_internal
-        if (key_name_external is None):
-            key_name_external = key_name_internal
-        self.key_name_external = key_name_external
-        self.default = default
-
-
-#I am keeping a different external and internal name
-#for the flexibility of changing the external name in the future.
-#the advantage of having a class like this rather than just
-#using enums is being able to support methods like "fill_in_defaults_for_keys".
-#I need the DynamicEnum class so that I can use the Keys class for
-#different types of Keys; i.e. I don't
-#know what the keys are going to be beforehand and I don't know
-#how else to create an enum dynamically.
-class Keys(object): 
-    def __init__(self, *keys):
-        #just a wrapper around a dictionary, for the
-        #purpose of accessing the keys using the object
-        #attribute syntax rather than the dictionary syntax.
-        self.keys = DynamicEnum() 
-        self.keys_defaults = DynamicEnum()
-        for key in keys:
-            self.add_key(key.key_name_internal, key.key_name_external,
-                         key.default)
-
-    def add_key(self, key_name_internal,
-                      key_name_external, default_value=UNDEF):
-        self.keys.add_key(key_name_internal, key_name_external)
-        if (default_value != UNDEF):
-            self.keys_defaults.add_key(key_name_internal, default_value)
-
-    def check_for_unsupported_keys(self, a_dict):
-        for a_key in a_dict:
-            if self.keys.has_key(a_key)==False:
-                raise RuntimeError("Unsupported key "+str(a_key)
-                                   +"; supported keys are: "
-                                   +str(self.keys.get_keys()))
-
-    def fill_in_defaults_for_keys(self,
-        a_dict, internal_names_of_keys_to_fill_defaults_for=None):
-        if internal_names_of_keys_to_fill_defaults_for is None:
-            internal_names_of_keys_to_fill_defaults_for = self.keys.get_keys()
-        for a_key in internal_names_of_keys_to_fill_defaults_for:
-            if a_key not in a_dict:
-                if (self.keys_defaults.has_key(a_key)==False):
-                    raise RuntimeError("Default for "+str(a_key)
-                                       +" not present, and a value "
-                                       +"was not provided")
-                a_dict[a_key] = self.keys_defaults.getKey(a_key);
-        return a_dict;
-
-    def check_for_unsupported_keys_and_fill_in_defaults(self, a_dict):
-        self.check_for_unsupported_keys(a_dict)
-        self.fill_in_defaults_for_keys(a_dict);
+from avutils.dynamic_enum import Key, Keys
 
 
 ContentType=namedtuple('ContentType',['name','casting_function'])
@@ -132,11 +44,12 @@ SubsetOfColumnsToUseOptionsYamlKeys = Keys(
 ###
 #Label keys
 ###
-LabelsKeys = Keys(Key("file_name")
-                 , Key("content_type", default=ContentTypes.integer.name)
-                 , Key("file_with_labels_to_use", default=None)
-                 , Key("key_columns", default=[0])
-                 , Key("output_mode_name", default=DefaultModeNames.labels))
+LabelsKeys = Keys(Key("file_name"),
+                  Key("content_type", default=ContentTypes.integer.name),
+                  Key("file_with_labels_to_use", default=None),
+                  Key("key_columns", default=[0]),
+                  Key("output_mode_name", default=DefaultModeNames.labels),
+                  Key("progress_update", default=None))
 
 ###
 #Weight Keys
@@ -159,11 +72,15 @@ class AbstractDataForSplitProcessor(object):
     def __init__(self, split_name, ids_in_split):
         self.split_name = split_name
         self.ids_in_split = ids_in_split
+        self.output_mode_to_label_names = OrderedDict()
 
-    def add_features(self, the_id, features, input_mode):
+    def add_features(self, the_id, input_mode, features):
         raise NotImplementedError() 
 
-    def add_labels(self, the_id, labels, output_mode):
+    def set_label_names(self, output_mode, label_names):
+        self.output_mode_to_label_names[output_mode] = label_names
+
+    def add_labels(self, the_id, output_mode, labels):
         raise NotImplementedError()
 
     def add_weights(self, the_id, sample_weights, output_mode): 
@@ -206,7 +123,6 @@ class InMemoryDataForSplitProcessor(object):
             #set the attributes to the underlying ordered_dict of
             #DefaultOrderedDictWrapper
             setattr(self, attr, getattr(self, attr).ordered_dict)
-        
 
     @staticmethod
     def append_to_array_using_id(an_id, mode_to_array, mode_to_id_to_val):
@@ -231,29 +147,102 @@ class InMemoryDataForSplitProcessor(object):
                     return False
         return True
 
-def process_combined_yamls_for_input_datas(combined_yamls):
+def process_combined_yamls(combined_yamls, split_processor_factory):
     #get the splits info 
-    id_to_split_names, distinct_split_names = get_id_to_split_names(
+    id_to_split_names, split_to_ids = get_id_to_split_names(
                                           combined_yamls[RootKeys.keys.splits])
 
     #initialize the data for split compiler objects using
-    #the split information and the output info
+    #the split information
+    split_to_compiler = OrderedDict()
+    for split_name in split_to_ids:
+        split_to_compiler[split_name] =\
+            split_processor_factory(split_name=split_name,
+                                    ids_in_split=split_to_ids[split_name]) 
 
-    #define the action that will get applied to a new *set* of
-    #generated features to feed it into the compiler
+    #define the action that will get applied to new labels
+    def labels_action(output_mode, an_id, labels): 
+        split_name = id_to_split_names[an_id]
+        split_name_to_compiler[split_name].add_labels(
+            the_id=an_id, output_mode=output_mode, labels=labels)
 
-    #define the action that will get applied to a new *set* of
-    #generated labels to feed it to the compiler
+    def set_label_names_action(output_mode, label_names):
+        for split_name in split_to_ids: 
+            split_name_to_compiler[split_name].set_label_names(
+                output_mode=output_mode, label_names=label_names) 
+
+    process_labels_with_labels_action(
+        labels_objects=combined_yamls[RootKeys.keys.labels],
+        labels_action=labels_action,
+        set_label_names_action=set_label_names_action)
+
+    #define the action that will get applied to new features
+    def features_action(input_mode, an_id, features):
+        split_name = id_to_split_names[an_id]
+        split_to_compiler[split_name].add_features(
+            the_id=an_id, input_mode=input_mode, features=features)
+
+    #define the action that will be applied to new weights
+    def weights_action(output_mode, an_id, weights):
+        split_name = id_to_split_names[an_id]
+        split_name_to_compiler[split_name].add_weights(
+            the_id=an_id, weights=weights, output_mode=output_mode)
 
     #call "process inputs with input action"
-    #call "process outputs with output action"
     
+
+def process_labels_with_labels_action(labels_objects,
+                                      labels_action,
+                                      set_label_names_action): 
+    for labels_object in labels_objects:
+        LabelsKeys.fillInDefaultsForKeys(labels_object)
+        LabelsKeys.checkForUnsupportedKeys(labels_object)
+        output_mode = labels_object[LabelsKeys.keys.output_mode_name] 
+
+        file_with_labels_to_use =\
+            labels_object[LabelsKeys.keys.file_with_labels_to_use]
+        content_type=get_content_type_from_name(
+                      labels_object[LabelsKeys.keys.content_type])
+        content_start_index =\
+            featureSetYamlObject[KeysObj.keys.contentStartIndex];
+        key_columns = labels_object[LabelsKeys.keys.key_columns]
+        subset_of_columns_to_use_options=\
+          (None if file_with_labels_to_use is None
+            else fp.SubsetOfColumnsToUseOptions(
+                columnNames=fp.read_rows_into_arr(fp.get_file_handle(
+                                                  file_with_labels_to_use))))
+        core_titled_mapping_action = fp.get_core_titled_mapping_action(
+            subset_of_columns_to_use_options=\
+                subset_of_columns_to_use_options,
+                content_type=content_type,
+                content_start_index=1,
+                key_columns=[0])
+
+        def action(inp, line_number):
+            if (line_number==1):
+                #If this is the first row, then pick out the list
+                #of names relevant in the title
+                label_names = core_titled_mapping_action(inp, line_number)
+                set_label_names_action(output_mode=output_mode,
+                                       label_names=label_names)
+            else:
+                #otherwise, pick out the labels
+                the_id, labels = core_titled_mapping_action(inp, line_number)
+                labels_action(output_mode=output_mode,
+                              an_id=the_id,
+                              labels=labels)
+        fp.perform_action_on_each_line_of_file(
+            file_handle=fp.get_file_handle(file_with_labels_to_use),
+            action=action,
+            transformation=fp.default_tab_seppd,
+            progress_update=labels_object[LabelsKeys.keys.progress_update])
+        
 
 def get_id_to_split_names(split_object):
     """
         return:
         id_to_split_names
-        distinct_split_names
+        split_to_ids
     """
     SplitKeys.fill_in_defaults_for_keys(split_object)
     SplitKeys.check_for_unsupported_keys(split_object)
@@ -263,63 +252,19 @@ def get_id_to_split_names(split_object):
     split_name_to_split_file = split_object[
                                 SplitKeys.keys.split_name_to_split_files]
     id_to_split_names = {}
-    distinct_split_names = []
+    split_to_ids = OrderedDict()
     for split_name in split_name_to_split_files:
         if split_name in distinct_split_names:
             raise RuntimeError("Repeated split_name: "+str(split_name))
-        distinct_split_names.append(split_name)
         ids_in_split = fp.read_col_into_arr(
                         fp.get_file_handle(
                          split_name_to_split_file[split_name]), **opts)
+        split_to_ids[split_name] = ids_in_split
         for the_id in ids_in_split:
             if the_id not in id_to_split_names:
                 id_to_split_names[the_id] = []
             id_to_split_names[the_id].append(split_name)
-    return id_to_split_names, distinct_split_names
-
-
-def get_id_to_labels(labels_objects):
-    """
-        accepts a bunch of labels yaml objects, each of which corresponds to
-            a different output mode.
-        return: output_mode_name_to_id_to_labels,
-                output_mode_name_to_label_names
-    """
-    output_mode_name_to_id_to_labels= OrderedDict()
-    output_mode_name_to_label_names = OrderedDict()
-    for labels_object in labels_objects:
-        LabelsKeys.fill_in_defaults_for_keys(labels_object)
-        LabelsKeys.check_for_unsupported_keys(labels_object)
-        output_mode_name = labels_object[LabelsKeys.keys.output_mode_name] 
-        titled_mapping_object = get_id_to_labels_single_label_set(
-                                 labels_object)
-        output_mode_name_to_id_to_labels[output_mode_name] =\
-                                                titled_mapping_object.mapping
-        output_mode_name_to_label_names[output_mode_name] =\
-                                                titled_mapping_object.title_arr
-    return output_mode_name_to_id_to_labels, output_mode_name_to_label_names
-
-
-def get_id_to_labels_single_label_set(labels_object):
-    """
-        return: titled_mapping which has attributes:
-            .mapping = id_to_labels dictionary
-            .title_arr = label names.
-    """
-    file_with_labels_to_use =\
-        labels_object[LabelsKeys.keys.file_with_labels_to_use]
-    titled_mapping = fp.read_titled_mapping(
-                      fp.get_file_handle(
-                          labels_object[LabelsKeys.keys.file_name]),
-                      content_type=get_content_type_from_name(
-                       labels_object[LabelsKeys.keys.content_type]),
-                      key_columns = labels_object[LabelsKeys.keys.key_columns],
-                      subset_of_columns_to_use_options=\
-                       (None if file_with_labels_to_use is None
-                             else fp.SubsetOfColumnsToUseOptions(
-                             columnNames=fp.readRowsIntoArr(
-                                fp.getFileHandle(fileWithLabelsToUse))))
-    return titledMapping;
+    return id_to_split_names, split_to_ids
     
 
 def get_content_type_from_name(content_type_name):
