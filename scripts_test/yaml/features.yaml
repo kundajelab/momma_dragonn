@@ -1,0 +1,9 @@
+{
+   "features": {
+       "features_format": "fasta"
+        ,"opts": {
+            "file_names": ["positives.gz", "negatives.gz"]
+            ,"progress_update": 5000
+        }
+    } 
+}
