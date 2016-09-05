@@ -2,6 +2,7 @@ import sys
 import os
 from collections import namedtuple
 from collections import OrderedDict
+from collections import defaultdict
 import numpy as np
 import avutils.file_processing as fp
 import avutils.utils as av_utils
@@ -97,7 +98,7 @@ class AbstractDataForSplitProcessor(object):
         raise NotImplementedError()
 
 
-class InMemoryDataForSplitProcessor(object):
+class InMemoryDataForSplitProcessor(AbstractDataForSplitProcessor):
 
     def __init__(self, **kwargs):
         super(InMemoryDataForSplitProcessor, self).__init__(**kwargs)
@@ -106,7 +107,7 @@ class InMemoryDataForSplitProcessor(object):
         self.output_mode_to_id_to_features =\
             av_utils.DefaultOrderedDictWrapper(factory={})
         self.output_mode_to_id_to_weights =\
-            av_utils.DefaultOrderedDictWrapper(factor={})
+            av_utils.DefaultOrderedDictWrapper(factory={})
 
     def add_features(self, the_id, features, input_mode):
         self.input_mode_to_id_to_features[input_mode][the_id] = features
@@ -123,11 +124,12 @@ class InMemoryDataForSplitProcessor(object):
 
         for the_id in self.ids_in_split:
             if (self.check_in_everything(the_id)):
-                for arr_storer, dict_storer in [
+                for mode_to_array, mode_to_id_to_val in [
                     (self.X, self.input_mode_to_id_to_features),
                     (self.Y, self.output_mode_name_to_id_to_labels),
                     (self.weights, self.output_mode_to_id_to_weights)]:
-                self.append_to_array_using_id(the_id, arr_storer, dict_storer)
+                self.append_to_array_using_id(the_id, mode_to_array,
+                                              mode_to_id_to_val)
 
         for attr in ['X','Y','weights']:
             #set the attributes to the underlying ordered_dict of
@@ -156,6 +158,79 @@ class InMemoryDataForSplitProcessor(object):
                           parent_dict_name,"mode",mode) 
                     return False
         return True
+
+
+class Hdf5ForSplitProcessor(AbstractDataForSplitProcessor):
+
+    def __init__(self, output_dir=".", **kwargs):
+        super(Hdf5ForSplitProcessor, self).__init__(**kwargs)
+        #create the file to store the features, labels and weights
+        self.f = h5py.File(output_dir+"/"+self.split_name,"w") 
+        self.num_ids = len(self.ids_in_split)
+        self.X = f.create_group("X")
+        self.Y = f.create_group("Y")
+        self.weights = f.create_group("weights")
+        self.features_input_mode_to_count = defaultdict(lambda: 0.0) 
+        self.labels_output_mode_to_count = defaultdict(lambda: 0.0) 
+        self.weights_output_mode_to_count = defaultdict(lambda: 0.0) 
+
+    def add_features(self, the_id, features, input_mode):
+        self.extend_dataset(
+            mode=input_mode,
+            the_id=the_id,
+            vals=features,
+            mode_to_count_dict=self.features_input_mode_to_count,
+            hdf5grp=self.X,
+            shape=features.shape)
+
+    def add_labels(self, the_id, labels, output_mode):
+        self.extend_dataset(
+            mode=output_mode,
+            the_id=the_id,
+            vals=labels,
+            mode_to_count_dict=self.labels_output_mode_to_count,
+            hdf5grp=self.Y,
+            shape=(len(labels),))
+
+    def add_weights(self, the_id, weights, output_mode):
+        self.extend_dataset(
+            mode=output_mode,
+            the_id=the_id,
+            vals=weights,
+            mode_to_count_dict=self.weights_output_mode_to_count,
+            hdf5grp=self.weights,
+            shape=(,))
+
+    def extend_dataset(mode, the_id, vals, mode_to_count_dict, hdf5grp, shape):
+        idx = mode_to_count_dict[mode]
+        assert self.ids_in_split[idx] == the_id,\
+               ("On index "+str(idx)+"; id meant to be "
+                +the_id+" but got "+the_id)
+        if (idx == 0):
+            grp.create_dataset(mode, [self.num_ids]+shape) 
+        grp[mode][idx] = vals 
+        mode_to_count_dict[mode] += 1
+
+    def finalize(self):
+        for attr in ['X','Y','weights']:
+            setattr(self, attr, DefaultOrderedDictWrapper(factory=[]))
+
+        for the_id in self.ids_in_split:
+            if (self.check_in_everything(the_id)):
+                for arr_storer, dict_storer in [
+                    (self.X, self.input_mode_to_id_to_features),
+                    (self.Y, self.output_mode_name_to_id_to_labels),
+                    (self.weights, self.output_mode_to_id_to_weights)]:
+                self.append_to_array_using_id(the_id, arr_storer, dict_storer)
+
+        for attr in ['X','Y','weights']:
+            #set the attributes to the underlying ordered_dict of
+            #DefaultOrderedDictWrapper
+            setattr(self, attr, getattr(self, attr).ordered_dict)
+
+    def close(self):
+        self.f.close()
+
 
 def process_combined_yamls(combined_yamls, split_processor_factory):
     #get the splits info 
