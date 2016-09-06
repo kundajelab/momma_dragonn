@@ -14,6 +14,10 @@ class AbstractBatchDataLoader(AbstractDataLoader):
         #produces the generator for batches 
         raise NotImplementedError()
 
+    def get_data_for_eval(self):
+        #produce a hunk of data to run evaluation on
+        raise NotImplementedError()
+
 class AbstractAtOnceDataLoader(AbstractAtOnceDataLoader):
 
     def get_data(self):

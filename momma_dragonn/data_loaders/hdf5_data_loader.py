@@ -6,7 +6,7 @@ from avutils import util
 
 class MultimodalBatchDataLoader(AbstractBatchDataLoader):
 
-    def __init__(self, path_to_hdf5, **kwargs):
+    def __init__(self, path_to_hdf5, num_to_load_for_eval, **kwargs):
         super(MultimodalBatchDataLoader, self).__init__(**kwargs)
         self.f = h5py.File(path_to_hdf5)
         self.X = f['/X']
@@ -14,6 +14,7 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
         assert len(self.X) == len(self.Y)
         self.num_items = len(self.X)
         self.start_index = 0
+        self.num_to_load_for_eval = num_to_load_for_eval
 
     def get_batch_generator(self):
         end_index = min(self.num_items, self.start_index+self.batch_size)
@@ -28,7 +29,22 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
         if (end_index==self.num_items):
             self.start_index = 0 
         return X_batch, Y_batch
-        
+
+    def get_data_for_eval(self):
+        X = {}
+        Y = {}
+        eval_start_index = max(self.start_index-self.num_to_load_for_eval,0)
+        eval_end_index = self.start_index
+        for input_mode in self.X:
+            #load the last self.num_to_load_for_eval
+            X[input_mode] = self.X[input_mode]\
+                                  [eval_start_index:eval_end_index]
+
+        for output_mode in self.Y:
+            Y[output_mode] = self.Y[output_mode]\
+                                   [eval_start_index:eval_end_index]
+        return X,Y
+             
  
 class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader)
 
