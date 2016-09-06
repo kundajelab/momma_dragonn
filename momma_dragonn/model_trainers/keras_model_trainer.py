@@ -11,17 +11,18 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
  
-    def train(self, model_wrapper, model_evaluator, data_loaders,
+    def train(self, model_wrapper, model_evaluator,
+                    valid_data_loader, other_data_loaders,
                     end_of_epoch_callbacks, end_of_training_callbacks):
 
         is_larger_better = model_evaluator.is_larger_better_for_key_metric()
 
-        self.stopping_criterion = momma_dragonn.load_class_from_config(
+        self.stopping_criterion = momma_dragonn.loaders.load_class_from_config(
             config=self.stopping_criterion_config,
             extra_kwargs={'larger_is_better':is_larger_better})
 
-        train_data_loader = data_loaders['train']
-        valid_data = data_loaders['valid'].get_data()
+        train_data_loader = other_data_loaders['train']
+        valid_data = valid_data_loader.get_data()
 
         other_model_training_configs = self.model.get_other_training_configs()
         batch_size = other_model_training_configs['batch_size']
