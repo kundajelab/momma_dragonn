@@ -1,6 +1,7 @@
 from .core import AbstractBatchDataLoader, AbstractAtOnceDataLoader
 import h5py
 import numpy as np
+from avutils import util
 
 
 class MultimodalBatchDataLoader(AbstractBatchDataLoader):
@@ -44,4 +45,4 @@ class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader)
             X[input_mode] = np.array(self.X[input_mode])
         for output_mode in self.Y:
             Y[output_mode] = np.array(self.Y[output_mode])
-        return X, Y
+        return util.enum(X=X, Y=Y)
