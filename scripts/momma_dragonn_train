@@ -18,8 +18,8 @@ def momma_dragonn_train(options):
         momma_dragonn.loaders.load_callbacks(options.callbacks_config)
 
     list_of_hyperparameter_settings =\
-        momma_dragonn.loaders.load_hyperparameter_configs(
-                                                options.hyperparameter_configs)
+        momma_dragonn.loaders.load_hyperparameter_configs_list(
+                                        options.hyperparameter_configs_list)
 
     for hyperparameter_setting in list_of_hyperparameter_settings:
         other_data_loaders = hyperparameter_setting["other_data_loaders"]
@@ -33,13 +33,6 @@ def momma_dragonn_train(options):
             end_of_epoch_callbacks=end_of_epoch_callbacks,
             end_of_training_callbacks=end_of_training_callbacks)
 
-    configs_list = yaml.load(fp.get_file_handle(options.configs_list))
-    for config in configs_list:
-        data_loaders_config = config["data_loaders"]
-        model_creator_config = config["model_creator"]
-        model_evaluator_config = config["model_evaluator"]
-        model_trainer_config = config["model_trainer"]
-
 
 if __name__ == "__main__":
     import argparse;
@@ -47,6 +40,6 @@ if __name__ == "__main__":
     parser.add_argument("--valid_data_loader_config", required=True)
     parser.add_argument("--evaluator_config", required=True)
     parser.add_argument("--callbacks_config", required=True)
-    parser.add_argument("--hyperparameter_configs", required=True)
+    parser.add_argument("--hyperparameter_configs_list", required=True)
     options = parser.parse_args();
     momma_dragonn_train(options)
