@@ -43,7 +43,7 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
         for output_mode in self.Y:
             Y[output_mode] = self.Y[output_mode]\
                                    [eval_start_index:eval_end_index]
-        return X,Y
+        return util.enum(X=X,Y=Y)
              
  
 class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader)

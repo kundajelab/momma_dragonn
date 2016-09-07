@@ -53,6 +53,15 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
                 stopping_criterion.update(valid_key_metric)
                 performance_history.update_train_key_metric(train_key_metric)
                 performance_history.update_valid_key_metric(valid_key_metric)
+                if (new_best):
+                    valid_all_stats = model_evaluator.compute_all_stats(
+                                        model_wrapper=model_wrapper,
+                                        data=valid_data)
+                    performance_history.update_best_valid_perf_stats(
+                        epoch=epoch,
+                        valid_key_metric=valid_key_metric,
+                        train_key_metric=train_key_metric,
+                        valid_all_stats=valid_all_stats)
                 epoch += 1
 
                 for end_of_epoch_callback in end_of_epoch_callbacks:
