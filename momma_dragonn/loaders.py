@@ -10,12 +10,14 @@ def load_class_from_config(config, extra_kwargs={}):
     return the_class(**kwargs)
 
 
-def load_callbacks(config):
+def load_callbacks(config, key_metric_name):
     config = load_file_if_string(config)
     end_of_epoch_callbacks = [load_class_from_config(callback_config)
                     for callback_config in config["end_of_epoch_callbacks"]] 
-    end_of_training_callbacks = [load_class_from_config(callback_config)
-                    for callback_config in config["end_of_training_callbacks"]] 
+    end_of_training_callbacks = [
+        load_class_from_config(callback_config,
+            extra_kwargs={'key_metric_name': key_metric_name})
+        for callback_config in config["end_of_training_callbacks"]] 
     return end_of_epoch_callbacks, end_of_training_callbacks 
 
 

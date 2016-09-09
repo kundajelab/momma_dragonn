@@ -3,10 +3,8 @@ from avutils import util
 
 class AbstractPerEpochCallback(object):
 
-    def __call__(self, epoch, model_wrapper,
-                       performance_history,
-                       is_new_best_valid_perf):
-        raise RuntimeError()
+    def __call__(self, **kwargs):
+        raise NotImplementedError()
 
 
 class SaveBestValidModel(AbstractPerEpochCallback):

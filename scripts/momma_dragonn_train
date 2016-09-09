@@ -15,7 +15,9 @@ def momma_dragonn_train(options):
                             options.evaluator_config)
 
     end_of_epoch_callbacks, end_of_training_callbacks =\
-        momma_dragonn.loaders.load_callbacks(options.callbacks_config)
+        momma_dragonn.loaders.load_callbacks(
+            config=options.callbacks_config,
+            key_metric_name=model_evaluator.get_key_metric_name())
 
     list_of_hyperparameter_settings =\
         momma_dragonn.loaders.load_hyperparameter_configs_list(
