@@ -10,8 +10,9 @@ class AbstractEndOfTrainingCallback(object):
 
 class WriteToDbCallback(AbstractEndOfTrainingCallback):
 
-    def __init__(self, db_path, key_metric_name, **kwargs):
+    def __init__(self, db_path, key_metric_name, new_save_dir=None, **kwargs):
         self.key_metric_name = key_metric_name 
+        self.new_save_dir = new_save_dir
         self.db_path = ( #put the perf metric in the db name
             util.get_file_name_parts(db_path) 
                 .get_transformed_file_path(transformation:
@@ -28,7 +29,7 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
             db_contents = yaml.load(fp.get_file_handle(config)) 
         else:
             db_contents = OrderedDict([
-                ('metadata', OrderedDict([('total_models',0),
+                ('metadata', OrderedDict([('total_records',0),
                                           ('best_valid_key_metric', None),
                                           ('best_saved_files_config', None)])),
                 ('records', [])]) 
@@ -37,8 +38,13 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
         metadata = db_contents['metadata']
         records = db_contents['records']
 
+        new_record_num =  metadata['total_records']+1
+        model_wrapper.prefix_to_last_saved_files(
+            prefix="record_"+str(new_record_num),
+            new_directory=self.new_save_dir) 
+
         #update the metadata
-        metadata['total_models'] += 1
+        metadata['total_records'] = new_record_num
         previous_best_valid_key_metric = metadata['best_valid_key_metric']
         current_best_valid_perf_info =\
             performance_history.get_best_valid_epoch_perf_info() 
@@ -51,7 +57,7 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
 
         #create a new entry for the db
         entry = OrderedDict()
-        entry['record_number'] = metadata['total_models']
+        entry['record_number'] = new_record_num
         entry['best_valid_key_metric'] = current_best_valid_key_metric
         entry['best_valid_perf_info'] = current_best_valid_perf_info\
                                         .get_jsonable_object())

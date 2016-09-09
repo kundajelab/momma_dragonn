@@ -60,4 +60,8 @@ class KerasGraphModelWrapper(AbstractModelWrapper):
         new_weights, new_yaml =\
             self.generate_file_names(new_directory, new_prefix)
         fp.rename_files([(old_weights, new_weights), (old_yaml, new_yaml)])
+
+        self.last_saved_files_config['directory'] = new_directory
+        self.last_saved_files_config['weights_file'] = new_weights
+        self.last_saved_files_config['yaml_file'] = new_yaml
         
