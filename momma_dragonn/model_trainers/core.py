@@ -1,8 +1,9 @@
 
+
 class AbstractModelTrainer(object)
 
-    def __init__(self, config):
-        self.config = config
+    def get_jsonable_object(self):
+        raise NotImplementedError()
 
     def train(self, model, model_evaluator, data_loaders):
         #return PerformanceHistory, ModelWrapper

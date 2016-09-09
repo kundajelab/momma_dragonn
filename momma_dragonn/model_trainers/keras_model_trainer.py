@@ -10,10 +10,15 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
                        stopping_criterion_config):
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
+
+    def get_jsonable_object(self):
+        return OrderedDict([
+                ('samples_per_epoch', self.samples_per_epoch),
+                ('stopping_criterion_config', self.stopping_criterion_config)])
  
     def train(self, model_wrapper, model_evaluator,
                     valid_data_loader, other_data_loaders,
-                    end_of_epoch_callbacks, end_of_training_callbacks):
+                    end_of_epoch_callbacks):
 
         is_larger_better = model_evaluator.is_larger_better_for_key_metric()
 
@@ -51,17 +56,17 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
                                                           valid_key_metric)
 
                 stopping_criterion.update(valid_key_metric)
-                performance_history.update_train_key_metric(train_key_metric)
-                performance_history.update_valid_key_metric(valid_key_metric)
+                performance_history.epoch_update(
+                    train_key_metric=train_key_metric,
+                    valid_key_metric=valid_key_metric)
                 if (new_best):
                     valid_all_stats = model_evaluator.compute_all_stats(
                                         model_wrapper=model_wrapper,
                                         data=valid_data)
-                    performance_history.update_best_valid_perf_stats(
-                        OrderedDict([('epoch', epoch),
-                                     ('valid_key_metric', valid_key_metric),
-                                     ('train_key_metric', train_key_metric),
-                                     ('valid_all_stats', valid_all_stats)]))
+                    performance_history.update_best_valid_epoch_perf_info(
+                        epoch=epoch, valid_key_metric=valid_key_metric,
+                        train_key_metric=train_key_metric,
+                        valid_all_stats=valid_all_stats)
                 epoch += 1
 
                 for end_of_epoch_callback in end_of_epoch_callbacks:
@@ -79,9 +84,5 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
                      epoch,"with a keyboard interrupt")
             training_metadata['terminated_by_interrupt']=True
 
-        for end_of_training_callback in end_of_training_callbacks:
-            end_of_training_callback( #handles writing to db
-                performance_history=performance_history, #provides best train perf, best valid perf, total epochs, perfs at best valid epochs
-                model_wrapper=model_wrapper,
-                training_metadata=training_metadata)
+        return model_wrapper, performance_history, training_metadata
         

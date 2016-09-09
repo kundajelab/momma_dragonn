@@ -8,7 +8,8 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
 
     def __init__(self, path_to_hdf5, num_to_load_for_eval, **kwargs):
         super(MultimodalBatchDataLoader, self).__init__(**kwargs)
-        self.f = h5py.File(path_to_hdf5)
+        self.path_to_hdf5 = path_to_hdf5
+        self.f = h5py.File(self.path_to_hdf5)
         self.X = f['/X']
         self.Y = f['/Y']
         assert len(self.X) == len(self.Y)
@@ -45,12 +46,19 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
                                    [eval_start_index:eval_end_index]
         return util.enum(X=X,Y=Y)
              
+    def get_jsonable_object(self):
+        the_dict = super(MultimodalBatchDataLoader, self).get_jsonable_object() 
+        the_dict['path_to_hdf5'] = self.path_to_hdf5
+        the_dict['num_to_load_for_eval'] = self.num_to_load_for_eval
+        return the_dict 
+
  
 class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader)
 
     def __init__(self, path_to_hdf5, **kwargs):
         super(MultimodalAtOnceDataLoader, self).__init__(**kwargs)
-        self.f = h5py.File(path_to_hdf5)
+        self.path_to_hdf5 = path_to_hdf5
+        self.f = h5py.File(self.path_to_hdf5)
         self.X = f['/X']
         self.Y = f['/X']
 
@@ -62,3 +70,9 @@ class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader)
         for output_mode in self.Y:
             Y[output_mode] = np.array(self.Y[output_mode])
         return util.enum(X=X, Y=Y)
+
+    def get_jsonable_object(self):
+        the_dict = super(MultimodalAtOnceDataLoader, self)\
+                   .get_jsonable_object()
+        the_dict['path_to_hdf5'] = self.path_to_hdf5
+        return the_dict

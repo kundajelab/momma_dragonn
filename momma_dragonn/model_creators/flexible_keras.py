@@ -2,11 +2,15 @@ from .core import AbstractModelCreator
 from avutils.dynamic_enum import Key, Keys
 import keras
 from momma_dragonn.loaders import loaders
+from collections import OrderedDict
 
 
 class FlexibleKerasGraph(AbstractModelCreator):
     def __init__(self, config):
         self.config = loaders.load_file_if_string(config)
+
+    def get_jsonable_object(self):
+        return OrderedDict([('config', self.config)])
 
     def get_model(self):
         model = self._get_uncompiled_model() 

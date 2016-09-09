@@ -1,3 +1,21 @@
+from collections import OrderedDict
+
+
+class PerfInfo(object):
+    def __init__(self, epoch, valid_key_metric, train_key_metric,
+                       valid_all_stats):
+        self.epoch = epoch
+        self.valid_key_metric = valid_key_metric
+        self.train_key_metric = train_key_metric
+        self.valid_all_stats = valid_all_stats
+
+    def get_jsonable_object(self):
+        return OrderedDict([
+            ('epoch', self.epoch),
+            ('valid_key_metric', self.valid_key_metric),
+            ('train_key_metric', self.train_key_metric),
+            ('valid_all_stats', self.valid_all_stats)])
+
 
 class PerformanceHistory(object):
 
@@ -6,14 +24,12 @@ class PerformanceHistory(object):
         self._valid_key_metric_history = []
         self._best_valid_epoch_perf_info = None
 
-    def update_train_key_metric(self, key_metric):
-        self._train_key_metric_history.append(key_metric)
-          
-    def update_valid_key_metric(self, key_metric):
-        self._valid_key_metric_history.append(key_metric)
+    def epoch_update(self, train_key_metric, valid_key_metric):
+        self._train_key_metric_history.append(train_key_metric)
+        self._valid_key_metric_history.append(valid_key_metric)
 
-    def update_best_valid_epoch_perf_info(self, perf_info):
-        self._best_valid_epoch_perf_info = perf_info
+    def update_best_valid_epoch_perf_info(self, **kwargs):
+        self._best_valid_epoch_perf_info = PerfInfo(**kwargs)
 
     def get_best_valid_epoch_perf_info(self):
         return self._best_valid_epoch_perf_info

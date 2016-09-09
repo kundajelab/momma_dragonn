@@ -14,9 +14,12 @@ def momma_dragonn_train(options):
     model_evaluator = momma_dragonn.loaders.load_class_from_config(
                             options.evaluator_config)
 
-    end_of_epoch_callbacks, end_of_training_callbacks =\
-        momma_dragonn.loaders.load_callbacks(
-            config=options.callbacks_config,
+    end_of_epoch_callbacks = momma_dragonn.loaders.load_end_of_epoch_callbacks(
+                                options.end_of_epoch_callbacks_config)
+
+    end_of_training_callbacks =\
+        momma_dragonn.loaders.load_end_of_training_callbacks(
+            config=options.end_of_training_callbacks_config,
             key_metric_name=model_evaluator.get_key_metric_name())
 
     list_of_hyperparameter_settings =\
@@ -27,21 +30,33 @@ def momma_dragonn_train(options):
         other_data_loaders = hyperparameter_setting["other_data_loaders"]
         model_creator = hyperparameter_setting["model_creator"]
         model_trainer = hyperparameter_setting["model_trainer"]
-        model_trainer.train(
-            model_wrapper=model_creator.get_model_wrapper(),
-            model_evaluator=model_evaluator,
-            valid_data_loader=valid_data_loader,
-            other_data_loaders=other_data_loaders,
-            end_of_epoch_callbacks=end_of_epoch_callbacks,
-            end_of_training_callbacks=end_of_training_callbacks)
+        model_wrapper, performance_history, training_metadata =\
+            model_trainer.train(
+                model_wrapper=model_creator.get_model_wrapper(),
+                model_evaluator=model_evaluator,
+                valid_data_loader=valid_data_loader,
+                other_data_loaders=other_data_loaders,
+                end_of_epoch_callbacks=end_of_epoch_callbacks)
 
+        model_trainer_config = model_trainer
+
+        for end_of_training_callback in end_of_training_callbacks:
+            end_of_training_callback( #handles writing to db
+                performance_history=performance_history,
+                model_wrapper=model_wrapper,
+                training_metadata=training_metadata,
+                model_creator_info=model_creator.get_jsonable_object(),
+                model_trainer_info=model_trainer.get_jsonable_object(),
+                other_data_loaders_info=[data_loader.get_jsonable_object() for
+                                         data_loader in other_data_loaders])
 
 if __name__ == "__main__":
     import argparse;
     parser = argparse.ArgumentParser()
     parser.add_argument("--valid_data_loader_config", required=True)
     parser.add_argument("--evaluator_config", required=True)
-    parser.add_argument("--callbacks_config", required=True)
+    parser.add_argument("--end_of_epoch_callbacks_config", required=True)
+    parser.add_argument("--end_of_training_callbacks_config", required=True)
     parser.add_argument("--hyperparameter_configs_list", required=True)
     options = parser.parse_args();
     momma_dragonn_train(options)
