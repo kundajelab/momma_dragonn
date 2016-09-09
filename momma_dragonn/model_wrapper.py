@@ -1,10 +1,13 @@
 from avutils import file_processing as fp
+from avutils import util
 from collections import OrderedDict
 
 class AbstractModelWrapper(object):
 
     def __init__(self, model):
         self.model
+        #randomly generated string to use as an id 
+        self.random_string = util.get_random_string(5)
 
     def get_model(self):
         return self.model

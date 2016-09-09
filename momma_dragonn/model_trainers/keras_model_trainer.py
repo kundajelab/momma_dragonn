@@ -58,18 +58,21 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
                                         model_wrapper=model_wrapper,
                                         data=valid_data)
                     performance_history.update_best_valid_perf_stats(
-                        epoch=epoch,
-                        valid_key_metric=valid_key_metric,
-                        train_key_metric=train_key_metric,
-                        valid_all_stats=valid_all_stats)
+                        OrderedDict([('epoch', epoch),
+                                     ('valid_key_metric', valid_key_metric),
+                                     ('train_key_metric', train_key_metric),
+                                     ('valid_all_stats', valid_all_stats)]))
                 epoch += 1
 
                 for end_of_epoch_callback in end_of_epoch_callbacks:
-                    end_of_epoch_callback( #handles intermediate model saving
+                    end_of_epoch_callback(#handles intermediate model saving
                         epoch=epoch,
                         model_wrapper=model_wrapper,
-                        performance_history=performance_history,
-                        is_new_best_valid_perf=new_best)
+                        valid_key_metric=valid_key_metric,
+                        train_key_metric=train_key_metric,
+                        valid_all_stats=valid_all_stats,
+                        is_new_best_valid_perf=new_best,
+                        performance_history=performance_history)
             training_metadata['terminated_by_interrupt']=False
         except (KeyboardInterrupt):
             print("\nTraining was interrupted at epoch ",
