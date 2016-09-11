@@ -22,9 +22,10 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
 
         is_larger_better = model_evaluator.is_larger_better_for_key_metric()
 
-        self.stopping_criterion = momma_dragonn.loaders.load_class_from_config(
-            config=self.stopping_criterion_config,
-            extra_kwargs={'larger_is_better':is_larger_better})
+        self.stopping_criterion =\
+            momma_dragonn.loaders.load_stopping_criterion(
+                config=self.stopping_criterion_config,
+                extra_kwargs={'larger_is_better':is_larger_better})
 
         train_data_loader = other_data_loaders['train']
         valid_data = valid_data_loader.get_data()

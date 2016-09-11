@@ -10,13 +10,13 @@ from collections import OrderedDict
 from avutils import file_processing as fp
 
 def momma_dragonn_train(options):
-    valid_data_loader = momma_dragonn.loaders.load_class_from_config(
-                            options.valid_data_loader_config)
-    model_evaluator = momma_dragonn.loaders.load_class_from_config(
+    valid_data_loader = momma_dragonn.loaders.load_data_loader(
+                            config=options.valid_data_loader_config)
+    model_evaluator = momma_dragonn.loaders.load_model_evaluator(
                             options.evaluator_config)
 
     end_of_epoch_callbacks = momma_dragonn.loaders.load_end_of_epoch_callbacks(
-                                options.end_of_epoch_callbacks_config)
+                                config=options.end_of_epoch_callbacks_config)
 
     end_of_training_callbacks =\
         momma_dragonn.loaders.load_end_of_training_callbacks(
