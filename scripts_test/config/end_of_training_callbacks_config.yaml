@@ -1,0 +1,4 @@
+[
+{"class":"momma_dragonn.end_of_training_callbacks.WriteToDbCallback",
+ "kwargs":{"db_path": "runs.db"}}
+]

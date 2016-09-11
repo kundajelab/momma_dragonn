@@ -50,8 +50,8 @@ is_larger_better_lookup = {
 
 class GraphAccuracyStats(AbstractModelEvaluator):
 
-    def __init__(self):
-        self.key_metric = AccuracyStats.auROC #just auROC for now
+    def __init__(self, key_metric): #just auROC supported for now
+        self.key_metric = key_metric 
 
     def get_key_metric_name(self):
         return self.key_metric

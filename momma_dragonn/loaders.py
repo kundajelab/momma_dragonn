@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import yaml
 from avutils import file_processing as fp
 from avutils import util
@@ -31,9 +32,10 @@ def load_hyperparameter_configs(hyperparameter_configs_list):
     list_of_hyperparameter_settings = []   
     for hyperparameter_configs in\
         util.load_yaml_if_string(hyperparameter_configs_list):
-        other_data_loaders = [load_class_from_config(data_loader_config)
-                              for data_loader_config in
-                              hyperparameter_configs["other_data_loaders"]]
+        other_data_loaders = OrderedDict([
+            (split_name, load_class_from_config(data_loader_config))
+            for (split_name, data_loader_config) in
+            hyperparameter_configs["other_data_loaders"].items()])
         model_creator = load_class_from_config(
                             hyperparameter_configs["model_creator"]) 
         model_trainer = load_class_from_config(

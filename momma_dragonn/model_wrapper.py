@@ -41,6 +41,7 @@ class KerasGraphModelWrapper(AbstractModelWrapper):
         return weights_file, yaml_file
 
     def create_files_to_save(self, directory, prefix):
+        util.create_dir_if_not_exists(directory)   
         weights_file, yaml_file = self.generate_file_names(
                                         directory, prefix)
         model.save_weights(weights_file,overwrite=True)
@@ -54,6 +55,7 @@ class KerasGraphModelWrapper(AbstractModelWrapper):
     def prefix_to_last_saved_files(self, prefix, new_directory=None):
         if new_directory is None:
             new_directory = self.last_saved_files_config['directory'] 
+        util.create_dir_if_not_exists(new_directory)   
         new_prefix = prefix+"_"+self.last_saved_files_config['prefix']
         old_weights = self.last_saved_files_config['weights_file']
         old_yaml = self.last_saved_files_config['yaml_file']

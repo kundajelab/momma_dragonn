@@ -1,0 +1,6 @@
+{
+    "class": "momma_dragonn.data_loaders.hdf5_data_loader.MultimodalAtOnceDataLoader",
+    "kwargs": {
+       "path_to_hdf5": "valid_data.hdf5" 
+    }
+}

@@ -6,6 +6,7 @@ import sys
 import os
 import yaml
 import momma_dragonn
+from collections import OrderedDict
 from avutils import file_processing as fp
 
 def momma_dragonn_train(options):
@@ -47,8 +48,10 @@ def momma_dragonn_train(options):
                 training_metadata=training_metadata,
                 model_creator_info=model_creator.get_jsonable_object(),
                 model_trainer_info=model_trainer.get_jsonable_object(),
-                other_data_loaders_info=[data_loader.get_jsonable_object() for
-                                         data_loader in other_data_loaders])
+                other_data_loaders_info=\
+                OrderedDict([
+                (split_name, data_loader.get_jsonable_object())
+                for (split_name, data_loader) in other_data_loaders.items()])
 
 if __name__ == "__main__":
     import argparse;
