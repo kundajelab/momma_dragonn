@@ -1,10 +1,5 @@
 
 class AbstractModelCreator(object):
-    def __init__(self, config):
-        self.config = config
 
-    def get_model(self):
+    def get_model_wrapper(self):
         raise NotImplementedError()
-
-    def get_config(self):
-        return self.config

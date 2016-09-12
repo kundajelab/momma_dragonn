@@ -2,11 +2,24 @@ from collections import OrderedDict
 import yaml
 from avutils import file_processing as fp
 from avutils import util
+import re
 
 
 def load_class_from_config(config, extra_kwargs={}, module_prefix=""):
+    import momma_dragonn
     config = fp.load_yaml_if_string(config)
-    the_class = module_prefix+config['class']
+    path_to_class = module_prefix+config['class']
+    print("Loading",path_to_class)
+    try:
+        the_class = eval(path_to_class)
+    except NameError:
+        #parse out the beginning module and import before loading
+        p = re.compile(r"^((.*)(\.))?([^.]*)$")
+        m = p.search(path_to_class)
+        module,the_class = m.group(2),m.group(4)
+        if (module is not None):
+            exec("import "+module)
+        the_class = eval(path_to_class)
     kwargs = config['kwargs']
     kwargs.update(extra_kwargs)
     return the_class(**kwargs)
@@ -46,12 +59,12 @@ def load_end_of_training_callbacks(config, key_metric_name):
     return end_of_training_callbacks 
     
 
-def load_hyperparameter_configs(hyperparameter_configs_list):
+def load_hyperparameter_configs_list(hyperparameter_configs_list):
     list_of_hyperparameter_settings = []   
     for hyperparameter_configs in\
         fp.load_yaml_if_string(hyperparameter_configs_list):
         other_data_loaders = OrderedDict([
-            (split_name, load_class_from_config(data_loader_config))
+            (split_name, load_data_loader(data_loader_config))
             for (split_name, data_loader_config) in
             hyperparameter_configs["other_data_loaders"].items()])
         model_creator = load_class_from_config(

@@ -1,24 +1,23 @@
 [
 {
-    "other_data_loaders":[
-    {
+    "other_data_loaders":{
         "train": {
             "class": "hdf5_data_loader.MultimodalBatchDataLoader",
             "kwargs": {
+                "batch_size": 200,
                 "path_to_hdf5": "train_data.hdf5",
-                "num_to_load_for_eval": 20000
+                "num_to_load_for_eval": 20000,
             }
         }
-    }],
+    },
     "model_creator":{
         "class": "flexible_keras.FlexibleKerasGraph",
         "kwargs": {
-           "config": {
-                "inputs_config": [
-                    {"name": "sequence",
-                     "input_shape": [1, 4, 800]}
-                ],
-                "nodes_config": [
+            "inputs_config": [
+                {"name": "sequence",
+                 "input_shape": [1, 4, 800]}
+            ],
+            "nodes_config": [
                 {
                     "name": "conv1",
                     "input_name": "sequence", 
@@ -50,8 +49,14 @@
                     "kwargs": {"pool_size": [1,40], "strides": [1,40]}
                 },
                 {
-                    "name": "output",
+                    "name": "flatten",
                     "input_name": "max_pool", 
+                    "class": "keras.layers.core.Flatten", 
+                    "kwargs": {}
+                },
+                {
+                    "name": "output",
+                    "input_name": "flatten", 
                     "class": "keras.layers.core.Dense", 
                     "kwargs": {"output_dim": 1, }
                 },
@@ -60,19 +65,19 @@
                     "input_name": "output", 
                     "class": "keras.layers.core.Activation", 
                     "kwargs": {"activation": "sigmoid"}
-                }],
-                "outputs_config": [
-                   {"name": "output",
-                    "input": "output_act"} 
-                ]
-                "optimizer_config": {
-                    "class": "Adam",
-                    "kwargs": {"lr": 0.001}
-                },
-                "loss_dictionary": {
-                    "output": "binary_crossentropy"
-                }  
-            } 
+                }
+            ],
+            "outputs_config": [
+               {"name": "output",
+                "input": "output_act"} 
+            ],
+            "optimizer_config": {
+                "class": "keras.optimizers.Adam",
+                "kwargs": {"lr": 0.001}
+            },
+            "loss_dictionary": {
+                "output": "binary_crossentropy"
+            }  
         } 
     },
     "model_trainer":{
@@ -86,7 +91,7 @@
                    "epochs_to_wait": 20
                 } 
             },
-            "class_weight": {0:1, 1:25}
+            "class_weight": {"0":1, "1":25}
         }
     }
 }

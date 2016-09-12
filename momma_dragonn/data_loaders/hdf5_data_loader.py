@@ -10,8 +10,8 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
         super(MultimodalBatchDataLoader, self).__init__(**kwargs)
         self.path_to_hdf5 = path_to_hdf5
         self.f = h5py.File(self.path_to_hdf5)
-        self.X = f['/X']
-        self.Y = f['/Y']
+        self.X = self.f['/X']
+        self.Y = self.f['/Y']
         assert len(self.X) == len(self.Y)
         self.num_items = len(self.X)
         self.start_index = 0
@@ -59,8 +59,8 @@ class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader):
         super(MultimodalAtOnceDataLoader, self).__init__(**kwargs)
         self.path_to_hdf5 = path_to_hdf5
         self.f = h5py.File(self.path_to_hdf5)
-        self.X = f['/X']
-        self.Y = f['/X']
+        self.X = self.f['/X']
+        self.Y = self.f['/X']
 
     def get_data(self):
         X = {}

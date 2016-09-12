@@ -11,7 +11,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                        class_weight=None):
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
-        self.class_weight = class_weight
+        self.class_weight = dict((int(key),val) for
+                                  key,val in class_weight.items())
 
     def get_jsonable_object(self):
         return OrderedDict([
