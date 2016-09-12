@@ -51,7 +51,7 @@ def momma_dragonn_train(options):
                 other_data_loaders_info=\
                 OrderedDict([
                 (split_name, data_loader.get_jsonable_object())
-                for (split_name, data_loader) in other_data_loaders.items()])
+                for (split_name, data_loader) in other_data_loaders.items()]))
 
 if __name__ == "__main__":
     import argparse;
