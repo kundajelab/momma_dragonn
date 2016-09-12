@@ -1,4 +1,4 @@
 {
-    "class": "momma_dragonn.model_evaluators.GraphAccuracyStats",
+    "class": "GraphAccuracyStats",
     "kwargs": {"key_metric": "auROC"}
 }

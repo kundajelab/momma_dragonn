@@ -1,6 +1,6 @@
 [
-{"class": "momma_dragonn.end_of_epoch_callbacks.SaveBestValidModel",
- "kwargs": {"directory": "model_files"}},
-{"class": "momma_dragonn.end_of_epoch_callbacks.PrintPerfAfterEpoch",
- "kwargs": {"print_trend": true}}
+    {"class": "SaveBestValidModel",
+     "kwargs": {"directory": "model_files"}},
+    {"class": "PrintPerfAfterEpoch",
+     "kwargs": {"print_trend": true}}
 ]

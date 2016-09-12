@@ -7,17 +7,19 @@ import keras
 
 
 class FlexibleKerasGraph(AbstractModelCreator):
-    def __init__(self, input_layers_config, nodes_config,
+    def __init__(self, inputs_config, nodes_config, outputs_config,
                        optimizer_config, loss_dictionary):
-        self.input_layers_config = input_layers_config
+        self.inputs_config = inputs_config
         self.nodes_config = nodes_config
+        self.outputs_config = outputs_config
         self.optimizer_config = optimizer_config
         self.loss_dictionary = loss_dictionary
 
     def get_jsonable_object(self):
         return OrderedDict([
-                ('input_layers_config', self.input_layers_config),
+                ('inputs_config', self.inputs_config),
                 ('nodes_config', self.nodes_config),
+                ('outputs_config', self.outputs_config),
                 ('optimizer_config', self.optimizer_config),
                 ('loss_dictionary', self.loss_dictionary)])
 
@@ -29,21 +31,29 @@ class FlexibleKerasGraph(AbstractModelCreator):
     def _get_uncompiled_model(self):
         from keras.model import Graph 
         graph = Graph()
-        self._add_input_layers(graph) 
+        self._add_inputs(graph) 
         self._add_nodes(graph)
+        self._add_outputs(graph)
         return graph
 
     def _add_input_layers(self, graph):
-        for input_layer_config in self.input_layers_config:
-           graph.add_input(name=input_layers_config["name"],
-                           input_shape=input_layers_config["input_shape"]) 
+        for input_config in self.inputs_config:
+           graph.add_input(**input_config) 
 
     def _add_nodes(self, graph):
         for node_config in self.nodes_config:
-            class_and_kwargs = node_config["class_and_kwargs"]
-            layer = load_class_from_config(class_and_kwargs, extra_kwargs={}):
+            the_class = node_config["class"]
+            the_kwargs = node_config["kwargs"]
+            layer = load_class_from_config(
+                        {'class': the_class,
+                         'the_kwargs': the_kwargs},
+                         extra_kwargs={})
             graph.add_node(layer, name=node_config["name"],
                            input=node_config["input_name"])
+
+    def _add_outputs(self, graph):
+        for output_config in self.outputs_config:
+            graph.add_output(**output_config) 
 
     def _compile_model(self, graph):
         optimizer = load_class_from_config(self.optimizer_config)
