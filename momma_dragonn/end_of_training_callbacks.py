@@ -15,7 +15,7 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
         self.new_save_dir = new_save_dir
         self.db_path = ( #put the perf metric in the db name
             util.get_file_name_parts(db_path) 
-                .get_transformed_file_path(transformation:
+                .get_transformed_file_path(transformation=
                  lambda x: x+"_perf-metric-"+str(self.key_metric_name)))
 
     def __call__(self, performance_history, model_wrapper, training_metadata,
@@ -60,7 +60,7 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
         entry['record_number'] = new_record_num
         entry['best_valid_key_metric'] = current_best_valid_key_metric
         entry['best_valid_perf_info'] = current_best_valid_perf_info\
-                                        .get_jsonable_object())
+                                        .get_jsonable_object()
         entry['saved_files_config'] =\
             model_wrapper.get_last_saved_files_config()
         entry['model_creator_info'] = model_creator_info

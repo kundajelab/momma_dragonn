@@ -53,7 +53,7 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
         return the_dict 
 
  
-class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader)
+class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader):
 
     def __init__(self, path_to_hdf5, **kwargs):
         super(MultimodalAtOnceDataLoader, self).__init__(**kwargs)

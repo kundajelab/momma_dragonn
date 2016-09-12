@@ -1,6 +1,6 @@
 import avutils.util as util
 
-class AbstractStoppingCriterion(self):
+class AbstractStoppingCriterion(object):
 
     def __init__(self, max_epochs):
         self.max_epochs = max_epochs

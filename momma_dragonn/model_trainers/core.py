@@ -1,6 +1,6 @@
 
 
-class AbstractModelTrainer(object)
+class AbstractModelTrainer(object):
 
     def get_jsonable_object(self):
         raise NotImplementedError()

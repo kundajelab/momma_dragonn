@@ -4,7 +4,7 @@ from momma_dragonn.performance_history import PerformanceHistory
 from collections import OrderedDict
 import avutils.util as util
 
-class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
+class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
     def __init__(self, samples_per_epoch,
                        stopping_criterion_config,
@@ -17,7 +17,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
         return OrderedDict([
                 ('samples_per_epoch', self.samples_per_epoch),
                 ('stopping_criterion_config', self.stopping_criterion_config),
-                ('class_weight', self.class_weight])
+                ('class_weight', self.class_weight)])
  
     def train(self, model_wrapper, model_evaluator,
                     valid_data_loader, other_data_loaders,

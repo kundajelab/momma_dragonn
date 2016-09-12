@@ -1,7 +1,6 @@
 from .core import AbstractModelCreator
 from avutils.dynamic_enum import Key, Keys
 import keras
-from momma_dragonn.loaders import loaders
 from collections import OrderedDict
 import keras
 
