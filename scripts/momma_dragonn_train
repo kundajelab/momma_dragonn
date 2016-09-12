@@ -41,17 +41,18 @@ def momma_dragonn_train(options):
 
         model_trainer_config = model_trainer
 
-        for end_of_training_callback in end_of_training_callbacks:
-            end_of_training_callback( #handles writing to db
-                performance_history=performance_history,
-                model_wrapper=model_wrapper,
-                training_metadata=training_metadata,
-                model_creator_info=model_creator.get_jsonable_object(),
-                model_trainer_info=model_trainer.get_jsonable_object(),
-                other_data_loaders_info=\
-                OrderedDict([
-                (split_name, data_loader.get_jsonable_object())
-                for (split_name, data_loader) in other_data_loaders.items()]))
+        #if trained for at least one epoch:
+        if (performance_history.get_best_valid_epoch_perf_info is not None):
+            for end_of_training_callback in end_of_training_callbacks:
+                end_of_training_callback( #handles writing to db
+    performance_history=performance_history,
+    model_wrapper=model_wrapper,
+    training_metadata=training_metadata,
+    model_creator_info=model_creator.get_jsonable_object(),
+    model_trainer_info=model_trainer.get_jsonable_object(),
+    other_data_loaders_info=\
+        OrderedDict([(split_name, data_loader.get_jsonable_object())
+        for (split_name, data_loader) in other_data_loaders.items()]))
 
 if __name__ == "__main__":
     import argparse;
