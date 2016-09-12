@@ -22,7 +22,7 @@
                     "name": "conv1",
                     "input_name": "sequence", 
                     "class": "keras.layers.convolutional.Convolution2D", 
-                    "kwargs": {"nb_filter": 300, "nb_row": 4, "nb_col": 10}
+                    "kwargs": {"nb_filter": 50, "nb_row": 4, "nb_col": 10}
                 },
                 {
                     "name": "conv1_act",
@@ -34,7 +34,7 @@
                     "name": "conv2",
                     "input_name": "conv1_act", 
                     "class": "keras.layers.convolutional.Convolution2D", 
-                    "kwargs": {"nb_filter": 100, "nb_row": 1, "nb_col": 10}
+                    "kwargs": {"nb_filter": 50, "nb_row": 1, "nb_col": 10}
                 },
                 {
                     "name": "conv2_act",

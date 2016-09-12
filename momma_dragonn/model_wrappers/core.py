@@ -1,9 +1,9 @@
-
+from avutils import util
 
 class AbstractModelWrapper(object):
 
     def __init__(self, model):
-        self.model
+        self.model = model
         #randomly generated string to use as an id 
         self.random_string = util.get_random_string(5)
 

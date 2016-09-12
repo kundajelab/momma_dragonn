@@ -12,24 +12,40 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
         self.f = h5py.File(self.path_to_hdf5)
         self.X = self.f['/X']
         self.Y = self.f['/Y']
+        if ('weight' in self.f):
+            self.weight = self.f['/weight']
+        else:
+            self.weight = {}
+        self.input_modes = self.X.keys()
+        print("Input modes",self.input_modes)
+        self.output_modes = self.Y.keys()
+        print("Output modes",self.output_modes)
         assert len(self.X) == len(self.Y)
-        self.num_items = len(self.X)
+        self.num_items = len(self.X[self.input_modes[0]])
         self.start_index = 0
         self.num_to_load_for_eval = num_to_load_for_eval
 
     def get_batch_generator(self):
-        end_index = min(self.num_items, self.start_index+self.batch_size)
-        X_batch = {}
-        Y_batch = {}
-        for input_mode in self.X:
-            X_batch[input_mode] = self.X[input_mode]\
-                                        [self.start_index:end_index] 
-        for output_mode in self.Y:
-            Y_batch[output_mode] = self.Y[output_mode]\
-                                         [self.start_index:end_index]
-        if (end_index==self.num_items):
-            self.start_index = 0 
-        return X_batch, Y_batch
+        while True:
+            end_index = min(self.num_items, self.start_index+self.batch_size)
+            data_batch = {}
+            weight_batch = {}
+            for input_mode in self.input_modes:
+                data_batch[input_mode] = self.X[input_mode]\
+                                            [self.start_index:end_index] 
+
+            for output_mode in self.output_modes:
+                data_batch[output_mode] = self.Y[output_mode]\
+                                             [self.start_index:end_index]
+            for output_mode in self.weight:
+                weight_batch[output_mode] = self.weight[output_mode]\
+                                                 [self.start_index+end_index]
+
+            self.start_index = end_index
+            if (end_index==self.num_items):
+                self.start_index = 0 
+
+            yield data_batch, weight_batch
 
     def get_data_for_eval(self):
         X = {}
