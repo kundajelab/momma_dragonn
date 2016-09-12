@@ -85,7 +85,8 @@
                    "max_epochs": 300, 
                    "epochs_to_wait": 20
                 } 
-            }
+            },
+            "class_weight": {0:1, 1:25}
         }
     }
 }

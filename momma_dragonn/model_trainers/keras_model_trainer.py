@@ -7,14 +7,17 @@ import avutils.util as util
 class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
 
     def __init__(self, samples_per_epoch,
-                       stopping_criterion_config):
+                       stopping_criterion_config,
+                       class_weight=None):
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
+        self.class_weight = class_weight
 
     def get_jsonable_object(self):
         return OrderedDict([
                 ('samples_per_epoch', self.samples_per_epoch),
-                ('stopping_criterion_config', self.stopping_criterion_config)])
+                ('stopping_criterion_config', self.stopping_criterion_config),
+                ('class_weight', self.class_weight])
  
     def train(self, model_wrapper, model_evaluator,
                     valid_data_loader, other_data_loaders,
@@ -44,7 +47,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer)
                 model_wrapper.get_model().fit_generator(
                     train_data_loader.get_batch_generator(),
                     samples_per_epoch=self.samples_per_epoch,
-                    nb_epoch=1)
+                    nb_epoch=1,
+                    class_weight=self.class_weight)
                 train_data_for_eval = train_data_loader.get_data_for_eval()
 
                 train_key_metric = model_evaluator.compute_key_metric(
