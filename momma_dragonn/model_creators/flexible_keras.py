@@ -29,8 +29,11 @@ class FlexibleKerasGraph(AbstractModelCreator):
                 ('loss_dictionary', self.loss_dictionary)])
 
     def get_model(self):
+        print("Preparing uncompiled model")
         model = self._get_uncompiled_model() 
+        print("Compiling model")
         self._compile_model(model)
+        print("Done compiling model")
         return model
 
     def _get_uncompiled_model(self):

@@ -11,8 +11,11 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                        class_weight=None):
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
-        self.class_weight = dict((int(key),val) for
-                                  key,val in class_weight.items())
+        if (class_weight is not None):
+            self.class_weight = dict((int(key),val) for
+                                      key,val in class_weight.items())
+        else:
+            self.class_weight = None
 
     def get_jsonable_object(self):
         return OrderedDict([
@@ -32,7 +35,9 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                 extra_kwargs={'larger_is_better':is_larger_better})
 
         train_data_loader = other_data_loaders['train']
+        print("Loading validation data into memory")
         valid_data = valid_data_loader.get_data()
+        print("Loaded")
 
         performance_history = PerformanceHistory()
 

@@ -3,7 +3,6 @@ momma_dragonn/end_of_epoch_callbacks.py
 momma_dragonn/end_of_training_callbacks.py
 momma_dragonn/loaders.py
 momma_dragonn/model_evaluators.py
-momma_dragonn/model_wrapper.py
 momma_dragonn/output_saver.py
 momma_dragonn/performance_history.py
 momma_dragonn/stopping_criteria.py
