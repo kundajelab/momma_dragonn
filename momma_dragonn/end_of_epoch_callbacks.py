@@ -31,13 +31,13 @@ class PrintPerfAfterEpoch(AbstractPerEpochCallback):
         
         best_valid_perf_info = performance_history\
                                .get_best_valid_epoch_perf_info()
-        best_valid_perf_epoch = best_valid_perf_info['epoch']
+        best_valid_perf_epoch = best_valid_perf_info.epoch
         print("Finished epoch",epoch)
         print("Best valid perf epoch",best_valid_perf_epoch)
         print("Valid key metric:",valid_key_metric)
         print("Train key metric:",train_key_metric)
         print("Best valid perf info:",
-               util.format_as_json(best_valid_perf_info))
+         str(util.format_as_json(best_valid_perf_info.get_jsonable_object())))
         if (self.print_trend):
             valid_key_metric_trend = performance_history\
                                      .get_valid_key_metric_history()

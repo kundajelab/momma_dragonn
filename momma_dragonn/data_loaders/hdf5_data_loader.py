@@ -24,6 +24,10 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
         print("Output modes",self.output_modes)
         assert len(self.X) == len(self.Y)
         self.num_items = len(self.X[self.input_modes[0]])
+        if (num_to_load_for_eval > self.num_items):
+            print("num_to_load_for_eval is ",num_to_load_for_eval,
+                  "but num_items is",self.num_items,"- reducing")
+            num_to_load_for_eval = self.num_items
         self.start_index = 0
         self.num_to_load_for_eval = num_to_load_for_eval
              
@@ -37,6 +41,8 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
 
     def get_batch_generator(self):
         while True:
+            if (self.start_index==self.num_items):
+                self.start_index = 0 
             end_index = min(self.num_items, self.start_index+self.batch_size)
             x_batch = {}
             y_batch = {}
@@ -53,8 +59,6 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
                                                  [self.start_index+end_index]
 
             self.start_index = end_index
-            if (end_index==self.num_items):
-                self.start_index = 0 
 
             if (self.bundle_x_and_y_in_generator):
                 data_batch = {}
@@ -67,16 +71,27 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
     def get_data_for_eval(self):
         X = {}
         Y = {}
-        eval_start_index = max(self.start_index-self.num_to_load_for_eval,0)
-        eval_end_index = self.start_index
+        #take the items immediately preceding the current start_index
+        eval_start_index_1 = max(self.start_index-self.num_to_load_for_eval,0)
+        eval_end_index_1 = self.start_index
+        #any leftover taken from the end (presumably last seen)
+        eval_start_index_2 = self.num_items-\
+                             max(self.num_to_load_for_eval-self.start_index,0)
+        eval_end_index_2 = self.num_items
+        print("eval_start_index_1",eval_start_index_1)
+        print("eval_end_index_1",eval_end_index_1)
+        print("eval_start_index_2",eval_start_index_2)
+        print("eval_end_index_2",eval_end_index_2)
         for input_mode in self.X:
             #load the last self.num_to_load_for_eval
-            X[input_mode] = self.X[input_mode]\
-                                  [eval_start_index:eval_end_index]
+            arr1 = self.X[input_mode][eval_start_index_1:eval_end_index_1]
+            arr2 = self.X[input_mode][eval_start_index_2:eval_end_index_2]
+            X[input_mode] = np.concatenate([arr1, arr2], axis=0)
 
         for output_mode in self.Y:
-            Y[output_mode] = self.Y[output_mode]\
-                                   [eval_start_index:eval_end_index]
+            arr1 = self.Y[output_mode][eval_start_index_1:eval_end_index_1]
+            arr2 = self.Y[output_mode][eval_start_index_2:eval_end_index_2]
+            Y[output_mode] = np.concatenate([arr1, arr2], axis=0)
         return util.enum(X=X,Y=Y)
 
  
@@ -87,7 +102,7 @@ class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader):
         self.path_to_hdf5 = path_to_hdf5
         self.f = h5py.File(self.path_to_hdf5)
         self.X = self.f['/X']
-        self.Y = self.f['/X']
+        self.Y = self.f['/Y']
 
     def get_data(self):
         X = {}

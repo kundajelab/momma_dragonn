@@ -4,9 +4,9 @@
         "train": {
             "class": "hdf5_data_loader.MultimodalBatchDataLoader",
             "kwargs": {
-                "batch_size": 50,
+                "batch_size": 200,
                 "path_to_hdf5": "train_data.hdf5",
-                "num_to_load_for_eval": 500,
+                "num_to_load_for_eval": 3000,
                 "bundle_x_and_y_in_generator": True
             }
         }
@@ -84,7 +84,7 @@
     "model_trainer":{
         "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
         "kwargs": {
-            "samples_per_epoch": 500,
+            "samples_per_epoch": 3000,
             "stopping_criterion_config": {
                 "class": "EarlyStopping" ,
                 "kwargs": {

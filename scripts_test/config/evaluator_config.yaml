@@ -1,4 +1,5 @@
 {
     "class": "GraphAccuracyStats",
-    "kwargs": {"key_metric": "auROC"}
+    "kwargs": {"key_metric": "auROC",
+               "all_metrics": ["auROC"]}
 }

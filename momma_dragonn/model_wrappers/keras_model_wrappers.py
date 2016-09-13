@@ -23,8 +23,8 @@ class KerasGraphModelWrapper(AbstractModelWrapper):
         util.create_dir_if_not_exists(directory)   
         weights_file, yaml_file = self.generate_file_names(
                                         directory, prefix)
-        model.save_weights(weights_file,overwrite=True)
-        fp.write_to_file(yaml_file, model.to_yaml())
+        self.model.save_weights(weights_file,overwrite=True)
+        fp.write_to_file(yaml_file, self.model.to_yaml())
         self.last_saved_files_config =\
             OrderedDict([('weights_file', weights_file),
                          ('yaml_file', yaml_file),

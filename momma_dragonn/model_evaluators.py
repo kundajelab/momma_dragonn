@@ -30,12 +30,14 @@ def auroc_func(predictions, true_y):
     [num_rows, num_cols] = true_y.shape 
     aurocs=[]
     for c in range(num_cols): 
-        true_for_task = true_y[:,c]
+        true_y_for_task = true_y[:,c]
         predictions_for_task= predictions[:,c]
         predictions_for_task_filtered, true_y_for_task_filtered =\
          remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
-        task_auroc = roc_auc_score(true_y_for_task_filtered,
-                                   predictions_for_task_filtered)
+        print("c is",c)
+        print("true y is",true_y_for_task_filtered)
+        task_auroc = roc_auc_score(y_true=true_y_for_task_filtered,
+                                   y_score=predictions_for_task_filtered)
         aurocs.append(task_auroc) 
     return aurocs
 
@@ -50,8 +52,9 @@ is_larger_better_lookup = {
 
 class GraphAccuracyStats(AbstractModelEvaluator):
 
-    def __init__(self, key_metric): #just auROC supported for now
+    def __init__(self, key_metric, all_metrics): #just auROC supported for now
         self.key_metric = key_metric 
+        self.all_metrics = all_metrics 
 
     def get_key_metric_name(self):
         return self.key_metric
@@ -59,12 +62,13 @@ class GraphAccuracyStats(AbstractModelEvaluator):
     def is_larger_better_for_key_metric(self):
         return is_larger_better_lookup[self.key_metric]
 
-    def compute_key_metric(self, model_wrapper, data):
-        predictions = model_wrapper.predict(train_data_for_eval.X)
+    def compute_key_metric(self, model_wrapper, data, batch_size):
+        predictions = model_wrapper.predict(data.X, batch_size)
         return self.compute_summary_stat(
                     per_output_stats=self.compute_per_output_stats(
-                                      predictions, train_data_for_eval.Y,
-                                      self.key_metric),
+                                      predictions=predictions,
+                                      true_y=data.Y,
+                                      metric_name=self.key_metric),
                     summary_op=np.mean) 
 
     def compute_summary_stat(self, per_output_stats, summary_op):
@@ -81,3 +85,19 @@ class GraphAccuracyStats(AbstractModelEvaluator):
             to_return[output_name] = func(predictions=predictions[output_name],
                                          true_y=true_y[output_name]) 
         return to_return
+
+
+    def compute_all_stats(self, model_wrapper, data, batch_size):
+        predictions = model_wrapper.predict(data.X, batch_size)
+        all_stats = OrderedDict()
+        for metric_name in self.all_metrics:
+            per_output_stats = self.compute_per_output_stats( 
+                                        predictions=predictions,
+                                        true_y=data.Y,
+                                        metric_name=metric_name)
+            mean = self.compute_summary_stat(
+                    per_output_stats=per_output_stats,
+                    summary_op=np.mean)
+            all_stats["per_output_"+metric_name] = per_output_stats
+            all_stats["mean_"+metric_name] = mean
+        return all_stats
