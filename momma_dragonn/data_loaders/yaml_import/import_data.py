@@ -214,7 +214,7 @@ class Hdf5ForSplitCompiler(AbstractDataForSplitCompiler):
         idx = mode_to_count[mode]
         assert self.ids_in_split[idx] == the_id,\
                ("On index "+str(idx)+"; id meant to be "
-                +the_id+" but got "+the_id)
+                +the_id+" but got "+self.ids_in_split[idx])
         if (idx == 0):
             dset = hdf5grp.create_dataset(mode, [self.num_ids]+shape,
                                           compression="gzip") 

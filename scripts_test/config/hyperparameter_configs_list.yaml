@@ -4,9 +4,10 @@
         "train": {
             "class": "hdf5_data_loader.MultimodalBatchDataLoader",
             "kwargs": {
-                "batch_size": 200,
+                "batch_size": 50,
                 "path_to_hdf5": "train_data.hdf5",
-                "num_to_load_for_eval": 20000,
+                "num_to_load_for_eval": 500,
+                "bundle_x_and_y_in_generator": True
             }
         }
     },
@@ -15,7 +16,7 @@
         "kwargs": {
             "inputs_config": [
                 {"name": "sequence",
-                 "input_shape": [1, 4, 800]}
+                 "input_shape": [1, 4, 200]}
             ],
             "nodes_config": [
                 {
@@ -58,7 +59,7 @@
                     "name": "output",
                     "input_name": "flatten", 
                     "class": "keras.layers.core.Dense", 
-                    "kwargs": {"output_dim": 1, }
+                    "kwargs": {"output_dim": 2}
                 },
                 {
                     "name": "output_act",
@@ -83,7 +84,7 @@
     "model_trainer":{
         "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
         "kwargs": {
-            "samples_per_epoch": 50000,
+            "samples_per_epoch": 500,
             "stopping_criterion_config": {
                 "class": "EarlyStopping" ,
                 "kwargs": {
