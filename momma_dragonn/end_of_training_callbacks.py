@@ -1,17 +1,35 @@
 from avutils import util
+from avutils.dynamic_enum
 from avutils import file_processing as fp
 from collections import OrderedDict
+import yaml
 
 class AbstractEndOfTrainingCallback(object):
 
     def __call__(self, **kwargs):
         raise NotImplementedError()
 
+util.enum(
+   record_number='record_number',
+   best_valid_key_metric='best_valid_key_metric',
+   best_valid_perf_info='best_valid_perf_info',
+   saved_files_config='saved_files_config',
+   model_creator_info='model_creator_info',
+   other_data_loaders_info='other_data_loaders_info',
+   model_trainer_info='model_trainer_info',
+   training_metadata='training_metadata')   
 
 class WriteToDbCallback(AbstractEndOfTrainingCallback):
 
-    def __init__(self, db_path, key_metric_name, new_save_dir=None, **kwargs):
+    record_keys = Keys(Key('record_number'), Key('best_valid_key_metric'),
+                   Key('best_valid_perf_info'), Key('saved_files_config'),
+                   Key('model_creator_info'), Key('other_data_loaders_info'),
+                   Key('model_trainer_info'), Key('training_metadata'))
+
+    def __init__(self, db_path, key_metric_name, larger_is_better,
+                       new_save_dir=None, **kwargs):
         self.key_metric_name = key_metric_name 
+        self.larger_is_better = larger_is_better
         self.new_save_dir = new_save_dir
         self.db_path = ( #put the perf metric in the db name
             util.get_file_name_parts(db_path) 
@@ -26,7 +44,7 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
 
         #read the contents if file exists, otherwise init as you will
         if (util.file_exists(self.db_path)):
-            db_contents = yaml.load(fp.get_file_handle(config)) 
+            db_contents = yaml.load(fp.get_file_handle(self.db_path)) 
         else:
             db_contents = OrderedDict([
                 ('metadata', OrderedDict([('total_records',0),
@@ -37,6 +55,23 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
         #partition into metadata and records
         metadata = db_contents['metadata']
         records = db_contents['records']
+
+        #arrange the fields in the records in the right order
+        new_records = []
+        for record in records:
+            new_record = OrderedDict()
+            for key in self.record_keys.keys():
+                if key in record:
+                    new_record[key] = record[key] 
+                else:
+                    new_record[key] = None
+            #put in any leftover keys that are not in our
+            #current set of keys
+            for key in record:
+                if key not in new_record:
+                    new_record[key] = record[key]
+            new_records.append(new_record)
+        records = new_records
 
         new_record_num =  metadata['total_records']+1
         model_wrapper.prefix_to_last_saved_files(
@@ -57,19 +92,24 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
 
         #create a new entry for the db
         entry = OrderedDict()
-        entry['record_number'] = new_record_num
-        entry['best_valid_key_metric'] = current_best_valid_key_metric
-        entry['best_valid_perf_info'] = current_best_valid_perf_info\
-                                        .get_jsonable_object()
-        entry['saved_files_config'] =\
+        entry[self.record_keys.k.record_number] = new_record_num
+        entry[self.record_keys.k.best_valid_key_metric] =\
+            current_best_valid_key_metric
+        entry[self.record_keys.k.best_valid_perf_info] =\
+            current_best_valid_perf_info.get_jsonable_object()
+        entry[self.record_keys.k.saved_files_config] =\
             model_wrapper.get_last_saved_files_config()
-        entry['model_creator_info'] = model_creator_info
-        entry['other_data_loaders_info'] = other_data_loaders_info
-        entry['model_trainer_info'] = model_trainer_info
-        entry['training_metadata'] = training_metadata
+        entry[self.record_keys.k.model_creator_info] = model_creator_info
+        entry[self.record_keys.k.other_data_loaders_info] =\
+            other_data_loaders_info
+        entry[self.record_keys.k.model_trainer_info] = model_trainer_info
+        entry[self.record_keys.k.training_metadata] = training_metadata
 
         #append a new entry to the records 
         records.append(entry)
+        #sort the records by perf
+        records = sorted(records, key=lambda x:
+    ((-1 if self.larger_is_better else 1)*x['best_valid_key_metric']))
 
         #open BackupForWriteFileHandle, write the json, close
         file_handle = fp.BackupForWriteFileHandle(self.db_path)

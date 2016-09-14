@@ -49,11 +49,12 @@ def load_end_of_epoch_callbacks(config):
     return end_of_epoch_callbacks
 
 
-def load_end_of_training_callbacks(config, key_metric_name):
+def load_end_of_training_callbacks(config, key_metric_name, larger_is_better):
     config = fp.load_yaml_if_string(config)
     end_of_training_callbacks = [
         load_class_from_config(config=callback_config,
-            extra_kwargs={'key_metric_name': key_metric_name},
+            extra_kwargs={'key_metric_name': key_metric_name,
+                          'larger_is_better': larger_is_better},
             module_prefix="momma_dragonn.end_of_training_callbacks.")
         for callback_config in config] 
     return end_of_training_callbacks 

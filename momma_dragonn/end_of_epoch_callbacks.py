@@ -32,19 +32,20 @@ class PrintPerfAfterEpoch(AbstractPerEpochCallback):
         best_valid_perf_info = performance_history\
                                .get_best_valid_epoch_perf_info()
         best_valid_perf_epoch = best_valid_perf_info.epoch
-        print("Finished epoch",epoch)
-        print("Best valid perf epoch",best_valid_perf_epoch)
-        print("Valid key metric:",valid_key_metric)
-        print("Train key metric:",train_key_metric)
-        print("Best valid perf info:",
-         str(util.format_as_json(best_valid_perf_info.get_jsonable_object())))
+        print("Finished epoch:\t"+str(epoch))
+        print("Best valid perf epoch:\t"+str(best_valid_perf_epoch))
+        print("Valid key metric:\t"+str(valid_key_metric))
+        print("Train key metric:\t"+str(train_key_metric))
+        print("Best valid perf info:")
+        print(util.format_as_json(best_valid_perf_info.get_jsonable_object()))
         if (self.print_trend):
             valid_key_metric_trend = performance_history\
                                      .get_valid_key_metric_history()
             train_key_metric_trend = performance_history\
                                      .get_train_key_metric_history()
-            print("epoch","train","valid")
+            print("epoch\ttrain\tvalid")
             for (epoch, (train_key_metric, valid_key_metric)) in\
                 enumerate(zip(train_key_metric_trend,
                               valid_key_metric_trend)):
-                print(epoch,train_key_metric, valid_key_metric)
+                print(str(epoch)+"\t"+str(train_key_metric)
+                           +"\t"+str(valid_key_metric))

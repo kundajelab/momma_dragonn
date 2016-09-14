@@ -34,8 +34,6 @@ def auroc_func(predictions, true_y):
         predictions_for_task= predictions[:,c]
         predictions_for_task_filtered, true_y_for_task_filtered =\
          remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
-        print("c is",c)
-        print("true y is",true_y_for_task_filtered)
         task_auroc = roc_auc_score(y_true=true_y_for_task_filtered,
                                    y_score=predictions_for_task_filtered)
         aurocs.append(task_auroc) 

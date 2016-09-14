@@ -14,7 +14,7 @@ class KerasGraphModelWrapper(AbstractModelWrapper):
         return self.model.predict(X,batch_size=batch_size)
 
     def generate_file_names(self, directory, prefix):
-        file_path_prefix = directory+"/"+prefix+"_" 
+        file_path_prefix = directory+"/"+prefix 
         weights_file = file_path_prefix+"_modelWeights.h5"
         yaml_file = file_path_prefix+"_modelYaml.yaml"
         return weights_file, yaml_file

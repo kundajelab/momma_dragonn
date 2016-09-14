@@ -2,3 +2,6 @@
 **/*.gz
 **/*.pyc
 **/*.swp
+**/*modelWeights.h5
+**/*modelYaml.yaml
+**/*.db

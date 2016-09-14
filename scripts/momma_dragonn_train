@@ -14,6 +14,7 @@ def momma_dragonn_train(options):
                             config=options.valid_data_loader_config)
     model_evaluator = momma_dragonn.loaders.load_model_evaluator(
                             options.evaluator_config)
+    larger_is_better = model_evaluator.is_larger_better_for_key_metric()
 
     end_of_epoch_callbacks = momma_dragonn.loaders.load_end_of_epoch_callbacks(
                                 config=options.end_of_epoch_callbacks_config)
@@ -21,7 +22,8 @@ def momma_dragonn_train(options):
     end_of_training_callbacks =\
         momma_dragonn.loaders.load_end_of_training_callbacks(
             config=options.end_of_training_callbacks_config,
-            key_metric_name=model_evaluator.get_key_metric_name())
+            key_metric_name=model_evaluator.get_key_metric_name(),
+            larger_is_better=larger_is_better)
 
     list_of_hyperparameter_settings =\
         momma_dragonn.loaders.load_hyperparameter_configs_list(

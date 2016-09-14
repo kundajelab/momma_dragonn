@@ -20,4 +20,4 @@ class AbstractModelWrapper(object):
         raise NotImplementedError()
 
     def get_last_saved_files_config(self):
-        raise NotImplementedError()
+        return self.last_saved_files_config

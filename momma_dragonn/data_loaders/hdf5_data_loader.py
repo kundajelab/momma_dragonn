@@ -78,10 +78,6 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
         eval_start_index_2 = self.num_items-\
                              max(self.num_to_load_for_eval-self.start_index,0)
         eval_end_index_2 = self.num_items
-        print("eval_start_index_1",eval_start_index_1)
-        print("eval_end_index_1",eval_end_index_1)
-        print("eval_start_index_2",eval_start_index_2)
-        print("eval_end_index_2",eval_end_index_2)
         for input_mode in self.X:
             #load the last self.num_to_load_for_eval
             arr1 = self.X[input_mode][eval_start_index_1:eval_end_index_1]
