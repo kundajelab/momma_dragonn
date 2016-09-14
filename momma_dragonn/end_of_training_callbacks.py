@@ -1,5 +1,5 @@
 from avutils import util
-from avutils.dynamic_enum
+from avutils.dynamic_enum import Keys, Key
 from avutils import file_processing as fp
 from collections import OrderedDict
 import yaml
@@ -60,7 +60,7 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
         new_records = []
         for record in records:
             new_record = OrderedDict()
-            for key in self.record_keys.keys():
+            for key in self.record_keys.get_keys():
                 if key in record:
                     new_record[key] = record[key] 
                 else:
