@@ -23,7 +23,21 @@
                     "name": "conv1",
                     "input_name": "sequence", 
                     "class": "keras.layers.convolutional.Convolution2D", 
-                    "kwargs": {"nb_filter": 50, "nb_row": 4, "nb_col": 10}
+                    "kwargs": {
+                        "nb_filter": 50,
+                        "nb_row": 4,
+                        "nb_col": 10,
+                        "W_constraint": {
+                            "autoload": true,
+                            "class": "keras.constraints.maxnorm",
+                            "kwargs": {"m": 7, "axis": 1}
+                        },
+                        "activity_regularizer": {
+                            "autoload": true,
+                            "class": "keras.regularizers.ActivityRegularizer",
+                            "kwargs": {"l1":0.00001}
+                        }
+                    }
                 },
                 {
                     "name": "conv1_act",

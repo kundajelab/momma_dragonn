@@ -21,6 +21,13 @@ def load_class_from_config(config, extra_kwargs={}, module_prefix=""):
             exec("import "+module)
         the_class = eval(path_to_class)
     kwargs = config['kwargs']
+    #replace any recursive kwargs as necessary
+    for key,val in kwargs.items():
+        if isinstance(val,dict):
+            if ((len(val.keys())==3) and ('class' in val)
+                and ('kwargs' in val) and ('autoload' in val)
+                and (val['autoload']==True)): 
+                kwargs[key] = load_class_from_config(config=val)
     kwargs.update(extra_kwargs)
     return the_class(**kwargs)
 
