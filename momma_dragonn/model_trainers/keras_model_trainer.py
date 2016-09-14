@@ -42,7 +42,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         performance_history = PerformanceHistory()
 
         training_metadata = OrderedDict() 
-        epoch = 0
+        epoch = 1
         best_valid_perf_finder = util.init_get_best(is_larger_better)
         try:
             while (not stopping_criterion.stop_training()):
@@ -77,7 +77,6 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                         epoch=epoch, valid_key_metric=valid_key_metric,
                         train_key_metric=train_key_metric,
                         valid_all_stats=valid_all_stats)
-                epoch += 1
 
                 for end_of_epoch_callback in end_of_epoch_callbacks:
                     end_of_epoch_callback(#handles intermediate model saving
@@ -88,6 +87,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                         valid_all_stats=valid_all_stats,
                         is_new_best_valid_perf=new_best,
                         performance_history=performance_history)
+
+                epoch += 1
             training_metadata['terminated_by_interrupt']=False
             training_metadata['total_epochs_trained_for']=epoch
         except (KeyboardInterrupt):

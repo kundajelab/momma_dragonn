@@ -4,7 +4,7 @@
         "train": {
             "class": "hdf5_data_loader.MultimodalBatchDataLoader",
             "kwargs": {
-                "batch_size": 200,
+                "batch_size": 50,
                 "path_to_hdf5": "train_data.hdf5",
                 "num_to_load_for_eval": 3000,
                 "bundle_x_and_y_in_generator": True
@@ -88,8 +88,8 @@
             "stopping_criterion_config": {
                 "class": "EarlyStopping" ,
                 "kwargs": {
-                   "max_epochs": 10, 
-                   "epochs_to_wait": 20
+                   "max_epochs": 300, 
+                   "epochs_to_wait": 3
                 } 
             },
             #"class_weight": {"0":1, "1":25}
