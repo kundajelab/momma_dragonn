@@ -56,14 +56,14 @@
                     "kwargs": {}
                 },
                 {
-                    "name": "output",
+                    "name": "output_preact",
                     "input_name": "flatten", 
                     "class": "keras.layers.core.Dense", 
                     "kwargs": {"output_dim": 2}
                 },
                 {
                     "name": "output_act",
-                    "input_name": "output", 
+                    "input_name": "output_preact", 
                     "class": "keras.layers.core.Activation", 
                     "kwargs": {"activation": "sigmoid"}
                 }
