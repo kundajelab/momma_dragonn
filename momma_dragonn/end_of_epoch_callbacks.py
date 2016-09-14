@@ -47,5 +47,5 @@ class PrintPerfAfterEpoch(AbstractPerEpochCallback):
             for (epoch, (train_key_metric, valid_key_metric)) in\
                 enumerate(zip(train_key_metric_trend,
                               valid_key_metric_trend)):
-                print(str(epoch)+"\t"+str(train_key_metric)
+                print(str(epoch+1)+"\t"+str(train_key_metric)
                            +"\t"+str(valid_key_metric))

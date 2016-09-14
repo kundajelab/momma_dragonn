@@ -9,22 +9,17 @@ class AbstractEndOfTrainingCallback(object):
     def __call__(self, **kwargs):
         raise NotImplementedError()
 
-util.enum(
-   record_number='record_number',
-   best_valid_key_metric='best_valid_key_metric',
-   best_valid_perf_info='best_valid_perf_info',
-   saved_files_config='saved_files_config',
-   model_creator_info='model_creator_info',
-   other_data_loaders_info='other_data_loaders_info',
-   model_trainer_info='model_trainer_info',
-   training_metadata='training_metadata')   
-
 class WriteToDbCallback(AbstractEndOfTrainingCallback):
 
-    record_keys = Keys(Key('record_number'), Key('best_valid_key_metric'),
-                   Key('best_valid_perf_info'), Key('saved_files_config'),
-                   Key('model_creator_info'), Key('other_data_loaders_info'),
-                   Key('model_trainer_info'), Key('training_metadata'))
+    record_keys = Keys(Key('record_number'),
+                       Key('best_valid_key_metric'),
+                       Key('best_valid_perf_info'),
+                       Key('training_metadata'),
+                       Key('other_data_loaders_info'),
+                       Key('model_trainer_info'),
+                       Key('model_creator_info'),
+                       Key('key_metric_history'),
+                       Key('saved_files_config'))
 
     def __init__(self, db_path, key_metric_name, larger_is_better,
                        new_save_dir=None, **kwargs):
@@ -97,6 +92,10 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
             current_best_valid_key_metric
         entry[self.record_keys.k.best_valid_perf_info] =\
             current_best_valid_perf_info.get_jsonable_object()
+        entry[self.record_keys.k.key_metric_history] =\
+            [('train','valid')]+\
+            zip(performance_history.get_train_key_metric_history(),
+                performance_history.get_valid_key_metric_history())
         entry[self.record_keys.k.saved_files_config] =\
             model_wrapper.get_last_saved_files_config()
         entry[self.record_keys.k.model_creator_info] = model_creator_info

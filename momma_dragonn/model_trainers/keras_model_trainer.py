@@ -89,6 +89,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                         is_new_best_valid_perf=new_best,
                         performance_history=performance_history)
             training_metadata['terminated_by_interrupt']=False
+            training_metadata['total_epochs_trained_for']=epoch
         except (KeyboardInterrupt):
             print("\nTraining was interrupted at epoch ",
                      epoch,"with a keyboard interrupt")

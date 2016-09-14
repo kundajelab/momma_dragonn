@@ -9,7 +9,7 @@ def load_class_from_config(config, extra_kwargs={}, module_prefix=""):
     import momma_dragonn
     config = fp.load_yaml_if_string(config)
     path_to_class = module_prefix+config['class']
-    print("Loading",path_to_class)
+    print("Loading "+path_to_class)
     try:
         the_class = eval(path_to_class)
     except NameError:

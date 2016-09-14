@@ -88,7 +88,7 @@
             "stopping_criterion_config": {
                 "class": "EarlyStopping" ,
                 "kwargs": {
-                   "max_epochs": 300, 
+                   "max_epochs": 10, 
                    "epochs_to_wait": 20
                 } 
             },
