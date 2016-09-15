@@ -67,7 +67,11 @@ class FlexibleKerasGraph(AbstractModelCreator):
     def _compile_model(self, graph):
         from momma_dragonn.loaders import load_class_from_config
         optimizer = load_class_from_config(self.optimizer_config)
-        graph.compile(optimizer=optimizer, loss=self.loss_dictionary) 
+        parsed_loss_dictionary =\
+            dict((key, (val if isinstance(val,dict)==False else
+                        load_class_from_config(val))) for
+                        (key,val) in self.loss_dictionary.items())
+        graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary) 
 
     def get_config(self):
         return self.config
