@@ -93,9 +93,10 @@ class MultimodalBatchDataLoader(AbstractBatchDataLoader):
  
 class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader):
 
-    def __init__(self, path_to_hdf5, **kwargs):
+    def __init__(self, path_to_hdf5, max_to_load=None, **kwargs):
         super(MultimodalAtOnceDataLoader, self).__init__(**kwargs)
         self.path_to_hdf5 = path_to_hdf5
+        self.max_to_load = max_to_load
         self.f = h5py.File(self.path_to_hdf5)
         self.X = self.f['/X']
         self.Y = self.f['/Y']
@@ -104,13 +105,21 @@ class MultimodalAtOnceDataLoader(AbstractAtOnceDataLoader):
         X = {}
         Y = {}
         for input_mode in self.X:
-            X[input_mode] = np.array(self.X[input_mode])
+            if (self.max_to_load is None):
+                X[input_mode] = np.array(self.X[input_mode])
+            else:
+                X[input_mode] = np.array(self.X[input_mode][:self.max_to_load])
         for output_mode in self.Y:
-            Y[output_mode] = np.array(self.Y[output_mode])
+            if (self.max_to_load is None):
+                Y[output_mode] = np.array(self.Y[output_mode])
+            else:
+                Y[output_mode] = np.array(self.Y[output_mode]
+                                                [:self.max_to_load])
         return util.enum(X=X, Y=Y)
 
     def get_jsonable_object(self):
         the_dict = super(MultimodalAtOnceDataLoader, self)\
                    .get_jsonable_object()
         the_dict['path_to_hdf5'] = self.path_to_hdf5
+        the_dict['max_to_load'] = self.max_to_load
         return the_dict
