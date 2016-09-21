@@ -24,9 +24,9 @@
                     "input_name": "sequence", 
                     "class": "keras.layers.convolutional.Convolution2D", 
                     "kwargs": {
-                        "nb_filter": 50,
+                        "nb_filter": 51,
                         "nb_row": 4,
-                        "nb_col": 10,
+                        "nb_col": 11,
                         "W_constraint": {
                             "autoload": true,
                             "class": "keras.constraints.maxnorm",
@@ -49,7 +49,7 @@
                     "name": "conv2",
                     "input_name": "conv1_act", 
                     "class": "keras.layers.convolutional.Convolution2D", 
-                    "kwargs": {"nb_filter": 50, "nb_row": 1, "nb_col": 10}
+                    "kwargs": {"nb_filter": 49, "nb_row": 1, "nb_col": 10}
                 },
                 {
                     "name": "conv2_act",
@@ -103,7 +103,7 @@
                 "class": "EarlyStopping" ,
                 "kwargs": {
                    "max_epochs": 300, 
-                   "epochs_to_wait": 3
+                   "epochs_to_wait": 10
                 } 
             },
             #"class_weight": {"0":1, "1":25}
