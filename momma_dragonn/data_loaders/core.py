@@ -129,7 +129,7 @@ class AbstractAtOnceDataLoader(AbstractDataLoader):
 class AtOnceDataLoader_XYDictAPI(AbstractAtOnceDataLoader):
 
     def __init__(self, X, Y, max_to_load=None, **kwargs):
-        super(AtOnceDataLoader, self).__init__(**kwargs)
+        super(AtOnceDataLoader_XYDictAPI, self).__init__(**kwargs)
         self.X = X
         self.Y = Y
         self.max_to_load = max_to_load

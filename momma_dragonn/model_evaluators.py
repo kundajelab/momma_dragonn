@@ -68,7 +68,7 @@ compute_func_lookup = {
 }
 is_larger_better_lookup = {
     AccuracyStats.auROC: True,
-    AccuracyStats.onehot_rows_crossent_func: False
+    AccuracyStats.onehot_rows_crossent: False
 }
 
 class GraphAccuracyStats(AbstractModelEvaluator):
