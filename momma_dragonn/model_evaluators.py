@@ -55,7 +55,7 @@ def onehot_rows_crossent_func(predictions, true_y):
     predictions, true_y = [np.clip(arr, (10**-6), (1-(10**-6))) for arr in
                             [predictions, true_y]]
     #compute categ crossentropy
-    return -np.sum(true_y*np.log(predictions))
+    return [-np.mean(np.sum(true_y*np.log(predictions),axis=-1))]
 
 
 AccuracyStats = util.enum(

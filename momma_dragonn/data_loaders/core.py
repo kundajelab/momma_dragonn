@@ -14,14 +14,12 @@ class AbstractDataLoader(object):
 
 class AbstractBatchDataLoader(AbstractDataLoader):
 
-    def __init__(self, batch_size, num_to_load_for_eval):
+    def __init__(self, batch_size):
         self.batch_size = batch_size
-        self.num_to_load_for_eval = num_to_load_for_eval
 
     def get_jsonable_object(self):
         the_dict = super(AbstractBatchDataLoader, self).get_jsonable_object()
         the_dict['batch_size'] = self.batch_size
-        the_dict['num_to_load_for_eval'] = self.num_to_load_for_eval
         return the_dict
 
     def get_batch_generator(self):
@@ -35,8 +33,8 @@ class AbstractBatchDataLoader(AbstractDataLoader):
 
 class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
-    def __init__(self, X, Y, weight, num_to_load_for_eval,
-                       bundle_x_and_y_in_generator, **kwargs):
+    def __init__(self, X, Y, weight, bundle_x_and_y_in_generator,
+                       num_to_load_for_eval, **kwargs):
         super(BatchDataLoader_XYDictAPI, self).__init__(**kwargs)
         self.X = X
         self.Y = Y
