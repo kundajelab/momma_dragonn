@@ -1,6 +1,6 @@
 input_config:
 - dtype: float
-  input_shape: !!python/tuple [1, 4, 200]
+  input_shape: !!python/tuple [1, 4, 45]
   name: sequence
 input_order: [sequence]
 loss: {output: one_hot_rows_categorical_cross_entropy}
@@ -65,7 +65,7 @@ nodes:
     init: glorot_uniform
     name: Convolution2D
     nb_col: 20
-    nb_filter: 60
+    nb_filter: 1
     nb_row: 4
     subsample: &id002 !!python/tuple [1, 1]
     trainable: true
