@@ -1,0 +1,118 @@
+input_config:
+- dtype: float
+  input_shape: !!python/tuple [1, 4, 200]
+  name: sequence
+input_order: [sequence]
+loss: {output: one_hot_rows_categorical_cross_entropy}
+name: Graph
+node_config:
+- concat_axis: -1
+  create_output: false
+  dot_axes: -1
+  input: sequence
+  inputs: &id001 []
+  merge_mode: concat
+  name: conv
+- concat_axis: -1
+  create_output: false
+  dot_axes: -1
+  input: conv
+  inputs: *id001
+  merge_mode: concat
+  name: filt
+- concat_axis: -1
+  create_output: false
+  dot_axes: -1
+  input: filt
+  inputs: *id001
+  merge_mode: concat
+  name: padding
+- concat_axis: -1
+  create_output: false
+  dot_axes: -1
+  input: padding
+  inputs: *id001
+  merge_mode: concat
+  name: deconv
+- concat_axis: -1
+  create_output: false
+  dot_axes: -1
+  input: deconv
+  inputs: *id001
+  merge_mode: concat
+  name: swapaxes
+- concat_axis: -1
+  create_output: false
+  dot_axes: -1
+  input: swapaxes
+  inputs: *id001
+  merge_mode: concat
+  name: output_softmax
+nodes:
+  conv:
+    W_constraint: null
+    W_learning_rate_multiplier: null
+    W_regularizer: null
+    activation: linear
+    activity_regularizer: null
+    b_constraint: null
+    b_learning_rate_multiplier: null
+    b_regularizer: null
+    border_mode: valid
+    cache_enabled: true
+    custom_name: conv
+    dim_ordering: th
+    init: glorot_uniform
+    name: Convolution2D
+    nb_col: 20
+    nb_filter: 60
+    nb_row: 4
+    subsample: &id002 !!python/tuple [1, 1]
+    trainable: true
+  deconv:
+    W_constraint: {axis: 0, m: 10, name: MaxNorm}
+    W_learning_rate_multiplier: null
+    W_regularizer: null
+    activation: linear
+    activity_regularizer: null
+    b_constraint: null
+    b_learning_rate_multiplier: null
+    b_regularizer: null
+    border_mode: valid
+    cache_enabled: true
+    custom_name: deconv
+    dim_ordering: th
+    init: glorot_uniform
+    name: Convolution2D
+    nb_col: 20
+    nb_filter: 4
+    nb_row: 1
+    subsample: *id002
+    trainable: true
+  filt:
+    border_mode: valid
+    cache_enabled: true
+    custom_name: filt
+    name: MaxPoolFilter2D_CenteredPool
+    pool_size: !!python/tuple [1, 20]
+    trainable: true
+  output_softmax: {cache_enabled: true, custom_name: output_softmax, name: SoftmaxAcrossRows,
+    trainable: true}
+  padding:
+    cache_enabled: true
+    custom_name: padding
+    name: ZeroPadding2D
+    padding: !!python/tuple [0, 19]
+    trainable: true
+  swapaxes: {cache_enabled: true, custom_name: swapaxes, name: ExchangeChannelsAndRows,
+    trainable: true}
+optimizer: {beta_1: 0.8999999761581421, beta_2: 0.9990000128746033, epsilon: 1.0e-08,
+  lr: 0.0010000000474974513, name: Adam}
+output_config:
+- concat_axis: -1
+  dot_axes: -1
+  input: output_softmax
+  inputs: []
+  merge_mode: concat
+  name: output
+output_order: [output]
