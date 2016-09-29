@@ -53,7 +53,7 @@ nodes:
     W_constraint: null
     W_learning_rate_multiplier: null
     W_regularizer: null
-    activation: linear
+    activation: sigmoid
     activity_regularizer: null
     b_constraint: null
     b_learning_rate_multiplier: null
@@ -65,7 +65,7 @@ nodes:
     init: glorot_uniform
     name: Convolution2D
     nb_col: 20
-    nb_filter: 1
+    nb_filter: 20
     nb_row: 4
     subsample: &id002 !!python/tuple [1, 1]
     trainable: true
@@ -89,13 +89,9 @@ nodes:
     nb_row: 1
     subsample: *id002
     trainable: true
-  filt:
-    border_mode: valid
-    cache_enabled: true
-    custom_name: filt
-    name: MaxPoolFilter2D_CenteredPool
-    pool_size: !!python/tuple [1, 20]
-    trainable: true
+  filt: {border_mode: valid, break_ties: true, cache_enabled: true, custom_name: filt,
+    name: MaxPoolFilter2D_CenteredPool_Sequence, pool_length: 20, pool_over_channels: true,
+    trainable: true}
   output_softmax: {cache_enabled: true, custom_name: output_softmax, name: SoftmaxAcrossRows,
     trainable: true}
   padding:
