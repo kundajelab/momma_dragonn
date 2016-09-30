@@ -1,0 +1,56 @@
+input_config:
+- dtype: float
+  input_shape: !!python/tuple [1, 4, 45]
+  name: sequence
+input_order: [sequence]
+loss: {output: one_hot_rows_categorical_cross_entropy}
+name: Graph
+node_config:
+- concat_axis: -1
+  create_output: false
+  dot_axes: -1
+  input: sequence
+  inputs: &id001 []
+  merge_mode: concat
+  name: conv_deconv
+- concat_axis: -1
+  create_output: false
+  dot_axes: -1
+  input: conv_deconv
+  inputs: *id001
+  merge_mode: concat
+  name: output_softmax
+nodes:
+  conv_deconv:
+    W_constraint: null
+    W_learning_rate_multiplier: null
+    W_regularizer: {l1: 1.0e-05, l2: 0.0, name: WeightRegularizer, zr: 0.0}
+    activation: sigmoid
+    b_constraint: null
+    b_learning_rate_multiplier: null
+    b_regularizer: null
+    border_mode: valid
+    break_ties: true
+    cache_enabled: true
+    custom_name: conv_deconv
+    dim_ordering: th
+    init: glorot_uniform
+    name: ConvDeconvSequence
+    nb_col: 20
+    nb_filter: 20
+    nb_row: 4
+    pool_length: 20
+    pool_over_channels: true
+    trainable: true
+  output_softmax: {cache_enabled: true, custom_name: output_softmax, name: SoftmaxAcrossRows,
+    trainable: true}
+optimizer: {beta_1: 0.8999999761581421, beta_2: 0.9990000128746033, epsilon: 1.0e-08,
+  lr: 0.0010000000474974513, name: Adam}
+output_config:
+- concat_axis: -1
+  dot_axes: -1
+  input: output_softmax
+  inputs: []
+  merge_mode: concat
+  name: output
+output_order: [output]

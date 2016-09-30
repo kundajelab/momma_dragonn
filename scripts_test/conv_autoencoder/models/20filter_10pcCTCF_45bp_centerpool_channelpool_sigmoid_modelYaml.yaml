@@ -52,7 +52,7 @@ nodes:
   conv:
     W_constraint: null
     W_learning_rate_multiplier: null
-    W_regularizer: null
+    W_regularizer: {l1: 1.0e-05, l2: 0.0, name: WeightRegularizer, zr: 0.0}
     activation: sigmoid
     activity_regularizer: null
     b_constraint: null
@@ -70,9 +70,9 @@ nodes:
     subsample: &id002 !!python/tuple [1, 1]
     trainable: true
   deconv:
-    W_constraint: {axis: 0, m: 10, name: MaxNorm}
+    W_constraint: null
     W_learning_rate_multiplier: null
-    W_regularizer: null
+    W_regularizer: {l1: 1.0e-05, l2: 0.0, name: WeightRegularizer, zr: 0.0}
     activation: linear
     activity_regularizer: null
     b_constraint: null
