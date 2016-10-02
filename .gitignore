@@ -5,3 +5,4 @@
 **/*modelWeights.h5
 **/*modelYaml.yaml
 **/*.db
+**/.ipynb_checkpoints*

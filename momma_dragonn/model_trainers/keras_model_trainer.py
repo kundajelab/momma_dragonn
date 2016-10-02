@@ -37,6 +37,10 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         train_data_loader = other_data_loaders['train']
         print("Loading validation data into memory")
         valid_data = valid_data_loader.get_data()
+        valid_data_dict = {}
+        valid_data_dict.update(valid_data.X)
+        valid_data_dict.update(valid_data.Y)
+        #TODO: deal with weights
         print("Loaded")
 
         performance_history = PerformanceHistory()
@@ -48,6 +52,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
             while (not stopping_criterion.stop_training()):
                 model_wrapper.get_model().fit_generator(
                     train_data_loader.get_batch_generator(),
+                    validation_data=valid_data_dict,
                     samples_per_epoch=self.samples_per_epoch,
                     nb_epoch=1,
                     class_weight=self.class_weight)

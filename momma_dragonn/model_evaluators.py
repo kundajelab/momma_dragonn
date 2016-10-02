@@ -40,12 +40,34 @@ def auroc_func(predictions, true_y):
     return aurocs
 
 
-AccuracyStats = util.enum(auROC="auROC")
+def onehot_rows_crossent_func(predictions, true_y):
+    #squeeze to get rid of channel axis 
+    predictions, true_y = [np.squeeze(arr) for arr in [predictions, true_y]] 
+    assert len(predictions.shape)==3
+    assert len(true_y.shape)==3
+    #transpose to put the row axis at the end
+    predictions, true_y = [np.transpose(arr, (0,2,1)) for arr in
+                            [predictions, true_y]] 
+    #reshape
+    predictions, true_y = [np.reshape(arr, (-1, 4)) for arr in
+                            [predictions, true_y]]
+    #clip
+    predictions = np.clip(predictions, (10**-6), (1-(10**-6)))
+    #compute categ crossentropy
+    return [-np.mean(np.sum(true_y*np.log(predictions),axis=-1))]
+
+
+AccuracyStats = util.enum(
+    auROC="auROC",
+    onehot_rows_crossent="onehot_rows_crossent")
 compute_func_lookup = {
-    AccuracyStats.auROC: auroc_func
+    AccuracyStats.auROC: auroc_func,
+    AccuracyStats.onehot_rows_crossent:
+        onehot_rows_crossent_func
 }
 is_larger_better_lookup = {
-    AccuracyStats.auROC: True
+    AccuracyStats.auROC: True,
+    AccuracyStats.onehot_rows_crossent: False
 }
 
 class GraphAccuracyStats(AbstractModelEvaluator):

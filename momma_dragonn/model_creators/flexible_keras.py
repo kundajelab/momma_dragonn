@@ -6,6 +6,28 @@ import keras
 from ..model_wrappers import keras_model_wrappers
 
 
+class KerasModelFromFunc(AbstractModelCreator):
+
+    def __init__(self, func, model_wrapper_class):
+        self.func = func
+        self._last_model_created = None
+        self.model_wrapper_class = model_wrapper_class
+
+    def get_model_wrapper(self):
+        self.create_model()
+        return self.model_wrapper_class(model=self._last_model_created) 
+
+    def create_model(self):
+        self._last_model_created = self.func()
+        assert self._last_model_created is not None, "func() returned None"
+
+    def get_jsonable_object(self):
+        if (self._last_model_created is None):
+            print("jsonable object requested but model not created; creating")
+            self.create_model()
+        return OrderedDict(['model_json', self._last_model_created.to_json()])
+
+
 class FlexibleKerasGraph(AbstractModelCreator):
 
     def __init__(self, inputs_config, nodes_config, outputs_config,
@@ -72,6 +94,3 @@ class FlexibleKerasGraph(AbstractModelCreator):
                         load_class_from_config(val))) for
                         (key,val) in self.loss_dictionary.items())
         graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary) 
-
-    def get_config(self):
-        return self.config
