@@ -1,0 +1,10 @@
+[{
+   "features": {
+       "features_format": "fasta"
+        ,"opts": {
+            "file_names": ["inputs.gz"]
+            ,"progress_update": 5000
+        },
+        "input_mode_name": "sequence" 
+    }
+}]

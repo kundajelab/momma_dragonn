@@ -103,7 +103,7 @@
                 "class": "EarlyStopping" ,
                 "kwargs": {
                    "max_epochs": 300, 
-                   "epochs_to_wait": 10
+                   "epochs_to_wait": 30
                 } 
             },
             #"class_weight": {"0":1, "1":25}
