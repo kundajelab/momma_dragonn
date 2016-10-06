@@ -59,7 +59,8 @@ LabelsKeys = Keys(Key("file_name"),
                   Key("content_type", default=ContentTypes.integer.name),
                   Key("file_with_subset_of_label_names", default=None),
                   Key("output_mode_name", default=DefaultModeNames.labels),
-                  Key("progress_update", default=None))
+                  Key("progress_update", default=None),
+		  Key("key_columns", default=[0]))
 
 ###
 #Weight Keys
@@ -387,7 +388,7 @@ def process_labels_with_labels_action(labels_objects,
                 subset_of_columns_to_use_options,
                 content_type=content_type,
                 content_start_index=1,
-                key_columns=[0])
+                key_columns=labels_object[LabelsKeys.keys.key_columns])
 
         def action(inp, line_number):
             if (line_number==1):
