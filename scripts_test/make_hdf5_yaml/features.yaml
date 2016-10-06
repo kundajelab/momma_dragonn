@@ -3,11 +3,7 @@
        "input_mode_name": "sequence",
        "features_format": "fasta",
        "opts": {
-            "file_names": [
-    "DensityEmbedding_prefix-gata_motifs-GATA_disc1_min-1_max-3_mean-2_zeroProb-0_seqLength-200_numSeqs-1000.fa.gz",
-    "DensityEmbedding_prefix-tal_motifs-TAL1_known1_min-1_max-3_mean-2_zeroProb-0_seqLength-200_numSeqs-1000.fa.gz",
-    "DensityEmbedding_prefix-talgata_motifs-GATA_disc1+TAL1_known1_min-1_max-3_mean-2_zeroProb-0_seqLength-200_numSeqs-1000.fa.gz"    
-                           ],
+            "file_names": ["inputs.fa.gz"],
             "progress_update": 5000
         }
     } 

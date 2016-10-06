@@ -3,6 +3,7 @@ import momma_dragonn
 from momma_dragonn.performance_history import PerformanceHistory
 from collections import OrderedDict
 import avutils.util as util
+import traceback
 
 class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
@@ -25,7 +26,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
  
     def train(self, model_wrapper, model_evaluator,
                     valid_data_loader, other_data_loaders,
-                    end_of_epoch_callbacks):
+                    end_of_epoch_callbacks, error_callbacks):
 
         is_larger_better = model_evaluator.is_larger_better_for_key_metric()
 
@@ -46,7 +47,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         performance_history = PerformanceHistory()
 
         training_metadata = OrderedDict() 
-        epoch = 1
+        epoch = 0
         best_valid_perf_finder = util.init_get_best(is_larger_better)
         try:
             while (not stopping_criterion.stop_training()):
@@ -56,6 +57,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                     samples_per_epoch=self.samples_per_epoch,
                     nb_epoch=1,
                     class_weight=self.class_weight)
+
                 train_data_for_eval = train_data_loader.get_data_for_eval()
 
                 train_key_metric = model_evaluator.compute_key_metric(
@@ -66,6 +68,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                                     model_wrapper=model_wrapper,
                                     data=valid_data,
                                     batch_size=train_data_loader.batch_size)
+                epoch += 1
+
                 new_best = best_valid_perf_finder.process(epoch,
                                                           valid_key_metric)
 
@@ -93,13 +97,23 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                         is_new_best_valid_perf=new_best,
                         performance_history=performance_history)
 
-                epoch += 1
-            training_metadata['terminated_by_interrupt']=False
-            training_metadata['total_epochs_trained_for']=epoch
+            training_metadata['termination_condition'] = "normal"
         except (KeyboardInterrupt):
             print("\nTraining was interrupted at epoch ",
                      epoch,"with a keyboard interrupt")
-            training_metadata['terminated_by_interrupt']=True
+            training_metadata['termination_condition']= "KeyboardInterrupt"
+        except (Exception,e):
+            traceback_str = str(traceback.format_exc())
+            print(traceback_str) 
+            print("\nTraining was interrupted at epoch ",
+                     epoch,"with an exception")
+            for error_callback in error_callbacks:
+                error_callback(exception=e,
+                               traceback_str=traceback_str,
+                               epoch=epoch)
+            training_metadata['termination_condition']= str(type(e)) 
+        finally:
+            training_metadata['total_epochs_trained_for']=epoch
 
         return model_wrapper, performance_history, training_metadata
         

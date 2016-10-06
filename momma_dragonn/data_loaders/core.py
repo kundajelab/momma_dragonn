@@ -50,9 +50,10 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         assert len(self.X) == len(self.Y)
 
         self.num_items = len(self.X[self.input_modes[0]])
-        if (num_to_load_for_eval > self.num_items):
+        if (num_to_load_for_eval is None or
+            num_to_load_for_eval > self.num_items):
             print("num_to_load_for_eval is ",num_to_load_for_eval,
-                  "but num_items is",self.num_items,"- reducing")
+                  "but num_items is",self.num_items,"- fixing")
             num_to_load_for_eval = self.num_items
         self.num_to_load_for_eval = num_to_load_for_eval
 
@@ -83,7 +84,7 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
                                              [self.start_index:end_index]
             for output_mode in self.weight:
                 weight_batch[output_mode] = self.weight[output_mode]\
-                                                 [self.start_index+end_index]
+                                                 [self.start_index:end_index]
 
             self.start_index = end_index
 
@@ -117,6 +118,9 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             Y[output_mode] = np.concatenate([arr1, arr2], axis=0)
         return util.enum(X=X,Y=Y)
 
+    def get_data(self):
+        return util.enum(X=self.X, Y=self.Y)
+
 
 class AbstractAtOnceDataLoader(AbstractDataLoader):
 
@@ -124,29 +128,40 @@ class AbstractAtOnceDataLoader(AbstractDataLoader):
         raise NotImplementedError()
 
 
-class AtOnceDataLoader_XYDictAPI(AbstractAtOnceDataLoader):
+class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
 
-    def __init__(self, X, Y, max_to_load=None, **kwargs):
-        super(AtOnceDataLoader_XYDictAPI, self).__init__(**kwargs)
-        self.X = X
-        self.Y = Y
+    def __init__(self, X_full, Y_full,
+                       max_to_load=None,
+                       #arguments below are only relevant if
+                       #want to use in batches as well
+                       num_to_load_for_eval=None,
+                       bundle_x_and_y_in_generator=None,
+                       batch_size=None, 
+                       **kwargs):
         self.max_to_load = max_to_load
 
-    def get_data(self):
         X = {}
         Y = {}
-        for input_mode in self.X:
+        for input_mode in X_full:
             if (self.max_to_load is None):
-                X[input_mode] = np.array(self.X[input_mode])
+                X[input_mode] = np.array(X_full[input_mode])
             else:
-                X[input_mode] = np.array(self.X[input_mode][:self.max_to_load])
-        for output_mode in self.Y:
+                X[input_mode] = np.array(X_full[input_mode][:self.max_to_load])
+        for output_mode in Y_full:
             if (self.max_to_load is None):
-                Y[output_mode] = np.array(self.Y[output_mode])
+                Y[output_mode] = np.array(Y_full[output_mode])
             else:
-                Y[output_mode] = np.array(self.Y[output_mode]
+                Y[output_mode] = np.array(Y_full[output_mode]
                                                 [:self.max_to_load])
-        return util.enum(X=X, Y=Y)
+        super(AtOnceDataLoader_XYDictAPI, self).__init__(
+            X=X, Y=Y,
+            weight={}, num_to_load_for_eval=num_to_load_for_eval,
+            bundle_x_and_y_in_generator=bundle_x_and_y_in_generator,
+            batch_size=batch_size,
+            **kwargs)
+
+        self.X = X
+        self.Y = Y
 
     def get_jsonable_object(self):
         the_dict = super(MultimodalAtOnceDataLoader, self)\

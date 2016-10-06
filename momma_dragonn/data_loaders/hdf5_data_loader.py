@@ -32,23 +32,8 @@ class MultimodalAtOnceDataLoader(AtOnceDataLoader_XYDictAPI):
         self.f = h5py.File(self.path_to_hdf5)
         X = self.f['/X']
         Y = self.f['/Y']
-        super(MultimodalAtOnceDataLoader, self).__init__(X=X, Y=Y, **kwargs)
-
-    def get_data(self):
-        X = {}
-        Y = {}
-        for input_mode in self.X:
-            if (self.max_to_load is None):
-                X[input_mode] = np.array(self.X[input_mode])
-            else:
-                X[input_mode] = np.array(self.X[input_mode][:self.max_to_load])
-        for output_mode in self.Y:
-            if (self.max_to_load is None):
-                Y[output_mode] = np.array(self.Y[output_mode])
-            else:
-                Y[output_mode] = np.array(self.Y[output_mode]
-                                                [:self.max_to_load])
-        return util.enum(X=X, Y=Y)
+        super(MultimodalAtOnceDataLoader, self).__init__(
+            X_full=X, Y_full=Y, **kwargs)
 
     def get_jsonable_object(self):
         the_dict = super(MultimodalAtOnceDataLoader, self)\

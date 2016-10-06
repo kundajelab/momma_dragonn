@@ -33,13 +33,19 @@ def momma_dragonn_train(options):
         other_data_loaders = hyperparameter_setting["other_data_loaders"]
         model_creator = hyperparameter_setting["model_creator"]
         model_trainer = hyperparameter_setting["model_trainer"]
+        if ("message" in hyperparameter_setting):
+            message = hyperparameter_setting["message"]
+        else:
+            message = ""
+
         model_wrapper, performance_history, training_metadata =\
             model_trainer.train(
                 model_wrapper=model_creator.get_model_wrapper(),
                 model_evaluator=model_evaluator,
                 valid_data_loader=valid_data_loader,
                 other_data_loaders=other_data_loaders,
-                end_of_epoch_callbacks=end_of_epoch_callbacks)
+                end_of_epoch_callbacks=end_of_epoch_callbacks,
+                error_callbacks=[])
 
         model_trainer_config = model_trainer
 
@@ -50,6 +56,7 @@ def momma_dragonn_train(options):
     performance_history=performance_history,
     model_wrapper=model_wrapper,
     training_metadata=training_metadata,
+    message=message,
     model_creator_info=model_creator.get_jsonable_object(),
     model_trainer_info=model_trainer.get_jsonable_object(),
     other_data_loaders_info=\
@@ -59,10 +66,10 @@ def momma_dragonn_train(options):
 if __name__ == "__main__":
     import argparse;
     parser = argparse.ArgumentParser()
-    parser.add_argument("--valid_data_loader_config", required=True)
-    parser.add_argument("--evaluator_config", required=True)
-    parser.add_argument("--end_of_epoch_callbacks_config", required=True)
-    parser.add_argument("--end_of_training_callbacks_config", required=True)
-    parser.add_argument("--hyperparameter_configs_list", required=True)
+    parser.add_argument("--valid_data_loader_config", default="config/valid_data_loader_config.yaml")
+    parser.add_argument("--evaluator_config", default="config/evaluator_config.yaml")
+    parser.add_argument("--end_of_epoch_callbacks_config", default="config/end_of_epoch_callbacks_config.yaml")
+    parser.add_argument("--end_of_training_callbacks_config", default="config/end_of_training_callbacks_config.yaml")
+    parser.add_argument("--hyperparameter_configs_list", default="config/hyperparameter_configs_list.yaml")
     options = parser.parse_args();
     momma_dragonn_train(options)
