@@ -4,12 +4,16 @@ from momma_dragonn.performance_history import PerformanceHistory
 from collections import OrderedDict
 import avutils.util as util
 import traceback
+import numpy as np
 
 class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
     def __init__(self, samples_per_epoch,
                        stopping_criterion_config,
-                       class_weight=None):
+                       class_weight=None,
+                       seed=1234):
+        np.random.seed(seed)
+
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
         if (class_weight is not None):
@@ -102,7 +106,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
             print("\nTraining was interrupted at epoch ",
                      epoch,"with a keyboard interrupt")
             training_metadata['termination_condition']= "KeyboardInterrupt"
-        except (Exception,e):
+        except Exception as e:
             traceback_str = str(traceback.format_exc())
             print(traceback_str) 
             print("\nTraining was interrupted at epoch ",

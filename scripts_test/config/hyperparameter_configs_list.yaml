@@ -6,8 +6,12 @@
             "kwargs": {
                 "batch_size": 50,
                 "path_to_hdf5": "train_data.hdf5",
-                "num_to_load_for_eval": 3000,
-                "bundle_x_and_y_in_generator": True
+                "num_to_load_for_eval": 3000, #if my training data is YUGE
+                #and I only want to load a subset when I'm calculating the
+                #performance stats on the training data, specify this number,
+                #and only that many datapoints of the training data will be used
+                #for performance stat calculation
+                "bundle_x_and_y_in_generator": True #True for keras 0.3, false for 1.0
             }
         }
     },
@@ -16,7 +20,7 @@
         "kwargs": {
             "inputs_config": [
                 {"name": "sequence",
-                 "input_shape": [1, 4, 200]}
+                 "input_shape": [1, 4, 200]} #shape would change for tensorflow; channel axis is last
             ],
             "nodes_config": [
                 {
@@ -28,7 +32,7 @@
                         "nb_row": 4,
                         "nb_col": 11,
                         "W_constraint": {
-                            "autoload": true,
+                            "autoload": true, #turn the dictionary into a class
                             "class": "keras.constraints.maxnorm",
                             "kwargs": {"m": 7, "axis": 1}
                         },
@@ -84,7 +88,7 @@
             ],
             "outputs_config": [
                {"name": "output",
-                "input": "output_act"} 
+                "input": "output_act"}
             ],
             "optimizer_config": {
                 "class": "keras.optimizers.Adam",
@@ -108,6 +112,7 @@
             },
             #"class_weight": {"0":1, "1":25}
         }
-    }
+    },
+    "message": "Test model"
 }
 ]
