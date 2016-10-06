@@ -37,6 +37,7 @@ rm concatenated_single_line_inputs.gz
 rm shuffled_concatenated_single_line_inputs.gz
 rm DensityEmbedding*.fa.gz
 
+mkdir splits
 #make the splits
 zcat labels.txt.gz | perl -lane 'if ($.%10 !=1 and $.%10 != 2) {print $F[0]}' | gzip -c > splits/train.txt.gz
 zcat labels.txt.gz | perl -lane 'if ($.%10==1 and $. > 1) {print $F[0]}' | gzip -c > splits/valid.txt.gz
