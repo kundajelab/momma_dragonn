@@ -1,4 +1,5 @@
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import average_precision_score
 import numpy as np
 import avutils.util as util
 from collections import OrderedDict
@@ -31,14 +32,26 @@ def auroc_func(predictions, true_y):
     aurocs=[]
     for c in range(num_cols): 
         true_y_for_task = true_y[:,c]
-        predictions_for_task= predictions[:,c]
-        predictions_for_task_filtered, true_y_for_task_filtered =\
+        predictions_for_task = predictions[:,c]
+        predictions_for_task_filtered, true_y_for_task_filtered = \
          remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
         task_auroc = roc_auc_score(y_true=true_y_for_task_filtered,
                                    y_score=predictions_for_task_filtered)
         aurocs.append(task_auroc) 
     return aurocs
 
+def auprc_func(predictions, true_y):
+    # sklearn only supports 2 classes (0,1) for the auPRC calculation 
+    [num_rows, num_cols]=true_y.shape 
+    auprcs=[]
+    for c in range(num_cols): 
+        true_y_for_task=np.squeeze(true_y[:,c])
+        predictions_for_task=np.squeeze(predictions[:,c])
+        predictions_for_task_filtered,true_y_for_task_filtered = \
+         remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
+        task_auprc = average_precision_score(true_y_for_task_filtered, predictions_for_task_filtered);
+        auprcs.append(task_auprc) 
+    return auprcs;
 
 def onehot_rows_crossent_func(predictions, true_y):
     #squeeze to get rid of channel axis 
@@ -59,13 +72,16 @@ def onehot_rows_crossent_func(predictions, true_y):
 
 AccuracyStats = util.enum(
     auROC="auROC",
+    auPRC="auPRC",
     onehot_rows_crossent="onehot_rows_crossent")
 compute_func_lookup = {
     AccuracyStats.auROC: auroc_func,
+    AccuracyStats.auPRC: auprc_func,
     AccuracyStats.onehot_rows_crossent:
         onehot_rows_crossent_func
 }
 is_larger_better_lookup = {
+    AccuracyStats.auROC: True,
     AccuracyStats.auROC: True,
     AccuracyStats.onehot_rows_crossent: False
 }
