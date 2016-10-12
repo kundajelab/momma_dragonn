@@ -53,25 +53,40 @@ def auprc_func(predictions, true_y):
         auprcs.append(task_auprc) 
     return auprcs;
 
+def get_accuracy_stats_for_task(predictions, true_y, c):
+    true_y_for_task=np.squeeze(true_y[:,c])
+    predictions_for_task=np.squeeze(predictions[:,c])
+    predictions_for_task_filtered,true_y_for_task_filtered = remove_ambiguous_peaks(predictions_for_task,true_y_for_task)
+    predictions_for_task_filtered_round = np.array([round(el) for el in predictions_for_task_filtered])
+    accuratePredictions = predictions_for_task_filtered_round==true_y_for_task_filtered;
+
+    numPositives_forTask=np.sum(true_y_for_task_filtered==1,axis=0,dtype="float");
+    numNegatives_forTask=np.sum(true_y_for_task_filtered==0,axis=0,dtype="float"); 
+
+    accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0);
+    accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0);
+
+    returnDict = {
+        'accuratePredictions': accuratePredictions,
+        'numPositives_forTask': numPositives_forTask,
+        'numNegatives_forTask': numNegatives_forTask,
+        'true_y_for_task_filtered': true_y_for_task_filtered,
+        'predictions_for_task_filtered': predictions_for_task_filtered,
+        'accuratePredictions_positives': accuratePredictions_positives,
+        'accuratePredictions_negatives': accuratePredictions_negatives
+    }
+    return returnDict
+
+
 def unbalanced_accuracy(predictions, true_y):
     assert predictions.shape==true_y.shape;
     assert len(predictions.shape)==2;
     [num_rows, num_cols]=true_y.shape 
     unbalanced_accuracies = []
     for c in range(num_cols): 
-        true_y_for_task=np.squeeze(true_y[:,c])
-        predictions_for_task=np.squeeze(predictions[:,c])
-        predictions_for_task_filtered,true_y_for_task_filtered = remove_ambiguous_peaks(predictions_for_task,true_y_for_task)
-        predictions_for_task_filtered_round = np.array([round(el) for el in predictions_for_task_filtered])
-        accuratePredictions = predictions_for_task_filtered_round==true_y_for_task_filtered;
+        r = get_accuracy_stats_for_task(predictions, true_y, c)
 
-        numPositives_forTask=np.sum(true_y_for_task_filtered==1,axis=0,dtype="float");
-        numNegatives_forTask=np.sum(true_y_for_task_filtered==0,axis=0,dtype="float"); 
-
-        accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0);
-        accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0);
-
-        unbalancedAccuracy_forTask = (accuratePredictions_positives + accuratePredictions_negatives)/(numPositives_forTask+numNegatives_forTask).astype("float");
+        unbalancedAccuracy_forTask = (r['accuratePredictions_positives'] + r['accuratePredictions_negatives'])/(r['numPositives_forTask']+r['numNegatives_forTask']).astype("float");
         unbalanced_accuracies.append(unbalancedAccuracy_forTask) 
     return unbalanced_accuracies;
 
@@ -81,23 +96,15 @@ def balanced_accuracy(predictions, true_y):
     [num_rows, num_cols]=true_y.shape 
     balanced_accuracies = [] 
     for c in range(num_cols): 
-        true_y_for_task=np.squeeze(true_y[:,c])
-        predictions_for_task=np.squeeze(predictions[:,c])
-        predictions_for_task_filtered,true_y_for_task_filtered = remove_ambiguous_peaks(predictions_for_task,true_y_for_task)
-        predictions_for_task_filtered_round = np.array([round(el) for el in predictions_for_task_filtered])
-        accuratePredictions = predictions_for_task_filtered_round==true_y_for_task_filtered;
-        numPositives_forTask=np.sum(true_y_for_task_filtered==1,axis=0,dtype="float");
-        numNegatives_forTask=np.sum(true_y_for_task_filtered==0,axis=0,dtype="float"); 
-        
-        accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0);
-        accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0);
-
-        positivesAccuracy_forTask = accuratePredictions_positives/numPositives_forTask;
-        negativesAccuracy_forTask = accuratePredictions_negatives/numNegatives_forTask;
+        r = get_accuracy_stats_for_task(predictions, true_y, c)
+    
+        positivesAccuracy_forTask = r['accuratePredictions_positives']/r['numPositives_forTask'];
+        negativesAccuracy_forTask = r['accuratePredictions_negatives']/r['numNegatives_forTask'];
 
         balancedAccuracy_forTask= (positivesAccuracy_forTask+negativesAccuracy_forTask)/2;
         balanced_accuracies.append(balancedAccuracy_forTask) 
     return balanced_accuracies
+
 
 def onehot_rows_crossent_func(predictions, true_y):
     #squeeze to get rid of channel axis 
