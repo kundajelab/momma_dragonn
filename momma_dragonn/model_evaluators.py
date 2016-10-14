@@ -1,4 +1,5 @@
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import average_precision_score
 import numpy as np
 import avutils.util as util
 from collections import OrderedDict
@@ -31,13 +32,78 @@ def auroc_func(predictions, true_y):
     aurocs=[]
     for c in range(num_cols): 
         true_y_for_task = true_y[:,c]
-        predictions_for_task= predictions[:,c]
-        predictions_for_task_filtered, true_y_for_task_filtered =\
+        predictions_for_task = predictions[:,c]
+        predictions_for_task_filtered, true_y_for_task_filtered = \
          remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
         task_auroc = roc_auc_score(y_true=true_y_for_task_filtered,
                                    y_score=predictions_for_task_filtered)
         aurocs.append(task_auroc) 
     return aurocs
+
+def auprc_func(predictions, true_y):
+    # sklearn only supports 2 classes (0,1) for the auPRC calculation 
+    [num_rows, num_cols]=true_y.shape 
+    auprcs=[]
+    for c in range(num_cols): 
+        true_y_for_task=np.squeeze(true_y[:,c])
+        predictions_for_task=np.squeeze(predictions[:,c])
+        predictions_for_task_filtered,true_y_for_task_filtered = \
+         remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
+        task_auprc = average_precision_score(true_y_for_task_filtered, predictions_for_task_filtered);
+        auprcs.append(task_auprc) 
+    return auprcs;
+
+def get_accuracy_stats_for_task(predictions, true_y, c):
+    true_y_for_task=np.squeeze(true_y[:,c])
+    predictions_for_task=np.squeeze(predictions[:,c])
+    predictions_for_task_filtered,true_y_for_task_filtered = remove_ambiguous_peaks(predictions_for_task,true_y_for_task)
+    predictions_for_task_filtered_round = np.array([round(el) for el in predictions_for_task_filtered])
+    accuratePredictions = predictions_for_task_filtered_round==true_y_for_task_filtered;
+
+    numPositives_forTask=np.sum(true_y_for_task_filtered==1,axis=0,dtype="float");
+    numNegatives_forTask=np.sum(true_y_for_task_filtered==0,axis=0,dtype="float"); 
+
+    accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0);
+    accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0);
+
+    returnDict = {
+        'accuratePredictions': accuratePredictions,
+        'numPositives_forTask': numPositives_forTask,
+        'numNegatives_forTask': numNegatives_forTask,
+        'true_y_for_task_filtered': true_y_for_task_filtered,
+        'predictions_for_task_filtered': predictions_for_task_filtered,
+        'accuratePredictions_positives': accuratePredictions_positives,
+        'accuratePredictions_negatives': accuratePredictions_negatives
+    }
+    return returnDict
+
+
+def unbalanced_accuracy(predictions, true_y):
+    assert predictions.shape==true_y.shape;
+    assert len(predictions.shape)==2;
+    [num_rows, num_cols]=true_y.shape 
+    unbalanced_accuracies = []
+    for c in range(num_cols): 
+        r = get_accuracy_stats_for_task(predictions, true_y, c)
+
+        unbalancedAccuracy_forTask = (r['accuratePredictions_positives'] + r['accuratePredictions_negatives'])/(r['numPositives_forTask']+r['numNegatives_forTask']).astype("float");
+        unbalanced_accuracies.append(unbalancedAccuracy_forTask) 
+    return unbalanced_accuracies;
+
+def balanced_accuracy(predictions, true_y):
+    assert predictions.shape==true_y.shape;
+    assert len(predictions.shape)==2;
+    [num_rows, num_cols]=true_y.shape 
+    balanced_accuracies = [] 
+    for c in range(num_cols): 
+        r = get_accuracy_stats_for_task(predictions, true_y, c)
+    
+        positivesAccuracy_forTask = r['accuratePredictions_positives']/r['numPositives_forTask'];
+        negativesAccuracy_forTask = r['accuratePredictions_negatives']/r['numNegatives_forTask'];
+
+        balancedAccuracy_forTask= (positivesAccuracy_forTask+negativesAccuracy_forTask)/2;
+        balanced_accuracies.append(balancedAccuracy_forTask) 
+    return balanced_accuracies
 
 
 def onehot_rows_crossent_func(predictions, true_y):
@@ -59,14 +125,23 @@ def onehot_rows_crossent_func(predictions, true_y):
 
 AccuracyStats = util.enum(
     auROC="auROC",
+    auPRC="auPRC",
+    balanced_accuracy="balanced_accuracy",
+    unbalanced_accuracy="unbalanced_accuracy",
     onehot_rows_crossent="onehot_rows_crossent")
 compute_func_lookup = {
     AccuracyStats.auROC: auroc_func,
+    AccuracyStats.auPRC: auprc_func,
+    AccuracyStats.balanced_accuracy: balanced_accuracy,
+    AccuracyStats.unbalanced_accuracy: unbalanced_accuracy,
     AccuracyStats.onehot_rows_crossent:
         onehot_rows_crossent_func
 }
 is_larger_better_lookup = {
     AccuracyStats.auROC: True,
+    AccuracyStats.auROC: True,
+    AccuracyStats.balanced_accuracy: True,
+    AccuracyStats.unbalanced_accuracy: True,
     AccuracyStats.onehot_rows_crossent: False
 }
 
