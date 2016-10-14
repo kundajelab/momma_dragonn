@@ -11,7 +11,7 @@ config = {
     'setup_requires': [],
     'install_requires': ['numpy', 'avutils'],
     'dependency_links': ['https://github.com/kundajelab/avutils/tarball/master#egg=avutils-0.2'],
-    'scripts': ['scripts/make_hdf5', 'scripts/momma_dragonn_train'],
+    'scripts': ['scripts/momma_dragonn_train'],
     'name': 'momma_dragonn'
 }
 

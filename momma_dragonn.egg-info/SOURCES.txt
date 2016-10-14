@@ -11,5 +11,4 @@ momma_dragonn.egg-info/SOURCES.txt
 momma_dragonn.egg-info/dependency_links.txt
 momma_dragonn.egg-info/requires.txt
 momma_dragonn.egg-info/top_level.txt
-scripts/make_hdf5
 scripts/momma_dragonn_train
