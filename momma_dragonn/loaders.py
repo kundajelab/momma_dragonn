@@ -83,8 +83,13 @@ def load_hyperparameter_configs_list(hyperparameter_configs_list):
         model_trainer = load_class_from_config(
                             config=hyperparameter_configs["model_trainer"],
                             module_prefix="momma_dragonn.model_trainers.")
+        if ('message' in hyperparameter_configs):
+            message = hyperparameter_configs['message']
+        else:
+            message = ""
         list_of_hyperparameter_settings.append(
             {'other_data_loaders':other_data_loaders,
              'model_creator':model_creator,
-             'model_trainer':model_trainer})
+             'model_trainer':model_trainer,
+             'message': message})
     return list_of_hyperparameter_settings 

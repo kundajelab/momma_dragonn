@@ -33,10 +33,7 @@ def momma_dragonn_train(options):
         other_data_loaders = hyperparameter_setting["other_data_loaders"]
         model_creator = hyperparameter_setting["model_creator"]
         model_trainer = hyperparameter_setting["model_trainer"]
-        if ("message" in hyperparameter_setting):
-            message = hyperparameter_setting["message"]
-        else:
-            message = ""
+        message = hyperparameter_setting["message"]
 
         model_wrapper, performance_history, training_metadata =\
             model_trainer.train(
