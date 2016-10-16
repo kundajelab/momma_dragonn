@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-make_hdf5 --yaml_configs make_hdf5_yaml/* --output_dir .
-
 momma_dragonn_train --valid_data_loader_config\
  config/valid_data_loader_config.yaml\
  --evaluator_config config/evaluator_config.yaml\
