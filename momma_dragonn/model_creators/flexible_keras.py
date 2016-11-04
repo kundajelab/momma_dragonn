@@ -79,8 +79,23 @@ class FlexibleKerasGraph(AbstractModelCreator):
                         {'class': the_class,
                          'kwargs': the_kwargs},
                          extra_kwargs={})
-            graph.add_node(layer, name=node_config["name"],
-                           input=node_config["input_name"])
+
+            add_node_kwargs = {}
+            for a_key in node_config:
+                if a_key not in ["class", "kwargs", "input_name"]:
+                    add_node_kwargs[a_key] = node_config[a_key] 
+
+            if (isinstance(node_config["input_name"],list)):
+                add_node_kwargs['inputs'] = node_config["input_name"]
+            elif (isinstance(node_config["input_name"], str)):
+                add_node_kwargs['input'] = node_config["input_name"]
+            else:
+                raise RuntimeError("Unsupported type for input_name: "
+                                   +str(node_config["input_name"]))
+
+            graph.add_node(
+                layer,
+                **add_node_kwargs)
 
     def _add_outputs(self, graph):
         for output_config in self.outputs_config:

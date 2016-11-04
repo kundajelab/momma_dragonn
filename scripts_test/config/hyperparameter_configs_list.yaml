@@ -31,6 +31,7 @@
                         "nb_filter": 51,
                         "nb_row": 4,
                         "nb_col": 11,
+                        "border_mode": "same",
                         "W_constraint": {
                             "autoload": true, #turn the dictionary into a class
                             "class": "keras.constraints.maxnorm",
@@ -53,7 +54,12 @@
                     "name": "conv2",
                     "input_name": "conv1_act", 
                     "class": "keras.layers.convolutional.Convolution2D", 
-                    "kwargs": {"nb_filter": 49, "nb_row": 1, "nb_col": 10}
+                    "kwargs": {
+                        "nb_filter": 49,
+                        "nb_row": 1,
+                        "nb_col": 10,
+                        "border_mode": "same"
+                       }
                 },
                 {
                     "name": "conv2_act",
@@ -62,8 +68,22 @@
                     "kwargs": {"activation": "relu"}
                 },
                 {
+                    "name": "conv3",
+                    "input_name": ["conv1_act", "conv2_act"], 
+                    "merge_mode": "concat",
+                    "concat_axis": 1,
+                    "class": "keras.layers.convolutional.Convolution2D", 
+                    "kwargs": {"nb_filter": 10, "nb_row": 1, "nb_col": 10}
+                },
+                {
+                    "name": "conv3_act",
+                    "input_name": "conv3", 
+                    "class": "keras.layers.core.Activation", 
+                    "kwargs": {"activation": "relu"}
+                },
+                {
                     "name": "max_pool",
-                    "input_name": "conv2", 
+                    "input_name": "conv3_act", 
                     "class": "keras.layers.convolutional.MaxPooling2D", 
                     "kwargs": {"pool_size": [1,40], "strides": [1,40]}
                 },
