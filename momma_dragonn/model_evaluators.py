@@ -139,7 +139,7 @@ compute_func_lookup = {
 }
 is_larger_better_lookup = {
     AccuracyStats.auROC: True,
-    AccuracyStats.auROC: True,
+    AccuracyStats.auPRC: True,
     AccuracyStats.balanced_accuracy: True,
     AccuracyStats.unbalanced_accuracy: True,
     AccuracyStats.onehot_rows_crossent: False
