@@ -3,7 +3,7 @@ from .core import (AbstractBatchDataLoader, AbstractAtOnceDataLoader,
 import h5py
 import numpy as np
 from avutils import util
-
+import pdb 
 
 class MultimodalBatchDataLoader(BatchDataLoader_XYDictAPI):
 
@@ -12,8 +12,9 @@ class MultimodalBatchDataLoader(BatchDataLoader_XYDictAPI):
         self.f = h5py.File(self.path_to_hdf5)
         X = self.f['/X']
         Y = self.f['/Y']
-        if ('weight' in self.f):
-            weight = self.f['/weight']
+
+        if ('weights' in self.f):
+            weight = self.f['/weights']
         else:
             weight = {}
         super(MultimodalBatchDataLoader, self).__init__(

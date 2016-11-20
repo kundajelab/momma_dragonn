@@ -4,11 +4,12 @@ from avutils import file_processing as fp
 from avutils import util
 import re
 import momma_dragonn
-
+import pdb 
 
 #creates generators for each split in the hdf5 file 
 def get_generators(options):
     generator_dict=dict()
+    pdb.set_trace() 
     return generator_dict
 
 def load_class_from_config(config, extra_kwargs={}, module_prefix=""):
@@ -78,7 +79,7 @@ def load_hyperparameter_configs_list(hyperparameter_configs_list):
     list_of_hyperparameter_settings = []   
     for hyperparameter_configs in\
         fp.load_yaml_if_string(hyperparameter_configs_list):
-        data_loaders = OrderedDict([
+        other_data_loaders = OrderedDict([
             (split_name, load_data_loader(data_loader_config))
             for (split_name, data_loader_config) in
             hyperparameter_configs["data_loaders"].items()])
@@ -93,7 +94,7 @@ def load_hyperparameter_configs_list(hyperparameter_configs_list):
         else:
             message = ""
         list_of_hyperparameter_settings.append(
-            {'data_loaders':data_loaders,
+            {'other_data_loaders':other_data_loaders,
              'model_creator':model_creator,
              'model_trainer':model_trainer,
              'message': message})

@@ -16,7 +16,7 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
                        Key('best_valid_key_metric'),
                        Key('best_valid_perf_info'),
                        Key('training_metadata'),
-                       Key('data_loaders_info'),
+                       Key('other_data_loaders_info'),
                        Key('model_trainer_info'),
                        Key('model_creator_info'),
                        Key('key_metric_history'),
@@ -34,7 +34,7 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
 
     def __call__(self, performance_history, model_wrapper, training_metadata,
                        message, model_creator_info, model_trainer_info,
-                       data_loaders_info):
+                       other_data_loaders_info):
         if (training_metadata['total_epochs_trained_for'] > 0):
             #acquire lock on db file
             db_lock = fp.FileLockAsDir(self.db_path)  
@@ -103,8 +103,8 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
             entry[self.record_keys.k.saved_files_config] =\
                 model_wrapper.get_last_saved_files_config()
             entry[self.record_keys.k.model_creator_info] = model_creator_info
-            entry[self.record_keys.k.data_loaders_info] =\
-                data_loaders_info
+            entry[self.record_keys.k.other_data_loaders_info] =\
+                other_data_loaders_info
             entry[self.record_keys.k.model_trainer_info] = model_trainer_info
             entry[self.record_keys.k.training_metadata] = training_metadata
 
