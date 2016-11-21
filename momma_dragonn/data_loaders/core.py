@@ -47,8 +47,10 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         self.output_modes = self.Y.keys()
         print("Output modes",self.output_modes)
         
-
-        assert len(self.X) == len(self.Y)
+        #assertion needs to be made for each task.
+        for x_key in self.X.keys():
+            for y_key in self.Y.keys(): 
+                assert len(self.X[x_key]) == len(self.Y[y_key])
 
         self.num_items = len(self.X[self.input_modes[0]])
 
