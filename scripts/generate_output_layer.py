@@ -39,7 +39,7 @@ def main():
         #copy the final activation layer
         last_layer_cur_task=last_layer
         last_layer_cur_task['name']=cur_name+'_'+str(task)
-        last_layer_cur_task['output_dim']=1
+        last_layer_cur_task['kwargs']['output_dim']=1
         #add a pre-output activation layer
         pre_act_cur_task=pre_act
         pre_act_cur_task['input_name']=cur_name+'_'+str(task) 
