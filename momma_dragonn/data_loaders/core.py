@@ -112,7 +112,7 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         num_expected=self.num_items
         self.permutation_index=0 
         while True:            
-            if (num_generated>=num_expected) or (self.permutation_index > len(self.permuted_batch_start)):
+            if (num_generated>=num_expected) or (self.permutation_index >= len(self.permuted_batch_start)):
                 self.permuted_batch_start,self.permuted_batch_end=self.get_batch_permutation_order()
                 self.permutation_index=0
             x_batch = {}
