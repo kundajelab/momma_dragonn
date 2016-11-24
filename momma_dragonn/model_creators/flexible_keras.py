@@ -4,7 +4,7 @@ import keras
 from collections import OrderedDict
 import keras
 from ..model_wrappers import keras_model_wrappers
-
+import pdb 
 
 class KerasModelFromFunc(AbstractModelCreator):
 
@@ -109,3 +109,4 @@ class FlexibleKerasGraph(AbstractModelCreator):
                         load_class_from_config(val))) for
                         (key,val) in self.loss_dictionary.items())
         graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary) 
+        
