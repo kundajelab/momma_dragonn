@@ -77,13 +77,13 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                 
                 train_key_metric = model_evaluator.compute_key_metric(
                                     model_wrapper=model_wrapper,
-                                    data_generator=train_data_loader.get_batch_generator(),
+                                    data_generator=train_data_loader.get_data_for_eval(),
                                     samples_to_use=train_num_to_load_for_eval,
                                     batch_size=train_data_loader.batch_size)
 
                 valid_key_metric = model_evaluator.compute_key_metric(
                                     model_wrapper=model_wrapper,
-                                    data_generator=valid_data_loader.get_batch_generator(),
+                                    data_generator=valid_data_loader.get_data_for_eval(),
                                     samples_to_use=valid_num_to_load_for_eval,
                                     batch_size=valid_data_loader.batch_size)
                 epoch += 1
@@ -98,7 +98,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                 if (new_best):
                     valid_all_stats = model_evaluator.compute_all_stats(
                                     model_wrapper=model_wrapper,
-                                    data_generator=valid_data_loader.get_batch_generator(),
+                                    data_generator=valid_data_loader.get_data_for_eval(),
                                     samples_to_use=valid_num_to_load_for_eval,
                                     batch_size=valid_data_loader.batch_size)
                     

@@ -79,24 +79,22 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
     def get_batch_permutation_order(self):
         #figure out what the offset of the first batch from 0 is
         start_index=np.random.randint(0,self.batch_size)
-        batch_number=0
+        #handle edge case for very few items:
+        if start_index >=self.num_items:
+            start_index=0 
+        batch_number=-1
         ordered_batches=OrderedDict()
         while start_index < self.num_items:
-            end_index=start_index+self.batch_size
-            #handle the edge case when your end_index runs off the sequence!
-            if end_index >=self.num_items:
-                #shift left
-                print("shifting!!") 
-                end_index=self.num_items
-                start_index=end_index-self.batch_size 
-            ordered_batches[batch_number]=[start_index,end_index]
             batch_number+=1
+            end_index=start_index+self.batch_size
+            if end_index >=self.num_items:
+                end_index=self.num_items
+                start_index=self.num_items - self.batch_size
+            ordered_batches[batch_number]=[start_index,end_index]
             start_index=start_index+self.batch_size
-            if start_index%1000==0:
-                print str(start_index) 
         #permute the batch indices
-        print("finished permutation") 
-        permuted_indices=np.random.permutation(batch_number)
+        #print("finished permutation") 
+        permuted_indices=np.random.permutation(batch_number+1)
         #return start & end indices for the permuted batches
         permuted_batch_start=[]
         permuted_batch_end=[] 
@@ -107,29 +105,37 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
     
 
     #this is for the training step, we cycle through all examples 
-    def get_batch_generator(self):   
-        num_generated=0
-        num_expected=self.num_items
+    def get_batch_generator(self,predict_mode=False):   
+        self.num_generated=0
         self.permutation_index=0 
         while True:            
-            if (num_generated>=num_expected) or (self.permutation_index >= len(self.permuted_batch_start)):
+            if (self.num_generated>=self.num_items) or (self.permutation_index >= len(self.permuted_batch_start)):
                 self.permuted_batch_start,self.permuted_batch_end=self.get_batch_permutation_order()
                 self.permutation_index=0
             x_batch = {}
             y_batch = {}
             weight_batch = {}
-            for input_mode in self.input_modes:
-                x_batch[input_mode] = np.asarray(self.X[input_mode]\
-                                            [self.permuted_batch_start[self.permutation_index]:self.permuted_batch_end[self.permutation_index]])
+            #print("permutation_index:"+str(self.permutation_index))
+            #print("self.permuted_batch_start:"+str(self.permuted_batch_start))
+            #print("self.permuted_batch_end:"+str(self.permuted_batch_end))
 
+            #make sure we don't generated more values than samples_per_epoch (aka self.num_items)
+            start_index=self.permuted_batch_start[self.permutation_index]
+            end_index = self.permuted_batch_end[self.permutation_index]
+            for input_mode in self.input_modes:
+                x_batch[input_mode] = np.asarray(self.X[input_mode][start_index:end_index])
             for output_mode in self.output_modes:
-                y_batch[output_mode] = np.asarray(self.Y[output_mode]\
-                                             [self.permuted_batch_start[self.permutation_index]:self.permuted_batch_end[self.permutation_index]])
+                y_batch[output_mode] = np.asarray(self.Y[output_mode][start_index:end_index])
             for output_mode in self.weight:
-                weight_batch[output_mode] = np.squeeze(np.asarray(self.weight[output_mode]\
-                                            [self.permuted_batch_start[self.permutation_index]:self.permuted_batch_end[self.permutation_index]]))
+                weight_batch[output_mode] = np.squeeze(np.asarray(self.weight[output_mode][start_index:end_index]))
+
             self.permutation_index+=1
-            if (self.bundle_x_and_y_in_generator):
+            self.num_generated+=(end_index-start_index)
+            if predict_mode==True:
+                #the generator will be used to generate values at test time of the model.
+                yield tuple([x_batch,y_batch])
+            
+            elif (self.bundle_x_and_y_in_generator):
                 #data_batch = tuple([x_batch,y_batch])
                 data_batch={} 
                 data_batch.update(x_batch)
@@ -145,6 +151,23 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
                     yield tuple([x_batch, y_batch]) 
 
     def get_data_for_eval(self):
+        self.batches_returned_for_evaluation=0
+        self.num_generated=0 
+        while True:
+            if self.num_generated >= self.num_items:
+                yield tuple([{},{}])
+            x_batch = {}
+            y_batch = {}
+            start_index=self.batch_size*self.batches_returned_for_evaluation
+            end_index=min([self.num_items,start_index+self.batch_size]) 
+            for input_mode in self.input_modes:
+                x_batch[input_mode] = np.asarray(self.X[input_mode][start_index:end_index])
+            for output_mode in self.output_modes:
+                y_batch[output_mode]=np.asarray(self.Y[output_mode][start_index:end_index])
+            self.batches_returned_for_evaluation+=1
+            self.num_generated+=(end_index-start_index)
+            yield tuple([x_batch,y_batch])
+        '''
         X = {}
         Y = {}
         #we don't want to assume that the data is presented in a random order.
@@ -155,12 +178,16 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         for output_mode in self.Y:
             Y[output_mode]=np.concatenate([self.X[input_mode][self.permuted_batch_start[i]:self.permuted_batch_end[i]] for i in range(num_batches)],axis=0)
         return util.enum(X=X,Y=Y)
-
+        '''
     def get_data(self):
         return util.enum(X=self.X, Y=self.Y)
 
     def get_samples_per_epoch(self):
-        return self.num_items
+        #This needs to be a multiple of the batch size to avoid warnings about dimensions not matching.
+        if self.num_items % self.batch_size !=0:
+            return (self.num_items/self.batch_size+1)*self.batch_size
+        else:
+            return self.num_items
     
 class AbstractAtOnceDataLoader(AbstractDataLoader):
 

@@ -3,7 +3,8 @@ from sklearn.metrics import average_precision_score
 import numpy as np
 import avutils.util as util
 from collections import OrderedDict
-
+import sys 
+import pdb 
 
 class AbstractModelEvaluator(object):
 
@@ -35,8 +36,14 @@ def auroc_func(predictions, true_y):
         predictions_for_task = predictions[:,c]
         predictions_for_task_filtered, true_y_for_task_filtered = \
          remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
-        task_auroc = roc_auc_score(y_true=true_y_for_task_filtered,
+        try:
+            task_auroc = roc_auc_score(y_true=true_y_for_task_filtered,
                                    y_score=predictions_for_task_filtered)
+        except Exception as e:
+            #if there is only one class in the batch of true_y, then auROC cannot be calculated
+            print("Could not calculate auROC:")
+            print(str(e))
+            task_auroc=None 
         aurocs.append(task_auroc) 
     return aurocs
 
@@ -49,7 +56,12 @@ def auprc_func(predictions, true_y):
         predictions_for_task=np.squeeze(predictions[:,c])
         predictions_for_task_filtered,true_y_for_task_filtered = \
          remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
-        task_auprc = average_precision_score(true_y_for_task_filtered, predictions_for_task_filtered);
+        try:
+            task_auprc = average_precision_score(true_y_for_task_filtered, predictions_for_task_filtered);
+        except:
+            print("Could not calculated auPRC:")
+            print(sys.exc_info()[0])
+            task_auprc=None 
         auprcs.append(task_auprc) 
     return auprcs;
 
@@ -85,7 +97,6 @@ def unbalanced_accuracy(predictions, true_y):
     unbalanced_accuracies = []
     for c in range(num_cols): 
         r = get_accuracy_stats_for_task(predictions, true_y, c)
-
         unbalancedAccuracy_forTask = (r['accuratePredictions_positives'] + r['accuratePredictions_negatives'])/(r['numPositives_forTask']+r['numNegatives_forTask']).astype("float");
         unbalanced_accuracies.append(unbalancedAccuracy_forTask) 
     return unbalanced_accuracies;
@@ -128,7 +139,8 @@ AccuracyStats = util.enum(
     auPRC="auPRC",
     balanced_accuracy="balanced_accuracy",
     unbalanced_accuracy="unbalanced_accuracy",
-    onehot_rows_crossent="onehot_rows_crossent")
+    onehot_rows_crossent="onehot_rows_crossent",
+    recall_at_fdr="recall_at_fdr")
 compute_func_lookup = {
     AccuracyStats.auROC: auroc_func,
     AccuracyStats.auPRC: auprc_func,
@@ -158,20 +170,27 @@ class GraphAccuracyStats(AbstractModelEvaluator):
         return is_larger_better_lookup[self.key_metric]
 
     #uses a generators to do batch predictions
-    def get_model_predictions(model_wrapper,data_generator,samples_to_use,batch_size):
-        x,y,weights=next(data_generator)
-        predictions=model_wrapper.predict_on_batch(x)
+    def get_model_predictions(self,model_wrapper,data_generator,samples_to_use,batch_size):
+        data_batch=next(data_generator)
+        x=data_batch[0]
+        y=data_batch[1]
+        predictions=model_wrapper.get_model().predict_on_batch(x)
         true_y=y 
         samples_used=batch_size 
-        while samples_used < samples_to_use:
-            x,y,weights=next(data_generator)
-            true_y=true_y.update(y) 
-            predictions=predictions.update(model_wrapper.predict_on_batch(x))
+        while len(x.values())>0: 
+            data_batch=next(data_generator)
+            x=data_batch[0]
+            y=data_batch[1]
+            if len(x.keys())==0:
+                break 
+            true_y.update(y) 
+            predictions.update(model_wrapper.get_model().predict_on_batch(x))
             samples_used+=batch_size
-        return predictions,true_vals 
+        return predictions,true_y
     
     def compute_key_metric(self, model_wrapper, data_generator, samples_to_use, batch_size):
-        predictions,true_y=get_model_predictions(model_wrapper,data_generator,samples_to_use,batch_size)
+        predictions,true_y=self.get_model_predictions(model_wrapper,data_generator,samples_to_use,batch_size)
+        #pdb.set_trace() 
         return self.compute_summary_stat(
                     per_output_stats=self.compute_per_output_stats(
                                       predictions=predictions,
@@ -180,9 +199,11 @@ class GraphAccuracyStats(AbstractModelEvaluator):
                     summary_op=np.mean) 
 
     def compute_summary_stat(self, per_output_stats, summary_op):
-        to_summarise = [] 
+        to_summarise = []
         for stats in per_output_stats.values():
             to_summarise.extend(stats)
+        while None in to_summarise:
+            to_summarise.remove(None) 
         return summary_op(to_summarise)
 
     def compute_per_output_stats(self, predictions, true_y, metric_name):
@@ -195,13 +216,13 @@ class GraphAccuracyStats(AbstractModelEvaluator):
         return to_return
 
 
-    def compute_all_stats(self, model_wrapper, data_generator, samples_to_user, batch_size):
-        predictions,true_y=get_model_predictions(model_wrapper,data_generator,samples_to_use,batch_size)
+    def compute_all_stats(self, model_wrapper, data_generator, samples_to_use, batch_size):
+        predictions,true_y=self.get_model_predictions(model_wrapper,data_generator,samples_to_use,batch_size)
         all_stats = OrderedDict()
         for metric_name in self.all_metrics:
             per_output_stats = self.compute_per_output_stats( 
                                         predictions=predictions,
-                                        true_y=data.Y,
+                                        true_y=true_y,
                                         metric_name=metric_name)
             mean = self.compute_summary_stat(
                     per_output_stats=per_output_stats,
