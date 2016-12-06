@@ -11,7 +11,7 @@ class KerasModelWrapper(AbstractModelWrapper):
         self.last_saved_files_config = {}
 
     def predict(self, X, batch_size):
-        return self.model.predict(X,batch_size=batch_size)
+        return self.model.predict_proba(X,batch_size=batch_size)
 
     def generate_file_names(self, directory, prefix):
         file_path_prefix = directory+"/"+prefix 

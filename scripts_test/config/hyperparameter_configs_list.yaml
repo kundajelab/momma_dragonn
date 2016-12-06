@@ -21,23 +21,19 @@
         "kwargs": {
             "layers_config": [
                 {
-                    "class": "keras.layers.convolutional.Convolution2D", 
+                    "class": "keras.layers.convolutional.Convolution1D", 
                     "kwargs": {
-                        "input_shape": [1,4,200],
+                        #"input_shape": [1,4,200],
+                        "input_shape": [200,4],
                         "nb_filter": 51,
-                        #"filter_length": 11,
-                        "nb_col":11,
-                        "nb_row":4,
+                        "filter_length": 11,
+                        #"nb_col":11,
+                        #"nb_row":4,
                         "border_mode": "same",
                         "W_constraint": {
                             "autoload": true, #turn the dictionary into a class
                             "class": "keras.constraints.maxnorm",
                             "kwargs": {"m": 7, "axis": 1}
-                        },
-                        "activity_regularizer": {
-                            "autoload": true,
-                            "class": "keras.regularizers.ActivityRegularizer",
-                            "kwargs": {"l1":0.00001}
                         }
                     }
                 },
@@ -46,12 +42,12 @@
                     "kwargs": {"activation": "relu"}
                 },
                 {
-                    "class": "keras.layers.convolutional.Convolution2D", 
+                    "class": "keras.layers.convolutional.Convolution1D", 
                     "kwargs": {
                         "nb_filter": 49,
-                        #"filter_length": 10,
-                        "nb_row": 1,
-                        "nb_col": 10,
+                        "filter_length": 10,
+                        #"nb_row": 1,
+                        #"nb_col": 10,
                         "border_mode": "same"
                     }
                 },
@@ -60,18 +56,18 @@
                     "kwargs": {"activation": "relu"}
                 },
                 {
-                    "class": "keras.layers.convolutional.Convolution2D", 
-                    #"kwargs": {"nb_filter": 10, "filter_length": 10}
-                    "kwargs": {"nb_filter": 10, "nb_row": 1, "nb_col": 10}
+                    "class": "keras.layers.convolutional.Convolution1D", 
+                    "kwargs": {"nb_filter": 10, "filter_length": 10}
+                    #"kwargs": {"nb_filter": 10, "nb_row": 1, "nb_col": 10}
                 },
                 {
                     "class": "keras.layers.core.Activation", 
                     "kwargs": {"activation": "relu"}
                 },
                 {
-                    "class": "keras.layers.convolutional.MaxPooling2D", 
-                    #"kwargs": {"pool_length": 40, "stride": 40}
-                    "kwargs": {"pool_size": [1,40], "strides": [1,40]}
+                    "class": "keras.layers.convolutional.MaxPooling1D", 
+                    "kwargs": {"pool_length": 40, "stride": 40}
+                    #"kwargs": {"pool_size": [1,40], "strides": [1,40]}
                 },
                 {
                     "class": "keras.layers.core.Flatten", 
