@@ -4,6 +4,7 @@ import keras
 from collections import OrderedDict
 import keras
 from ..model_wrappers import keras_model_wrappers
+from momma_dragonn.loaders import load_class_from_config
 
 
 class KerasModelFromFunc(AbstractModelCreator):
@@ -28,7 +29,28 @@ class KerasModelFromFunc(AbstractModelCreator):
         return OrderedDict(['model_json', self._last_model_created.to_json()])
 
 
-class FlexibleKerasGraph(AbstractModelCreator):
+class FlexibleKeras(AbstractModelCreator)
+
+    def _get_uncompiled_model(self):
+        raise NotImplementedError()
+
+    def _parse_loss(self):
+        raise NotImplementedError()
+
+    def get_model(self):
+        print("Preparing uncompiled model")
+        model = self._get_uncompiled_model() 
+        print("Compiling model")
+        self._compile_model(model)
+        print("Done compiling model")
+        return model
+
+    def _compile_model(self, model):
+        optimizer = load_class_from_config(self.optimizer_config)
+        model.compile(optimizer=optimizer, loss=self._parse_loss()) 
+
+
+class FlexibleKerasGraph(FlexibleKeras):
 
     def __init__(self, inputs_config, nodes_config, outputs_config,
                        optimizer_config, loss_dictionary):
@@ -49,14 +71,6 @@ class FlexibleKerasGraph(AbstractModelCreator):
                 ('outputs_config', self.outputs_config),
                 ('optimizer_config', self.optimizer_config),
                 ('loss_dictionary', self.loss_dictionary)])
-
-    def get_model(self):
-        print("Preparing uncompiled model")
-        model = self._get_uncompiled_model() 
-        print("Compiling model")
-        self._compile_model(model)
-        print("Done compiling model")
-        return model
 
     def _get_uncompiled_model(self):
         from keras.models import Graph 
@@ -101,11 +115,40 @@ class FlexibleKerasGraph(AbstractModelCreator):
         for output_config in self.outputs_config:
             graph.add_output(**output_config) 
 
-    def _compile_model(self, graph):
-        from momma_dragonn.loaders import load_class_from_config
-        optimizer = load_class_from_config(self.optimizer_config)
+    def _parse_loss(self):
         parsed_loss_dictionary =\
             dict((key, (val if isinstance(val,dict)==False else
                         load_class_from_config(val))) for
                         (key,val) in self.loss_dictionary.items())
-        graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary) 
+        return parsed_loss_dictionary
+
+
+class FlexibleKerasSequential(AbstractModelCreator):
+
+    def __init__(self, layers_config, optimizer_config, loss):
+        self.layers_config = layers_config
+        self.optimizer_config = optimizer_config
+        self.loss = loss
+
+    def get_model_wrapper(self):
+        return keras_model_wrappers.KerasSequentialModelWrapper(
+                model=self.get_model())
+
+    def get_jsonable_object(self):
+        return OrderedDict([
+                ('layers_config', self.layers_config),
+                ('optimizer_config', self.optimizer_config),
+                ('loss_config', self.loss_config)])
+
+    def _parse_loss(self):
+        if (isinstance(self.loss), str):
+            return self.loss
+        else:
+            return load_class_from_config(self.loss) 
+
+    def _get_uncompiled_model(self):
+        from keras.models import Sequential
+        model = Sequential()
+        for layer_config in self.layers_config:
+            model.add(load_class_from_config(layer_config)) 
+        return model

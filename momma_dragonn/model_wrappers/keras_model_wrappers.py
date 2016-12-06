@@ -4,10 +4,10 @@ from collections import OrderedDict
 from .core import AbstractModelWrapper
 
 
-class KerasGraphModelWrapper(AbstractModelWrapper):
+class KerasModelWrapper(AbstractModelWrapper)
 
     def __init__(self, **kwargs):
-        super(KerasGraphModelWrapper, self).__init__(**kwargs)
+        super(KerasModelWrapper, self).__init__(**kwargs)
         self.last_saved_files_config = {}
 
     def predict(self, X, batch_size):
@@ -45,4 +45,7 @@ class KerasGraphModelWrapper(AbstractModelWrapper):
         self.last_saved_files_config['directory'] = new_directory
         self.last_saved_files_config['weights_file'] = new_weights
         self.last_saved_files_config['yaml_file'] = new_yaml
-        
+
+
+class KerasGraphModelWrapper(KerasModelWrapper):
+    pass
