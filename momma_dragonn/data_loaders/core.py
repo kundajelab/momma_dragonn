@@ -115,7 +115,10 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
                 data_batch.update(y_batch)
                 yield (data_batch, weight_batch)
             else:
-                yield (x_batch, y_batch, weight_batch)
+                if (len(weight_batch)==0):
+                    yield(x_batch, y_batch)
+                else:
+                    yield (x_batch, y_batch, weight_batch)
 
     def get_data_for_eval(self):
         X = {}
