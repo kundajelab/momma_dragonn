@@ -1,5 +1,5 @@
 {
-    "class": "GraphAccuracyStats",
+    "class": "SequentialAccuracyStats",
     "kwargs": {"key_metric": "auROC",
                "all_metrics": ["auROC", "auPRC", "balanced_accuracy", "unbalanced_accuracy"]}
 }

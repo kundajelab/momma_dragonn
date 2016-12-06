@@ -11,6 +11,7 @@
                 #performance stats on the training data, specify this number,
                 #and only that many datapoints of the training data will be used
                 #for performance stat calculation
+                "bundle_x_and_y_in_generator": False,
                 "strip_enclosing_dictionary": True
             }
         }

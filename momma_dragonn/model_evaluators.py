@@ -182,7 +182,6 @@ class GraphAccuracyStats(AbstractModelEvaluator):
                                          true_y=true_y[output_name]) 
         return to_return
 
-
     def compute_all_stats(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
         all_stats = OrderedDict()
@@ -221,10 +220,6 @@ class SequentialAccuracyStats(AbstractModelEvaluator):
         predictions = model_wrapper.predict(data.X, batch_size)
         all_stats = OrderedDict()
         for metric_name in self.all_metrics:
-            per_output_stats = self.compute_per_output_stats( 
-                                        predictions=predictions,
-                                        true_y=data.Y,
-                                        metric_name=metric_name)
             per_output = compute_func_lookup[metric_name](
                             predictions=predictions,
                             true_y=data.Y)

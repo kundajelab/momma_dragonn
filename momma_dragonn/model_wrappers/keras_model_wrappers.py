@@ -4,7 +4,7 @@ from collections import OrderedDict
 from .core import AbstractModelWrapper
 
 
-class KerasModelWrapper(AbstractModelWrapper)
+class KerasModelWrapper(AbstractModelWrapper):
 
     def __init__(self, **kwargs):
         super(KerasModelWrapper, self).__init__(**kwargs)

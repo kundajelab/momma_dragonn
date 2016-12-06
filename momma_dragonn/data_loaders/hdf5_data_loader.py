@@ -1,5 +1,4 @@
-from .core import (AbstractBatchDataLoader, AbstractAtOnceDataLoader,
-                   BatchDataLoader_XYDictAPI, AtOnceDataLoader_XYDictAPI)
+from .core import (BatchDataLoader_XYDictAPI, AtOnceDataLoader_XYDictAPI)
 import h5py
 import numpy as np
 from avutils import util

@@ -29,7 +29,7 @@ class KerasModelFromFunc(AbstractModelCreator):
         return OrderedDict(['model_json', self._last_model_created.to_json()])
 
 
-class FlexibleKeras(AbstractModelCreator)
+class FlexibleKeras(AbstractModelCreator):
 
     def _get_uncompiled_model(self):
         raise NotImplementedError()
@@ -61,7 +61,7 @@ class FlexibleKerasGraph(FlexibleKeras):
         self.loss_dictionary = loss_dictionary
 
     def get_model_wrapper(self):
-        return keras_model_wrappers.KerasGraphModelWrapper(
+        return keras_model_wrappers.KerasModelWrapper(
                 model=self.get_model())
 
     def get_jsonable_object(self):
@@ -123,7 +123,7 @@ class FlexibleKerasGraph(FlexibleKeras):
         return parsed_loss_dictionary
 
 
-class FlexibleKerasSequential(AbstractModelCreator):
+class FlexibleKerasSequential(FlexibleKeras):
 
     def __init__(self, layers_config, optimizer_config, loss):
         self.layers_config = layers_config
@@ -131,17 +131,17 @@ class FlexibleKerasSequential(AbstractModelCreator):
         self.loss = loss
 
     def get_model_wrapper(self):
-        return keras_model_wrappers.KerasSequentialModelWrapper(
+        return keras_model_wrappers.KerasModelWrapper(
                 model=self.get_model())
 
     def get_jsonable_object(self):
         return OrderedDict([
                 ('layers_config', self.layers_config),
                 ('optimizer_config', self.optimizer_config),
-                ('loss_config', self.loss_config)])
+                ('loss', self.loss)])
 
     def _parse_loss(self):
-        if (isinstance(self.loss), str):
+        if (isinstance(self.loss, str)):
             return self.loss
         else:
             return load_class_from_config(self.loss) 

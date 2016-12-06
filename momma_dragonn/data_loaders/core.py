@@ -44,8 +44,8 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
         self.strip_enclosing_dictionary = strip_enclosing_dictionary
         if (strip_enclosing_dictionary): #for sequential models
-            assert len(X_full.keys())==1
-            assert len(Y_full.keys())==1
+            assert len(X.keys())==1
+            assert len(Y.keys())==1
 
         self.bundle_x_and_y_in_generator = bundle_x_and_y_in_generator
 
@@ -154,13 +154,14 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
 
     def __init__(self, X_full, Y_full,
+                       strip_enclosing_dictionary,
                        max_to_load=None,
                        #arguments below are only relevant if
-                       #want to use in batches as well
+                       #want to use in batches as well; listing them
+                       #out here to indicate their defaults
                        num_to_load_for_eval=None,
                        bundle_x_and_y_in_generator=None,
                        batch_size=None, 
-                       strip_enclosing_dictionary=False
                        **kwargs):
         self.max_to_load = max_to_load
         self.strip_enclosing_dictionary = strip_enclosing_dictionary
@@ -176,20 +177,14 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
                 the_arr = np.array(X_full[input_mode])
             else:
                 the_arr = np.array(X_full[input_mode][:self.max_to_load])
-            if (self.strip_enclosing_dictionary):
-                X = the_arr
-            else:
-                X[input_mode] = the_arr
+            X[input_mode] = the_arr
         for output_mode in Y_full:
             if (self.max_to_load is None):
                 the_arr = np.array(Y_full[output_mode])
             else:
                 the_arr = np.array(Y_full[output_mode]
                                                 [:self.max_to_load])
-            if (self.strip_enclosing_dictionary):
-                Y = the_arr
-            else:
-                Y[output_mode] = the_arr
+            Y[output_mode] = the_arr
 
         super(AtOnceDataLoader_XYDictAPI, self).__init__(
             X=X, Y=Y,
@@ -197,10 +192,15 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
             num_to_load_for_eval=num_to_load_for_eval,
             bundle_x_and_y_in_generator=bundle_x_and_y_in_generator,
             batch_size=batch_size,
+            strip_enclosing_dictionary=strip_enclosing_dictionary,
             **kwargs)
 
-        self.X = X
-        self.Y = Y
+        if (self.strip_enclosing_dictionary):
+            self.X = X[X.keys()[0]]
+            self.Y = Y[Y.keys()[0]]
+        else:
+            self.X = X
+            self.Y = Y
 
     def get_jsonable_object(self):
         the_dict = super(MultimodalAtOnceDataLoader, self)\
