@@ -35,7 +35,7 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
     def __init__(self, X, Y, weight, bundle_x_and_y_in_generator,
                        num_to_load_for_eval,
-                       strip_enclosing_dictionary,
+                       strip_enclosing_dictionary=False,
                        **kwargs):
         super(BatchDataLoader_XYDictAPI, self).__init__(**kwargs)
         self.X = X
@@ -154,7 +154,7 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
 
     def __init__(self, X_full, Y_full,
-                       strip_enclosing_dictionary,
+                       strip_enclosing_dictionary=False,
                        max_to_load=None,
                        #arguments below are only relevant if
                        #want to use in batches as well; listing them
