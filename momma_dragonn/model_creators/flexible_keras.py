@@ -61,7 +61,7 @@ class FlexibleKerasGraph(FlexibleKeras):
         self.loss_dictionary = loss_dictionary
 
     def get_model_wrapper(self):
-        return keras_model_wrappers.KerasModelWrapper(
+        return keras_model_wrappers.KerasGraphModelWrapper(
                 model=self.get_model())
 
     def get_jsonable_object(self):
