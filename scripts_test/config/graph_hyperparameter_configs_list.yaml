@@ -11,82 +11,113 @@
                 #performance stats on the training data, specify this number,
                 #and only that many datapoints of the training data will be used
                 #for performance stat calculation
-                "bundle_x_and_y_in_generator": False,
-                "strip_enclosing_dictionary": True
+                "bundle_x_and_y_in_generator": True, #True for keras 0.3, false for 1.0
+                "strip_enclosing_dictionary": False
             }
         }
     },
     "model_creator":{
-        "class": "flexible_keras.FlexibleKerasSequential",
+        "class": "flexible_keras.FlexibleKerasGraph",
         "kwargs": {
-            "layers_config": [
+            "inputs_config": [
+                {"name": "sequence",
+                 "input_shape": [1, 4, 200]} #shape would change for tensorflow; channel axis is last
+            ],
+            "nodes_config": [
                 {
-                    "class": "keras.layers.convolutional.Convolution1D", 
+                    "name": "conv1",
+                    "input_name": "sequence", 
+                    "class": "keras.layers.convolutional.Convolution2D", 
                     "kwargs": {
-                        #"input_shape": [1,4,200],
-                        "input_shape": [200,4],
                         "nb_filter": 51,
-                        "filter_length": 11,
-                        #"nb_col":11,
-                        #"nb_row":4,
+                        "nb_row": 4,
+                        "nb_col": 11,
                         "border_mode": "same",
                         "W_constraint": {
                             "autoload": true, #turn the dictionary into a class
                             "class": "keras.constraints.maxnorm",
                             "kwargs": {"m": 7, "axis": 1}
                         },
+                        "activity_regularizer": {
+                            "autoload": true,
+                            "class": "keras.regularizers.ActivityRegularizer",
+                            "kwargs": {"l1":0.00001}
+                        }
                     }
                 },
                 {
+                    "name": "conv1_act",
+                    "input_name": "conv1", 
                     "class": "keras.layers.core.Activation", 
                     "kwargs": {"activation": "relu"}
                 },
                 {
-                    "class": "keras.layers.convolutional.Convolution1D", 
+                    "name": "conv2",
+                    "input_name": "conv1_act", 
+                    "class": "keras.layers.convolutional.Convolution2D", 
                     "kwargs": {
                         "nb_filter": 49,
-                        "filter_length": 10,
-                        #"nb_row": 1,
-                        #"nb_col": 10,
+                        "nb_row": 1,
+                        "nb_col": 10,
                         "border_mode": "same"
-                    }
+                       }
                 },
                 {
+                    "name": "conv2_act",
+                    "input_name": "conv2", 
                     "class": "keras.layers.core.Activation", 
                     "kwargs": {"activation": "relu"}
                 },
                 {
-                    "class": "keras.layers.convolutional.Convolution1D", 
-                    "kwargs": {"nb_filter": 10, "filter_length": 10}
-                    #"kwargs": {"nb_filter": 10, "nb_row": 1, "nb_col": 10}
+                    "name": "conv3",
+                    "input_name": ["conv1_act", "conv2_act"], 
+                    "merge_mode": "concat",
+                    "concat_axis": 1,
+                    "class": "keras.layers.convolutional.Convolution2D", 
+                    "kwargs": {"nb_filter": 10, "nb_row": 1, "nb_col": 10}
                 },
                 {
+                    "name": "conv3_act",
+                    "input_name": "conv3", 
                     "class": "keras.layers.core.Activation", 
                     "kwargs": {"activation": "relu"}
                 },
                 {
-                    "class": "keras.layers.convolutional.MaxPooling1D", 
-                    "kwargs": {"pool_length": 40, "stride": 40}
-                    #"kwargs": {"pool_size": [1,40], "strides": [1,40]}
+                    "name": "max_pool",
+                    "input_name": "conv3_act", 
+                    "class": "keras.layers.convolutional.MaxPooling2D", 
+                    "kwargs": {"pool_size": [1,40], "strides": [1,40]}
                 },
                 {
+                    "name": "flatten",
+                    "input_name": "max_pool", 
                     "class": "keras.layers.core.Flatten", 
                     "kwargs": {}
                 },
                 {
+                    "name": "output_preact",
+                    "input_name": "flatten", 
                     "class": "keras.layers.core.Dense", 
                     "kwargs": {"output_dim": 2}
                 },
                 {
+                    "name": "output_act",
+                    "input_name": "output_preact", 
                     "class": "keras.layers.core.Activation", 
                     "kwargs": {"activation": "sigmoid"}
                 }
+            ],
+            "outputs_config": [
+               {"name": "output",
+                "input": "output_act"}
             ],
             "optimizer_config": {
                 "class": "keras.optimizers.Adam",
                 "kwargs": {"lr": 0.001}
             },
-            "loss": "binary_crossentropy" 
+            "loss_dictionary": {
+                "output": "binary_crossentropy"
+            }  
         } 
     },
     "model_trainer":{

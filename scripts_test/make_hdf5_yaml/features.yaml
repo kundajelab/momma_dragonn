@@ -4,7 +4,8 @@
        "features_format": "fasta",
        "opts": {
             "file_names": ["inputs.fa.gz"],
-            "progress_update": 5000
+            "progress_update": 5000,
+            "one_hot_format": "1d"
         }
     } 
 }
