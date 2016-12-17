@@ -32,11 +32,6 @@
                             "class": "keras.constraints.maxnorm",
                             "kwargs": {"m": 7, "axis": 1}
                         },
-                        "activity_regularizer": {
-                            "autoload": true,
-                            "class": "keras.regularizers.ActivityRegularizer",
-                            "kwargs": {"l1":0.00001}
-                        }
                     }
                 },
                 {
