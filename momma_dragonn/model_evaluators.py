@@ -2,7 +2,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import average_precision_score
 import numpy as np
 import avutils.util as util
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import sys 
 import pdb 
 
@@ -28,7 +28,7 @@ def remove_ambiguous_peaks(predictions, true_y):
     return predictions_filtered, true_y_filtered
 
 
-def auroc_func(predictions, true_y):
+def auroc_func(predictions, true_y,thresh=None):
     [num_rows, num_cols] = true_y.shape 
     aurocs=[]
     for c in range(num_cols): 
@@ -47,7 +47,7 @@ def auroc_func(predictions, true_y):
         aurocs.append(task_auroc) 
     return aurocs
 
-def auprc_func(predictions, true_y):
+def auprc_func(predictions, true_y,thresh=None):
     # sklearn only supports 2 classes (0,1) for the auPRC calculation 
     [num_rows, num_cols]=true_y.shape 
     auprcs=[]
@@ -90,7 +90,7 @@ def get_accuracy_stats_for_task(predictions, true_y, c):
     return returnDict
 
 
-def unbalanced_accuracy(predictions, true_y):
+def unbalanced_accuracy(predictions, true_y,thresh=None):
     assert predictions.shape==true_y.shape;
     assert len(predictions.shape)==2;
     [num_rows, num_cols]=true_y.shape 
@@ -101,7 +101,7 @@ def unbalanced_accuracy(predictions, true_y):
         unbalanced_accuracies.append(unbalancedAccuracy_forTask) 
     return unbalanced_accuracies;
 
-def balanced_accuracy(predictions, true_y):
+def balanced_accuracy(predictions, true_y, thresh=None):
     assert predictions.shape==true_y.shape;
     assert len(predictions.shape)==2;
     [num_rows, num_cols]=true_y.shape 
@@ -117,7 +117,7 @@ def balanced_accuracy(predictions, true_y):
     return balanced_accuracies
 
 
-def onehot_rows_crossent_func(predictions, true_y):
+def onehot_rows_crossent_func(predictions, true_y,thresh=None):
     #squeeze to get rid of channel axis 
     predictions, true_y = [np.squeeze(arr) for arr in [predictions, true_y]] 
     assert len(predictions.shape)==3
@@ -133,6 +133,103 @@ def onehot_rows_crossent_func(predictions, true_y):
     #compute categ crossentropy
     return [-np.mean(np.sum(true_y*np.log(predictions),axis=-1))]
 
+def prob_to_labels(predictions,thresh):
+    class_labels=np.zeros_like(predictions)
+    class_labels[class_labels >=thresh]=1 
+    return class_labels 
+
+#for a single task!
+def recall_at_fdr_function(predictions,true_y,thresh):
+    fdr_thresh=thresh
+    [num_rows, num_cols]=true_y.shape 
+    recall_at_fdr_vals=[]
+    for c in range(num_cols): 
+        true_y_for_task=np.squeeze(true_y[:,c])
+        predictions_for_task=np.squeeze(predictions[:,c])
+        predictions_for_task_filtered,true_y_for_task_filtered = remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
+
+        recall_vals=[]
+        fdr_vals=[] 
+        for thresh in [0.01*i for i in range(0,100,1)]: 
+            prediction_labels_at_thresh=prob_to_labels(predictions_for_task_filtered,thresh)
+            #get true positives
+            tp=np.size(np.where((prediction_labels_at_thresh==1) & (true_y_for_task_filtered==1)))
+            #get false positives
+            fp=np.size(np.where((prediction_labels_at_thresh==1) & (true_y_for_task_filtered==0)))
+            #get false negatives
+            fn=np.size(np.where((prediction_labels_at_thresh==0) & (true_y_for_task_filtered==1)))
+            if (tp+fn)==0:
+                recall=0
+            else:
+                recall=(1.0*tp)/(tp+fn)
+            if (fp+tp)==0:
+                fdr=0
+            else:
+                fdr=(1.0*fp)/(fp+tp)
+            recall_vals.append(recall)
+            fdr_vals.append(fdr)
+        #get the values that are closest to our thresholds
+        index=np.argmin(abs(np.asarray(fdr_vals)-fdr_thresh))
+        print("fdr values:"+str(fdr_vals))
+        print("recall values:"+str(recall_vals)) 
+        recall_at_fdr_vals.append(recall_vals[index]) 
+    return recall_at_fdr_vals
+
+def recall_at_fdr_function(predictions,true_y,thresh):
+    [num_rows, num_cols]=true_y.shape
+    recall_at_fdr_vals=[]
+    for c in range(num_cols): 
+        true_y_for_task=np.squeeze(true_y[:,c])
+        predictions_for_task=np.squeeze(predictions[:,c])
+        predictions_for_task_filtered,true_y_for_task_filtered = remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
+
+        #group by predicted prob
+        predictedProbToLabels = defaultdict(list)
+        for predictedProb, trueY in zip(predictions_for_task_filtered, true_y_for_task_filtered):
+            predictedProbToLabels[predictedProb].append(trueY)
+        #sort in ascending order of confidence
+        sortedThresholds = sorted(predictedProbToLabels.keys())
+        toReturnDict = OrderedDict();
+        thresholdPairs=[("recallAtFDR"+str(thresh),thresh)]
+        #sort desired recall thresholds by descending order of fdr        
+        totalPositives = np.sum(true_y_for_task_filtered)
+        totalNegatives = np.sum(1-true_y_for_task_filtered)
+        #start at 100% recall
+        confusionMatrixStatsSoFar = [[0,totalNegatives]
+                                    ,[0,totalPositives]]
+        recallsForThresholds = []; #for debugging
+        fdrsForThresholds = [];
+        #iterate over thresholds in ascending order
+        #that way highest recall comes first
+        labelsAtThreshold = predictedProbToLabels[thresh]; 
+        positivesAtThreshold = sum(labelsAtThreshold)
+        negativesAtThreshold = len(labelsAtThreshold)-positivesAtThreshold
+        #when you cross this threshold they all get predicted as negatives.
+        confusionMatrixStatsSoFar[0][0] += negativesAtThreshold
+        confusionMatrixStatsSoFar[0][1] -= negativesAtThreshold
+        confusionMatrixStatsSoFar[1][0] += positivesAtThreshold
+        confusionMatrixStatsSoFar[1][1] -= positivesAtThreshold
+        totalPredictedPositives = confusionMatrixStatsSoFar[0][1]\
+                                  + confusionMatrixStatsSoFar[1][1]
+        fdr = 1 - (confusionMatrixStatsSoFar[1][1]/
+                   float(totalPredictedPositives))\
+                   if totalPredictedPositives > 0 else 0.0
+        recall = confusionMatrixStatsSoFar[1][1]/float(totalPositives)
+        recallsForThresholds.append(recall)
+        fdrsForThresholds.append(fdr)
+        #first index of a thresholdPair is the name, second idx
+        #is the actual threshold
+        pdb.set_trace()
+        if fdr<=thresh:
+            recall_at_fdr_vals.append(recall)
+        else:
+            recall_at_fdr_vals.append(0)
+        print str(recallsForThresholds)
+        print str(fdrsForThresholds)
+        pdb.set_trace() 
+    return recall_at_fdr_vals
+
+
 
 AccuracyStats = util.enum(
     auROC="auROC",
@@ -140,22 +237,25 @@ AccuracyStats = util.enum(
     balanced_accuracy="balanced_accuracy",
     unbalanced_accuracy="unbalanced_accuracy",
     onehot_rows_crossent="onehot_rows_crossent",
-    recall_at_fdr="recall_at_fdr")
+    recall_at_fdr="recallAtFDR")
 compute_func_lookup = {
     AccuracyStats.auROC: auroc_func,
     AccuracyStats.auPRC: auprc_func,
     AccuracyStats.balanced_accuracy: balanced_accuracy,
     AccuracyStats.unbalanced_accuracy: unbalanced_accuracy,
-    AccuracyStats.onehot_rows_crossent:
-        onehot_rows_crossent_func
+    AccuracyStats.onehot_rows_crossent:onehot_rows_crossent_func,
+    AccuracyStats.recall_at_fdr: recall_at_fdr_function
 }
 is_larger_better_lookup = {
     AccuracyStats.auROC: True,
     AccuracyStats.auPRC: True,
     AccuracyStats.balanced_accuracy: True,
     AccuracyStats.unbalanced_accuracy: True,
-    AccuracyStats.onehot_rows_crossent: False
+    AccuracyStats.onehot_rows_crossent: False,
+    AccuracyStats.recall_at_fdr: True
 }
+
+multi_level_metrics=["recallAtFDR"]
 
 class GraphAccuracyStats(AbstractModelEvaluator):
 
@@ -206,13 +306,23 @@ class GraphAccuracyStats(AbstractModelEvaluator):
             to_summarise.remove(None) 
         return summary_op(to_summarise)
 
+    def split_metric_name(self,metric_name):
+        stripped_metric_name=metric_name
+        thresh=None
+    
+        for multi_level_metric_name in multi_level_metrics: 
+            if metric_name.startswith(multi_level_metric_name):
+                stripped_metric_name=multi_level_metric_name
+                thresh=int(metric_name.replace(multi_level_metric_name,""))
+        return stripped_metric_name,thresh 
+    
     def compute_per_output_stats(self, predictions, true_y, metric_name):
-        func = compute_func_lookup[metric_name] 
+        metric_name,metric_thresh=self.split_metric_name(metric_name) 
+        func = compute_func_lookup[metric_name]
         to_return = OrderedDict() 
         output_names = sorted(true_y.keys()) 
         for output_name in output_names:
-            to_return[output_name] = func(predictions=predictions[output_name],
-                                         true_y=true_y[output_name]) 
+            to_return[output_name] = func(predictions=predictions[output_name],true_y=true_y[output_name],thresh=metric_thresh) 
         return to_return
 
 
