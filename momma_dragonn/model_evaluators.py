@@ -138,44 +138,9 @@ def prob_to_labels(predictions,thresh):
     class_labels[class_labels >=thresh]=1 
     return class_labels 
 
-#for a single task!
 def recall_at_fdr_function(predictions,true_y,thresh):
-    fdr_thresh=thresh
-    [num_rows, num_cols]=true_y.shape 
-    recall_at_fdr_vals=[]
-    for c in range(num_cols): 
-        true_y_for_task=np.squeeze(true_y[:,c])
-        predictions_for_task=np.squeeze(predictions[:,c])
-        predictions_for_task_filtered,true_y_for_task_filtered = remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
-
-        recall_vals=[]
-        fdr_vals=[] 
-        for thresh in [0.01*i for i in range(0,100,1)]: 
-            prediction_labels_at_thresh=prob_to_labels(predictions_for_task_filtered,thresh)
-            #get true positives
-            tp=np.size(np.where((prediction_labels_at_thresh==1) & (true_y_for_task_filtered==1)))
-            #get false positives
-            fp=np.size(np.where((prediction_labels_at_thresh==1) & (true_y_for_task_filtered==0)))
-            #get false negatives
-            fn=np.size(np.where((prediction_labels_at_thresh==0) & (true_y_for_task_filtered==1)))
-            if (tp+fn)==0:
-                recall=0
-            else:
-                recall=(1.0*tp)/(tp+fn)
-            if (fp+tp)==0:
-                fdr=0
-            else:
-                fdr=(1.0*fp)/(fp+tp)
-            recall_vals.append(recall)
-            fdr_vals.append(fdr)
-        #get the values that are closest to our thresholds
-        index=np.argmin(abs(np.asarray(fdr_vals)-fdr_thresh))
-        print("fdr values:"+str(fdr_vals))
-        print("recall values:"+str(recall_vals)) 
-        recall_at_fdr_vals.append(recall_vals[index]) 
-    return recall_at_fdr_vals
-
-def recall_at_fdr_function(predictions,true_y,thresh):
+    if float(thresh)>1: 
+        thresh=float(thresh)/100 
     [num_rows, num_cols]=true_y.shape
     recall_at_fdr_vals=[]
     for c in range(num_cols): 
@@ -199,37 +164,35 @@ def recall_at_fdr_function(predictions,true_y,thresh):
                                     ,[0,totalPositives]]
         recallsForThresholds = []; #for debugging
         fdrsForThresholds = [];
-        #iterate over thresholds in ascending order
-        #that way highest recall comes first
-        labelsAtThreshold = predictedProbToLabels[thresh]; 
-        positivesAtThreshold = sum(labelsAtThreshold)
-        negativesAtThreshold = len(labelsAtThreshold)-positivesAtThreshold
-        #when you cross this threshold they all get predicted as negatives.
-        confusionMatrixStatsSoFar[0][0] += negativesAtThreshold
-        confusionMatrixStatsSoFar[0][1] -= negativesAtThreshold
-        confusionMatrixStatsSoFar[1][0] += positivesAtThreshold
-        confusionMatrixStatsSoFar[1][1] -= positivesAtThreshold
-        totalPredictedPositives = confusionMatrixStatsSoFar[0][1]\
+
+        for threshold in sortedThresholds:
+            labelsAtThreshold=predictedProbToLabels[threshold];
+            positivesAtThreshold=sum(labelsAtThreshold)
+            negativesAtThreshold = len(labelsAtThreshold)-positivesAtThreshold
+            
+            #when you cross this threshold they all get predicted as negatives.
+            confusionMatrixStatsSoFar[0][0] += negativesAtThreshold
+            confusionMatrixStatsSoFar[0][1] -= negativesAtThreshold
+            confusionMatrixStatsSoFar[1][0] += positivesAtThreshold
+            confusionMatrixStatsSoFar[1][1] -= positivesAtThreshold
+            totalPredictedPositives = confusionMatrixStatsSoFar[0][1]\
                                   + confusionMatrixStatsSoFar[1][1]
-        fdr = 1 - (confusionMatrixStatsSoFar[1][1]/
-                   float(totalPredictedPositives))\
-                   if totalPredictedPositives > 0 else 0.0
-        recall = confusionMatrixStatsSoFar[1][1]/float(totalPositives)
-        recallsForThresholds.append(recall)
-        fdrsForThresholds.append(fdr)
-        #first index of a thresholdPair is the name, second idx
-        #is the actual threshold
-        pdb.set_trace()
-        if fdr<=thresh:
-            recall_at_fdr_vals.append(recall)
-        else:
-            recall_at_fdr_vals.append(0)
-        print str(recallsForThresholds)
-        print str(fdrsForThresholds)
-        pdb.set_trace() 
-    return recall_at_fdr_vals
-
-
+            fdr = 1 - (confusionMatrixStatsSoFar[1][1]/
+                       float(totalPredictedPositives))\
+                       if totalPredictedPositives > 0 else 0.0
+            recall = confusionMatrixStatsSoFar[1][1]/float(totalPositives)
+            recallsForThresholds.append(recall)
+            fdrsForThresholds.append(fdr)
+            #first index of a thresholdPair is the name, second idx
+            #is the actual threshold
+            while (len(thresholdPairs)>0 and fdr<=thresholdPairs[0][1]):
+                toReturnDict[thresholdPairs[0][0]]=recall
+                thresholdPairs=thresholdPairs[1::]
+            if len(thresholdPairs)==0:
+                break;
+        for thresholdPair in thresholdPairs:
+            toReturnDict[thresholdPairs[0][0]]=0.0
+        return [toReturnDict['recallAtFDR'+str(thresh)]]
 
 AccuracyStats = util.enum(
     auROC="auROC",
@@ -238,6 +201,7 @@ AccuracyStats = util.enum(
     unbalanced_accuracy="unbalanced_accuracy",
     onehot_rows_crossent="onehot_rows_crossent",
     recall_at_fdr="recallAtFDR")
+
 compute_func_lookup = {
     AccuracyStats.auROC: auroc_func,
     AccuracyStats.auPRC: auprc_func,
@@ -334,6 +298,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
                                         predictions=predictions,
                                         true_y=true_y,
                                         metric_name=metric_name)
+            #pdb.set_trace() 
             mean = self.compute_summary_stat(
                     per_output_stats=per_output_stats,
                     summary_op=np.mean)

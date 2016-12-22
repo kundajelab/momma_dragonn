@@ -59,7 +59,7 @@ class FlexibleKerasGraph(AbstractModelCreator):
         return model
 
     def _get_uncompiled_model(self):
-        from keras.models import Graph 
+        from keras.legacy.models import Graph
         graph = Graph()
         self._add_inputs(graph) 
         self._add_nodes(graph)
