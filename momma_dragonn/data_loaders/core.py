@@ -151,7 +151,12 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         return util.enum(X=X,Y=Y)
 
     def get_data(self):
-        return util.enum(X=self.X, Y=self.Y)
+        if (self.strip_enclosing_dictionary):
+            X = self.X[list(self.X.keys())[0]] 
+            Y = self.Y[list(self.Y.keys())[0]]
+            return util.enum(X=X, Y=Y)
+        else: 
+            return util.enum(X=self.X, Y=self.Y)
 
 
 class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
@@ -191,22 +196,15 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
 
         super(AtOnceDataLoader_XYDictAPI, self).__init__(
             X=X, Y=Y,
-            weight={} if strip_enclosing_dictionary else [],
+            weight={},
             num_to_load_for_eval=num_to_load_for_eval,
             bundle_x_and_y_in_generator=bundle_x_and_y_in_generator,
             batch_size=batch_size,
             strip_enclosing_dictionary=strip_enclosing_dictionary,
             **kwargs)
 
-        if (self.strip_enclosing_dictionary):
-            self.X = X[X.keys()[0]]
-            self.Y = Y[Y.keys()[0]]
-        else:
-            self.X = X
-            self.Y = Y
-
     def get_jsonable_object(self):
-        the_dict = super(MultimodalAtOnceDataLoader, self)\
+        the_dict = super(AtOnceDataLoader_XYDictAPI, self)\
                    .get_jsonable_object()
         the_dict['max_to_load'] = self.max_to_load
         the_dict['strip_enclosing_dictionary'] =\
