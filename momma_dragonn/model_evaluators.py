@@ -296,15 +296,16 @@ class GraphAccuracyStats(AbstractModelEvaluator):
             x=data_batch[0]
             y=data_batch[1]
             if len(x.keys())==0:
-                break 
-            true_y.update(y) 
-            predictions.update(model_wrapper.get_model().predict_on_batch(x))
+                break
+            new_batch_predictions=model_wrapper.get_model().predict_on_batch(x)
+            for output_name in y.keys():
+                true_y[output_name]=np.concatenate((true_y[output_name],y[output_name]),axis=0)
+                predictions[output_name]=np.concatenate((predictions[output_name],new_batch_predictions[output_name]))
             samples_used+=batch_size
         return predictions,true_y
     
     def compute_key_metric(self, model_wrapper, data_generator, samples_to_use, batch_size):
         predictions,true_y=self.get_model_predictions(model_wrapper,data_generator,samples_to_use,batch_size)
-        #pdb.set_trace() 
         return self.compute_summary_stat(
                     per_output_stats=self.compute_per_output_stats(
                                       predictions=predictions,

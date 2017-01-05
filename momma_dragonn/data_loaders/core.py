@@ -129,15 +129,21 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             for output_mode in self.output_modes:
                 numcolumns_cur_output=numcolumns[output_mode]
                 for c in range(numcolumns_cur_output):
-                    pos_choices=np.squeeze(np.argwhere(positives[output_mode][:,1]==c))
-                    neg_choices=np.squeeze(np.argwhere(negatives[output_mode][:,1]==c))
+                    pos_choices=np.argwhere(positives[output_mode][:,1]==c)[0]
+                    neg_choices=np.argwhere(negatives[output_mode][:,1]==c)[0]
                     #get one positive for each output-column
-                    indices.add(positives[output_mode][np.random.choice(pos_choices,1)[0]][0])
+                    try:
+                        indices.add(positives[output_mode][np.random.choice(pos_choices,1)[0]][0])
+                    except:
+                        pdb.set_trace() 
                     #get one negative for each output-column
                     indices.add(negatives[output_mode][np.random.choice(neg_choices,1)[0]][0])
             
             num_remaining=self.batch_size - len(indices)
-            start_index=np.random.randint(0,self.num_items - self.batch_size)
+            try:
+                start_index=np.random.randint(0,self.num_items - self.batch_size)
+            except:
+                pdb.set_trace() 
             end_index=start_index+num_remaining
             indices=list(indices)
             indices.sort()
