@@ -10,8 +10,6 @@ from collections import OrderedDict
 from avutils import file_processing as fp
 import pdb 
 def momma_dragonn_train(options):
-    #valid_data_loader = momma_dragonn.loaders.load_data_loader(
-    #                        config=options.valid_data_loader_config)
     model_evaluator = momma_dragonn.loaders.load_model_evaluator(
                             options.evaluator_config)
     larger_is_better = model_evaluator.is_larger_better_for_key_metric()
@@ -63,7 +61,6 @@ def momma_dragonn_train(options):
 if __name__ == "__main__":
     import argparse;
     parser = argparse.ArgumentParser()
-    parser.add_argument("--valid_data_loader_config")
     parser.add_argument("--evaluator_config")
     parser.add_argument("--end_of_epoch_callbacks_config")
     parser.add_argument("--end_of_training_callbacks_config")

@@ -95,17 +95,59 @@ def unbalanced_accuracy(predictions, true_y,thresh=None):
     assert len(predictions.shape)==2;
     [num_rows, num_cols]=true_y.shape 
     unbalanced_accuracies = []
-    for c in range(num_cols): 
+    for c in range(num_cols):
         r = get_accuracy_stats_for_task(predictions, true_y, c)
         unbalancedAccuracy_forTask = (r['accuratePredictions_positives'] + r['accuratePredictions_negatives'])/(r['numPositives_forTask']+r['numNegatives_forTask']).astype("float");
         unbalanced_accuracies.append(unbalancedAccuracy_forTask) 
     return unbalanced_accuracies;
 
+def positives_accuracy(predictions,true_y,thresh=None):
+    assert predictions.shape==true_y.shape;
+    assert len(predictions.shape)==2;
+    [num_rows, num_cols]=true_y.shape 
+    positive_accuracies = []
+    for c in range(num_cols):
+        r = get_accuracy_stats_for_task(predictions, true_y, c)
+        positiveAccuracy_forTask = r['accuratePredictions_positives']/(r['numPositives_forTask']).astype("float");
+        positive_accuracies.append(positiveAccuracy_forTask) 
+    return positive_accuracies;
+
+def negatives_accuracy(predictions,true_y,thresh=None):
+    assert predictions.shape==true_y.shape;
+    assert len(predictions.shape)==2;
+    [num_rows, num_cols]=true_y.shape 
+    negative_accuracies = []
+    for c in range(num_cols):
+        r = get_accuracy_stats_for_task(predictions, true_y, c)
+        negativeAccuracy_forTask = (r['accuratePredictions_negatives'])/(r['numNegatives_forTask']).astype("float");
+        negative_accuracies.append(negativeAccuracy_forTask) 
+    return negative_accuracies;
+
+def num_positives(predictions,true_y,thresh=None):
+    assert predictions.shape==true_y.shape;
+    assert len(predictions.shape)==2;
+    [num_rows, num_cols]=true_y.shape 
+    num_positives = []
+    for c in range(num_cols):
+        r = get_accuracy_stats_for_task(predictions, true_y, c)
+        num_positives.append(r['numPositives_forTask']) 
+    return num_positives;
+
+def num_negatives(predictions,true_y,thresh=None):
+    assert predictions.shape==true_y.shape;
+    assert len(predictions.shape)==2;
+    [num_rows, num_cols]=true_y.shape 
+    num_negatives = []
+    for c in range(num_cols):
+        r = get_accuracy_stats_for_task(predictions, true_y, c)
+        num_negatives.append(r['numNegatives_forTask'])
+    return num_negatives;
+
 def balanced_accuracy(predictions, true_y, thresh=None):
     assert predictions.shape==true_y.shape;
     assert len(predictions.shape)==2;
     [num_rows, num_cols]=true_y.shape 
-    balanced_accuracies = [] 
+    balanced_accuracies = []
     for c in range(num_cols): 
         r = get_accuracy_stats_for_task(predictions, true_y, c)
     
@@ -139,6 +181,8 @@ def prob_to_labels(predictions,thresh):
     return class_labels 
 
 def recall_at_fdr_function(predictions,true_y,thresh):
+    if float(thresh)>1: 
+        thresh=float(thresh)/100 
     [num_rows, num_cols]=true_y.shape
     recall_at_fdr_vals=[]
     for c in range(num_cols): 
@@ -190,13 +234,17 @@ def recall_at_fdr_function(predictions,true_y,thresh):
                 break;
         for thresholdPair in thresholdPairs:
             toReturnDict[thresholdPairs[0][0]]=0.0
-        return toReturnDict[thresholdPairs[0][0]]
+        return [toReturnDict['recallAtFDR'+str(thresh)]]
 
 AccuracyStats = util.enum(
     auROC="auROC",
     auPRC="auPRC",
     balanced_accuracy="balanced_accuracy",
     unbalanced_accuracy="unbalanced_accuracy",
+    positives_accuracy="positives_accuracy",
+    negatives_accuracy="negatives_accuracy",
+    num_positives="num_positives",
+    num_negatives="num_negatives",
     onehot_rows_crossent="onehot_rows_crossent",
     recall_at_fdr="recallAtFDR")
 
@@ -206,7 +254,11 @@ compute_func_lookup = {
     AccuracyStats.balanced_accuracy: balanced_accuracy,
     AccuracyStats.unbalanced_accuracy: unbalanced_accuracy,
     AccuracyStats.onehot_rows_crossent:onehot_rows_crossent_func,
-    AccuracyStats.recall_at_fdr: recall_at_fdr_function
+    AccuracyStats.recall_at_fdr: recall_at_fdr_function,
+    AccuracyStats.positives_accuracy:positives_accuracy,
+    AccuracyStats.negatives_accuracy:negatives_accuracy,
+    AccuracyStats.num_positives:num_positives,
+    AccuracyStats.num_negatives:num_negatives
 }
 is_larger_better_lookup = {
     AccuracyStats.auROC: True,
@@ -296,6 +348,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
                                         predictions=predictions,
                                         true_y=true_y,
                                         metric_name=metric_name)
+            #pdb.set_trace() 
             mean = self.compute_summary_stat(
                     per_output_stats=per_output_stats,
                     summary_op=np.mean)

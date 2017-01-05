@@ -1,0 +1,30 @@
+#!/users/annashch/anaconda2/bin/python
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+import sys
+import os
+import yaml
+import momma_dragonn
+from avutils import file_processing as fp
+from momma_dragonn.data_loaders.yaml_import import import_data
+
+def make_hdf5(options):
+    split_to_compiler = import_data.process_series_of_yamls(
+        series_of_yamls = [yaml.load(fp.get_file_handle(yaml_config))
+                           for yaml_config in options.yaml_configs],
+        split_compiler_factory=(lambda **kwargs:
+            import_data.Hdf5ForSplitCompiler(output_dir=options.output_dir,
+                                             **kwargs))
+        )
+    for compiler in split_to_compiler.values():
+        compiler.close()
+    
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--yaml_configs", nargs="+", required=True) 
+    parser.add_argument("--output_dir", default=".") 
+    options = parser.parse_args()
+    make_hdf5(options)

@@ -54,7 +54,7 @@ def main():
                 vals.append(multiplier0)
             else:
                 vals.append(curval) 
-        outf.write('\t'.join([str(i) for i in vals]))
+        outf.write('\t'.join([str(i) for i in vals])+'\n')
         
 
     

@@ -33,13 +33,14 @@ class AbstractBatchDataLoader(AbstractDataLoader):
 #updated to randomize batch selection s.t. all data points get examined in a single epoch of training
 class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
-    def __init__(self, X, Y, weight, bundle_x_and_y_in_generator,use_weights=True,
+    def __init__(self, X, Y, weight, bundle_x_and_y_in_generator,use_weights=True,generator_type='standard',
                        num_to_load_for_eval =None,percent_to_load_for_eval=100, **kwargs):
         super(BatchDataLoader_XYDictAPI, self).__init__(**kwargs)
         self.X = X
         self.Y = Y
         self.weight = weight
-        self.use_weights=use_weights 
+        self.use_weights=use_weights
+        self.generator_type=generator_type
         self.bundle_x_and_y_in_generator = bundle_x_and_y_in_generator
 
         self.input_modes = self.X.keys()
@@ -102,10 +103,74 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             permuted_batch_start.append(ordered_batches[i][0])
             permuted_batch_end.append(ordered_batches[i][1])
         return permuted_batch_start, permuted_batch_end
-    
 
+    def balanced_generator(self,predict_mode=False):
+        raise("Balanced generator not implemented!!")
+    
+    
+    #generate at least one item in a batch for each class
+    #only relevant for classification tasks (not regression) 
+    def min1_per_class_batch_generator(self,predict_mode=False):
+        #generate an inventory of positive & negative values for each task
+        positives={}
+        negatives={}
+        numcolumns={}
+        for output_mode in self.output_modes:
+            positives[output_mode]=np.argwhere(np.asarray(self.Y[output_mode])==1)
+            negatives[output_mode]=np.argwhere(np.asarray(self.Y[output_mode])==0)
+            numcolumns[output_mode]=np.shape(self.Y[output_mode])[1]
+        print("generated inventory of positives & negatives")
+        
+        while True:
+            x_batch={}
+            y_batch={}
+            weight_batch={}
+            indices=set()
+            for output_mode in self.output_modes:
+                numcolumns_cur_output=numcolumns[output_mode]
+                for c in range(numcolumns_cur_output):
+                    pos_choices=np.squeeze(np.argwhere(positives[output_mode][:,1]==c))
+                    neg_choices=np.squeeze(np.argwhere(negatives[output_mode][:,1]==c))
+                    #get one positive for each output-column
+                    indices.add(positives[output_mode][np.random.choice(pos_choices,1)[0]][0])
+                    #get one negative for each output-column
+                    indices.add(negatives[output_mode][np.random.choice(neg_choices,1)[0]][0])
+            
+            num_remaining=self.batch_size - len(indices)
+            start_index=np.random.randint(0,self.num_items - self.batch_size)
+            end_index=start_index+num_remaining
+            indices=list(indices)
+            indices.sort()
+            for input_mode in self.input_modes:
+                x_batch[input_mode]=np.concatenate((np.asarray(self.X[input_mode][start_index:end_index]),
+                                                    np.asarray(self.X[input_mode][indices])),axis=0)
+            for output_mode in self.output_modes:
+                y_batch[output_mode]=np.concatenate((np.asarray(self.Y[output_mode][start_index:end_index]),
+                                                     np.asarray(self.Y[output_mode][indices])),axis=0)
+
+            if predict_mode==True:
+                yield tuple([x_batch,y_batch])
+            else:
+                if self.use_weights:
+                    weight_batch[output_mode]=np.squeeze(np.concatenate((np.asarray(self.Y[output_mode][start_index:end_index]),
+                                                              np.asarray(self.Y[output_mode][indices])),axis=0))
+                if (self.bundle_x_and_y_in_generator):
+                    #data_batch = tuple([x_batch,y_batch])
+                    data_batch={} 
+                    data_batch.update(x_batch)
+                    data_batch.update(y_batch)
+                    if self.use_weights:
+                        yield tuple([data_batch, weight_batch])
+                    else:
+                        yield data_batch 
+                else:
+                    if self.use_weights: 
+                        yield tuple([x_batch, y_batch, weight_batch])
+                    else:
+                        yield tuple([x_batch, y_batch]) 
+    
     #this is for the training step, we cycle through all examples 
-    def get_batch_generator(self,predict_mode=False):   
+    def standard_generator(self,predict_mode=False):   
         self.num_generated=0
         self.permutation_index=0 
         while True:            
@@ -115,9 +180,6 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             x_batch = {}
             y_batch = {}
             weight_batch = {}
-            #print("permutation_index:"+str(self.permutation_index))
-            #print("self.permuted_batch_start:"+str(self.permuted_batch_start))
-            #print("self.permuted_batch_end:"+str(self.permuted_batch_end))
 
             #make sure we don't generated more values than samples_per_epoch (aka self.num_items)
             start_index=self.permuted_batch_start[self.permutation_index]
@@ -126,8 +188,9 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
                 x_batch[input_mode] = np.asarray(self.X[input_mode][start_index:end_index])
             for output_mode in self.output_modes:
                 y_batch[output_mode] = np.asarray(self.Y[output_mode][start_index:end_index])
-            for output_mode in self.weight:
-                weight_batch[output_mode] = np.squeeze(np.asarray(self.weight[output_mode][start_index:end_index]))
+            if self.use_weights:
+                for output_mode in self.weight:
+                    weight_batch[output_mode] = np.squeeze(np.asarray(self.weight[output_mode][start_index:end_index]))
 
             self.permutation_index+=1
             self.num_generated+=(end_index-start_index)
@@ -149,7 +212,17 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
                     yield tuple([x_batch, y_batch, weight_batch])
                 else:
                     yield tuple([x_batch, y_batch]) 
-
+                
+    def get_batch_generator(self,predict_mode=False):
+        if self.generator_type=="standard":
+            return self.standard_generator(predict_mode)
+        elif self.generator_type=="min1_per_class":
+            return self.min1_per_class_batch_generator(predict_mode)
+        elif self.generator_type=="balanced":
+            return self.balanced_generator(predict_mode)
+        else:
+            raise Exception("invalid type of generator specified!!")
+        
     def get_data_for_eval(self):
         self.batches_returned_for_evaluation=0
         self.num_generated=0 
@@ -179,6 +252,7 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             Y[output_mode]=np.concatenate([self.X[input_mode][self.permuted_batch_start[i]:self.permuted_batch_end[i]] for i in range(num_batches)],axis=0)
         return util.enum(X=X,Y=Y)
         '''
+        
     def get_data(self):
         return util.enum(X=self.X, Y=self.Y)
 

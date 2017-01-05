@@ -38,6 +38,37 @@ def load_class_from_config(config, extra_kwargs={}, module_prefix=""):
     parsed_kwargs.update(extra_kwargs)
     return the_class(**parsed_kwargs)
 
+'''
+def load_loss_function_from_config(config,extra_kwargs={},module_prefix=""):
+    config=fp.load_yaml_if_string(config)
+    path_to_function=module_prefix+config['function']
+    print("Loading "+path_to_function)
+    try:
+        the_function=eval(path_to_function)
+    except NameError:
+#parse out the beginning module and import before loading
+        p = re.compile(r"^((.*)(\.))?([^.]*)$")
+        m = p.search(path_to_function)
+        module,the_function = m.group(2),m.group(4)
+        if (module is not None):
+            exec("import "+module)
+        the_function = eval(path_to_function)
+    kwargs = config['kwargs']
+    parsed_kwargs = {}
+    #replace any recursive kwargs as necessary
+    for key,val in kwargs.items():
+        if (isinstance(val,dict) and (len(val.keys())==3) and ('function' in val)
+                and ('kwargs' in val) and ('autoload' in val)
+                and (val['autoload']==True)): 
+                parsed_kwargs[key] = load_function_from_config(config=val)
+        else:
+            parsed_kwargs[key] = val
+    parsed_kwargs.update(extra_kwargs)
+    if config['function']=="keras.objectives.get_weighted_binary_crossentropy":
+        return keras.objectives.get_weighted_binary_crossentropy(w0_weights=parsed_kwargs["w0_weights"],w1_weights=parsed_kwargs["w1_weights"])
+    else:
+        return keras.objectives.get_weighted_binary_crossentropy(w0_weights=parsed_kwargs["w0_weights"],w1_weights=parsed_kwargs["w1_weights"])
+'''     
 
 def load_data_loader(config, extra_kwargs={}):
     return load_class_from_config(config=config, extra_kwargs=extra_kwargs,
