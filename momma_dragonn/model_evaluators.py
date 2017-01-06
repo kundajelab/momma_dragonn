@@ -77,7 +77,6 @@ def get_accuracy_stats_for_task(predictions, true_y, c):
 
     accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0);
     accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0);
-
     returnDict = {
         'accuratePredictions': accuratePredictions,
         'numPositives_forTask': numPositives_forTask,
@@ -349,7 +348,6 @@ class GraphAccuracyStats(AbstractModelEvaluator):
                                         predictions=predictions,
                                         true_y=true_y,
                                         metric_name=metric_name)
-            #pdb.set_trace() 
             mean = self.compute_summary_stat(
                     per_output_stats=per_output_stats,
                     summary_op=np.mean)

@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import numpy as np
 from avutils import util
+from thread_safety import * 
 import pdb
 
 class AbstractDataLoader(object):
@@ -218,7 +219,8 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
                     yield tuple([x_batch, y_batch, weight_batch])
                 else:
                     yield tuple([x_batch, y_batch]) 
-                
+
+    @threadsafe_generator
     def get_batch_generator(self,predict_mode=False):
         if self.generator_type=="standard":
             return self.standard_generator(predict_mode)

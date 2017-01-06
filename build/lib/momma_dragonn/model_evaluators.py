@@ -77,7 +77,6 @@ def get_accuracy_stats_for_task(predictions, true_y, c):
 
     accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0);
     accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0);
-
     returnDict = {
         'accuratePredictions': accuratePredictions,
         'numPositives_forTask': numPositives_forTask,
@@ -296,15 +295,16 @@ class GraphAccuracyStats(AbstractModelEvaluator):
             x=data_batch[0]
             y=data_batch[1]
             if len(x.keys())==0:
-                break 
-            true_y.update(y) 
-            predictions.update(model_wrapper.get_model().predict_on_batch(x))
+                break
+            new_batch_predictions=model_wrapper.get_model().predict_on_batch(x)
+            for output_name in y.keys():
+                true_y[output_name]=np.concatenate((true_y[output_name],y[output_name]),axis=0)
+                predictions[output_name]=np.concatenate((predictions[output_name],new_batch_predictions[output_name]))
             samples_used+=batch_size
         return predictions,true_y
     
     def compute_key_metric(self, model_wrapper, data_generator, samples_to_use, batch_size):
         predictions,true_y=self.get_model_predictions(model_wrapper,data_generator,samples_to_use,batch_size)
-        #pdb.set_trace() 
         return self.compute_summary_stat(
                     per_output_stats=self.compute_per_output_stats(
                                       predictions=predictions,
@@ -348,7 +348,6 @@ class GraphAccuracyStats(AbstractModelEvaluator):
                                         predictions=predictions,
                                         true_y=true_y,
                                         metric_name=metric_name)
-            #pdb.set_trace() 
             mean = self.compute_summary_stat(
                     per_output_stats=per_output_stats,
                     summary_op=np.mean)
