@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import numpy as np
 from avutils import util
-from thread_safety import * 
+from thread_safety import *
 import pdb
 
 class AbstractDataLoader(object):
@@ -105,12 +105,15 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             permuted_batch_end.append(ordered_batches[i][1])
         return permuted_batch_start, permuted_batch_end
 
+
+    @threadsafe_generator
     def balanced_generator(self,predict_mode=False):
         raise("Balanced generator not implemented!!")
     
     
     #generate at least one item in a batch for each class
-    #only relevant for classification tasks (not regression) 
+    #only relevant for classification tasks (not regression)
+    @threadsafe_generator
     def min1_per_class_batch_generator(self,predict_mode=False):
         #generate an inventory of positive & negative values for each task
         positives={}
@@ -120,7 +123,6 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             positives[output_mode]=np.argwhere(np.asarray(self.Y[output_mode])==1)
             negatives[output_mode]=np.argwhere(np.asarray(self.Y[output_mode])==0)
             numcolumns[output_mode]=np.shape(self.Y[output_mode])[1]
-        print("generated inventory of positives & negatives")
         
         while True:
             x_batch={}
@@ -169,14 +171,16 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
                     if self.use_weights:
                         yield tuple([data_batch, weight_batch])
                     else:
-                        yield data_batch 
+                        yield data_batch
                 else:
-                    if self.use_weights: 
+                    if self.use_weights:
                         yield tuple([x_batch, y_batch, weight_batch])
                     else:
-                        yield tuple([x_batch, y_batch]) 
+                        yield tuple([x_batch, y_batch])
+
     
-    #this is for the training step, we cycle through all examples 
+    #this is for the training step, we cycle through all examples
+    @threadsafe_generator
     def standard_generator(self,predict_mode=False):   
         self.num_generated=0
         self.permutation_index=0 
@@ -230,7 +234,8 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             return self.balanced_generator(predict_mode)
         else:
             raise Exception("invalid type of generator specified!!")
-        
+
+    @threadsafe_generator
     def get_data_for_eval(self):
         self.batches_returned_for_evaluation=0
         self.num_generated=0 
@@ -248,18 +253,6 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             self.batches_returned_for_evaluation+=1
             self.num_generated+=(end_index-start_index)
             yield tuple([x_batch,y_batch])
-        '''
-        X = {}
-        Y = {}
-        #we don't want to assume that the data is presented in a random order.
-        #so we select random batches of the data for evaluation
-        num_batches=self.num_to_load_for_eval/self.batch_size + 1
-        for input_mode in self.X: 
-            X[input_mode]=np.concatenate([self.X[input_mode][self.permuted_batch_start[i]:self.permuted_batch_end[i]] for i in range(num_batches)],axis=0)
-        for output_mode in self.Y:
-            Y[output_mode]=np.concatenate([self.X[input_mode][self.permuted_batch_start[i]:self.permuted_batch_end[i]] for i in range(num_batches)],axis=0)
-        return util.enum(X=X,Y=Y)
-        '''
         
     def get_data(self):
         return util.enum(X=self.X, Y=self.Y)

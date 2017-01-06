@@ -56,14 +56,16 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         training_metadata = OrderedDict() 
         epoch = 0
         best_valid_perf_finder = util.init_get_best(is_larger_better)
-        #train_gen=train_data_loader.get_batch_generator()
-        #valid_gen=valid_data_loader.get_batch_generator()
-        #test_gen=test_data_loader.get_batch_generator()
+
+        #training phase
+        train_gen=train_data_loader.get_batch_generator()
+        valid_gen=valid_data_loader.get_batch_generator()
+
         try:
             while (not stopping_criterion.stop_training()):
                 model_wrapper.get_model().fit_generator(
-                    train_data_loader.get_batch_generator(),
-                    validation_data=valid_data_loader.get_batch_generator(),
+                    train_gen,
+                    validation_data=valid_gen,
                     samples_per_epoch=train_samples_per_epoch,
                     nb_val_samples=valid_samples_per_epoch,
                     nb_epoch=1,
