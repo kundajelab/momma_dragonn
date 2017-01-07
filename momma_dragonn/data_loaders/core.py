@@ -119,11 +119,18 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         positives={}
         negatives={}
         numcolumns={}
+        pos_choices={}
+        neg_choices={}
         for output_mode in self.output_modes:
             positives[output_mode]=np.argwhere(np.asarray(self.Y[output_mode])==1)
             negatives[output_mode]=np.argwhere(np.asarray(self.Y[output_mode])==0)
             numcolumns[output_mode]=np.shape(self.Y[output_mode])[1]
-        
+            pos_choices[output_mode]={}
+            neg_choices[output_mode]={}  
+            for c in range(numcolumns[output_mode]):
+                pos_choices[output_mode][c]=np.argwhere(positives[output_mode][:,1]==c)[0]
+                neg_choices[output_mode][c]=np.argwhere(negatives[output_mode][:,1]==c)[0]
+                
         while True:
             x_batch={}
             y_batch={}
@@ -132,15 +139,13 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             for output_mode in self.output_modes:
                 numcolumns_cur_output=numcolumns[output_mode]
                 for c in range(numcolumns_cur_output):
-                    pos_choices=np.argwhere(positives[output_mode][:,1]==c)[0]
-                    neg_choices=np.argwhere(negatives[output_mode][:,1]==c)[0]
                     #get one positive for each output-column
                     try:
-                        indices.add(positives[output_mode][np.random.choice(pos_choices,1)[0]][0])
+                        indices.add(positives[output_mode][np.random.choice(pos_choices[output_mode][c],1)[0]][0])
                     except:
                         pdb.set_trace() 
                     #get one negative for each output-column
-                    indices.add(negatives[output_mode][np.random.choice(neg_choices,1)[0]][0])
+                    indices.add(negatives[output_mode][np.random.choice(neg_choices[output_mode][c],1)[0]][0])
             
             num_remaining=self.batch_size - len(indices)
             try:
