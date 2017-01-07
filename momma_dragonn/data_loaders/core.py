@@ -35,7 +35,9 @@ class AbstractBatchDataLoader(AbstractDataLoader):
 class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
     def __init__(self, X, Y, weight, bundle_x_and_y_in_generator,use_weights=True,generator_type='standard',
-                       num_to_load_for_eval =None,percent_to_load_for_eval=100, **kwargs):
+                 num_to_load_for_eval =None,percent_to_load_for_eval=100,
+                 num_to_load_for_training=None,percent_to_load_for_training=100,
+                 **kwargs):
         super(BatchDataLoader_XYDictAPI, self).__init__(**kwargs)
         self.X = X
         self.Y = Y
@@ -53,9 +55,23 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         for x_key in self.X.keys():
             for y_key in self.Y.keys(): 
                 assert len(self.X[x_key]) == len(self.Y[y_key])
-
+                
         self.num_items = len(self.X[self.input_modes[0]])
 
+        #check that the specified number of datapoints to load for training is valid
+        if(num_to_load_for_training > self.num_items):
+            print("num_to_load_for_training is ",num_to_load_for_training, "but num_items is",self.num_items,"- fixing")
+            num_to_load_for_training=self.num_items
+        if(num_to_load_for_training!=None) and (percent_to_load_for_training!=None):
+            print("You have specified both number_to_load_for_eval and percent_to_load_for_eval. The algorithm will default to the percent_to_load_for_training")
+        if (percent_to_load_for_training!=None):
+            self.num_to_load_for_training=int((float(percent_to_load_for_training)/100)*self.num_items)
+        elif (num_to_load_for_training!=None):
+            self.num_to_load_for_training=num_to_load_for_training
+        else:
+            self.num_to_load_for_training=self.num_items 
+        
+        #check that the specified number of datapoints to load for evaluation is valid 
         if (num_to_load_for_eval > self.num_items):
             print("num_to_load_for_eval is ",num_to_load_for_eval,"but num_items is",self.num_items,"- fixing")
             num_to_load_for_eval = self.num_items
@@ -63,11 +79,14 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             print("You have specified both number_to_load_for_eval and percent_to_load_for_eval. The algorithm will default to the percent_to_load_for_eval")
         if (percent_to_load_for_eval!=None):
             self.num_to_load_for_eval=int((float(percent_to_load_for_eval)/100)*self.num_items)
-        elif (num_to_load_for_Eval!=None):
+        elif (num_to_load_for_eval!=None):
             self.num_to_load_for_eval = num_to_load_for_eval
         else:
-            self.num_to_load_for_eval=self.num_items 
+            self.num_to_load_for_eval=self.num_items
+            
         self.permuted_batch_start,self.permuted_batch_end=self.get_batch_permutation_order()
+
+        
         
     def get_jsonable_object(self):
         the_dict = super(BatchDataLoader_XYDictAPI, self)\
@@ -264,10 +283,10 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
     def get_samples_per_epoch(self):
         #This needs to be a multiple of the batch size to avoid warnings about dimensions not matching.
-        if self.num_items % self.batch_size !=0:
-            return (self.num_items/self.batch_size+1)*self.batch_size
+        if self.num_to_load_for_training % self.batch_size !=0:
+            return (self.num_to_load_for_training/self.batch_size+1)*self.batch_size
         else:
-            return self.num_items
+            return self.num_to_load_for_training 
     
 class AbstractAtOnceDataLoader(AbstractDataLoader):
 
