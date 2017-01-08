@@ -266,7 +266,7 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         self.batches_returned_for_evaluation=0
         self.num_generated=0 
         while True:
-            if self.num_generated >= self.num_items:
+            if self.num_generated >= self.num_to_load_for_eval: 
                 yield tuple([{},{}])
             x_batch = {}
             y_batch = {}
