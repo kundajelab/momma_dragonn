@@ -283,13 +283,28 @@ class GraphAccuracyStats(AbstractModelEvaluator):
         return is_larger_better_lookup[self.key_metric]
 
     #uses a generators to do batch predictions
-    def get_model_predictions(self,model_wrapper,data_generator,samples_to_use,batch_size):
+    def get_model_predictions(self,model_wrapper,data_generator,samples_to_use,batch_size_predict):
+        print("getting model predictions!!")
+        batch_size=50000
         data_batch=next(data_generator)
         x=data_batch[0]
         y=data_batch[1]
-        predictions=model_wrapper.get_model().predict_on_batch(x)
-        true_y=y 
-        samples_used=batch_size 
+        new_batch_predictions=model_wrapper.get_model().predict_on_batch(x)
+        #print("y.shape:"+str(y.shape))
+        #print("new_batch_predictions.shape:"+str(new_batch_predictions.shape))
+        true_y={}
+        predictions={} 
+        samples_used=0
+        #pre-allocate numpy arrays to avoid running slow numpy concatenation operations
+        sample_output_name=y.keys()[0]
+        y_shape=y[sample_output_name].shape 
+        for output_name in y.keys():
+            true_y[output_name]=np.zeros((samples_to_use,y_shape[1]))
+            true_y[output_name][samples_used:samples_used+y_shape[0]]=y[output_name]
+            predictions[output_name]=np.zeros((samples_to_use,y_shape[1]))
+            predictions[output_name][samples_used:samples_used+y_shape[0]]=new_batch_predictions[output_name] 
+        samples_used+=y_shape[0]
+        print(str(samples_used))
         while len(x.values())>0: 
             data_batch=next(data_generator)
             x=data_batch[0]
@@ -297,14 +312,19 @@ class GraphAccuracyStats(AbstractModelEvaluator):
             if len(x.keys())==0:
                 break
             new_batch_predictions=model_wrapper.get_model().predict_on_batch(x)
+            y_shape=y[sample_output_name].shape 
             for output_name in y.keys():
-                true_y[output_name]=np.concatenate((true_y[output_name],y[output_name]),axis=0)
-                predictions[output_name]=np.concatenate((predictions[output_name],new_batch_predictions[output_name]))
-            samples_used+=batch_size
+                true_y[output_name][samples_used:samples_used+y_shape[0]]=y[output_name]
+                predictions[output_name][samples_used:samples_used+y_shape[0]]=new_batch_predictions[output_name]
+            samples_used+=y_shape[0]
+            print(str(samples_used))
+        pdb.set_trace() 
         return predictions,true_y
     
     def compute_key_metric(self, model_wrapper, data_generator, samples_to_use, batch_size):
+        print("calling compute_key_metric:") 
         predictions,true_y=self.get_model_predictions(model_wrapper,data_generator,samples_to_use,batch_size)
+        print("got predictions!!") 
         return self.compute_summary_stat(
                     per_output_stats=self.compute_per_output_stats(
                                       predictions=predictions,
@@ -313,6 +333,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
                     summary_op=np.mean) 
 
     def compute_summary_stat(self, per_output_stats, summary_op):
+        print("computing summary stat:") 
         to_summarise = []
         for stats in per_output_stats.values():
             to_summarise.extend(stats)
@@ -336,6 +357,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
         to_return = OrderedDict() 
         output_names = sorted(true_y.keys()) 
         for output_name in output_names:
+            print("computing stat for output:"+str(output_name)) 
             to_return[output_name] = func(predictions=predictions[output_name],true_y=true_y[output_name],thresh=metric_thresh) 
         return to_return
 

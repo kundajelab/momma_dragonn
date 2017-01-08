@@ -15,12 +15,14 @@ class AbstractDataLoader(object):
 
 class AbstractBatchDataLoader(AbstractDataLoader):
 
-    def __init__(self, batch_size):
-        self.batch_size = batch_size
+    def __init__(self, batch_size_train,batch_size_predict):
+        self.batch_size_train = batch_size_train
+        self.batch_size_predict=batch_size_predict 
 
     def get_jsonable_object(self):
         the_dict = super(AbstractBatchDataLoader, self).get_jsonable_object()
-        the_dict['batch_size'] = self.batch_size
+        the_dict['batch_size_train'] = self.batch_size_train
+        the_dict['batch_size_predict']=self.batch_size_predict 
         return the_dict
 
     def get_batch_generator(self):
@@ -35,8 +37,8 @@ class AbstractBatchDataLoader(AbstractDataLoader):
 class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
     def __init__(self, X, Y, weight, bundle_x_and_y_in_generator,use_weights=True,generator_type='standard',
-                 num_to_load_for_eval =None,percent_to_load_for_eval=100,
-                 num_to_load_for_training=None,percent_to_load_for_training=100,
+                 num_to_load_for_eval =None,percent_to_load_for_eval=None,
+                 num_to_load_for_training=None,percent_to_load_for_training=None,
                  **kwargs):
         super(BatchDataLoader_XYDictAPI, self).__init__(**kwargs)
         self.X = X
@@ -99,7 +101,7 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
     #generate a permutation of batches to use
     def get_batch_permutation_order(self):
         #figure out what the offset of the first batch from 0 is
-        start_index=np.random.randint(0,self.batch_size)
+        start_index=np.random.randint(0,self.batch_size_train)
         #handle edge case for very few items:
         if start_index >=self.num_items:
             start_index=0 
@@ -107,12 +109,12 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         ordered_batches=OrderedDict()
         while start_index < self.num_items:
             batch_number+=1
-            end_index=start_index+self.batch_size
+            end_index=start_index+self.batch_size_train
             if end_index >=self.num_items:
                 end_index=self.num_items
-                start_index=self.num_items - self.batch_size
+                start_index=self.num_items - self.batch_size_train
             ordered_batches[batch_number]=[start_index,end_index]
-            start_index=start_index+self.batch_size
+            start_index=start_index+self.batch_size_train
         #permute the batch indices
         #print("finished permutation") 
         permuted_indices=np.random.permutation(batch_number+1)
@@ -166,9 +168,9 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
                     #get one negative for each output-column
                     indices.add(negatives[output_mode][np.random.choice(neg_choices[output_mode][c],1)[0]][0])
             
-            num_remaining=self.batch_size - len(indices)
+            num_remaining=self.batch_size_train - len(indices)
             try:
-                start_index=np.random.randint(0,self.num_items - self.batch_size)
+                start_index=np.random.randint(0,self.num_items - self.batch_size_train)
             except:
                 pdb.set_trace() 
             end_index=start_index+num_remaining
@@ -268,8 +270,8 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
                 yield tuple([{},{}])
             x_batch = {}
             y_batch = {}
-            start_index=self.batch_size*self.batches_returned_for_evaluation
-            end_index=min([self.num_items,start_index+self.batch_size]) 
+            start_index=self.batch_size_predict*self.batches_returned_for_evaluation
+            end_index=min([self.num_items,start_index+self.batch_size_predict]) 
             for input_mode in self.input_modes:
                 x_batch[input_mode] = np.asarray(self.X[input_mode][start_index:end_index])
             for output_mode in self.output_modes:
@@ -281,12 +283,18 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
     def get_data(self):
         return util.enum(X=self.X, Y=self.Y)
 
-    def get_samples_per_epoch(self):
+    def get_samples_per_epoch(self,train=True):
         #This needs to be a multiple of the batch size to avoid warnings about dimensions not matching.
-        if self.num_to_load_for_training % self.batch_size !=0:
-            return (self.num_to_load_for_training/self.batch_size+1)*self.batch_size
+        if train==True: 
+            if self.num_to_load_for_training % self.batch_size_train !=0:
+                return (self.num_to_load_for_training/self.batch_size_train+1)*self.batch_size_train
+            else:
+                return self.num_to_load_for_training
         else:
-            return self.num_to_load_for_training 
+            if self.num_to_load_for_eval % self.batch_size_predict !=0:
+                return (self.num_to_load_for_eval/self.batch_size_predict+1)*self.batch_size_predict
+            else:
+                return self.num_to_load_for_eval
     
 class AbstractAtOnceDataLoader(AbstractDataLoader):
 
@@ -302,7 +310,8 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
                        #want to use in batches as well
                        num_to_load_for_eval=None,
                        bundle_x_and_y_in_generator=None,
-                       batch_size=None, 
+                       batch_size_train=None,
+                       batch_size_predict=None,
                        **kwargs):
         self.max_to_load = max_to_load
 
@@ -323,7 +332,8 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
             X=X, Y=Y,
             weight={}, num_to_load_for_eval=num_to_load_for_eval,
             bundle_x_and_y_in_generator=bundle_x_and_y_in_generator,
-            batch_size=batch_size,
+            batch_size_train=batch_size_train,
+            batch_size_predict=batch_size_predict
             **kwargs)
 
         self.X = X

@@ -40,9 +40,9 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                 extra_kwargs={'larger_is_better':is_larger_better})
 
         train_data_loader = data_loaders['train']
-        train_samples_per_epoch=train_data_loader.get_samples_per_epoch() 
+        train_samples_per_epoch=train_data_loader.get_samples_per_epoch(train=True) 
         valid_data_loader = data_loaders['validate']
-        valid_samples_per_epoch=valid_data_loader.get_samples_per_epoch()
+        valid_samples_per_epoch=valid_data_loader.get_samples_per_epoch(train=True)
         test_data_loader=data_loaders['test']
 
         train_num_to_load_for_eval=train_data_loader.num_to_load_for_eval
