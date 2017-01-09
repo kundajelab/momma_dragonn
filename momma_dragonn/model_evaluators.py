@@ -290,7 +290,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
         data_batch=next(data_generator)
         x=data_batch[0]
         y=data_batch[1]
-        new_batch_predictions=model_wrapper.get_model().predict(x)
+        new_batch_predictions=model_wrapper.predict(x,50)
         pdb.set_trace() 
         #print("y.shape:"+str(y.shape))
         #print("new_batch_predictions.shape:"+str(new_batch_predictions.shape))
@@ -313,7 +313,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
             y=data_batch[1]
             if len(x.values())==0:
                 break
-            new_batch_predictions=model_wrapper.get_model().predict_on_batch(x)
+            new_batch_predictions=model_wrapper.predict(x,50)
             y_shape=y[sample_output_name].shape 
             for output_name in y.keys():
                 true_y[output_name][samples_used:samples_used+y_shape[0]]=y[output_name]
