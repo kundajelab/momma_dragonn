@@ -77,6 +77,7 @@ def get_accuracy_stats_for_task(predictions, true_y, c):
 
     accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0);
     accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0);
+    pdb.set_trace() 
     returnDict = {
         'accuratePredictions': accuratePredictions,
         'numPositives_forTask': numPositives_forTask,
@@ -107,7 +108,7 @@ def positives_accuracy(predictions,true_y,thresh=None):
     positive_accuracies = []
     for c in range(num_cols):
         r = get_accuracy_stats_for_task(predictions, true_y, c)
-        positiveAccuracy_forTask = r['accuratePredictions_positives']/(r['numPositives_forTask']).astype("float");
+        positiveAccuracy_forTask = float(r['accuratePredictions_positives'])/float(r['numPositives_forTask'])
         positive_accuracies.append(positiveAccuracy_forTask) 
     return positive_accuracies;
 
@@ -118,7 +119,8 @@ def negatives_accuracy(predictions,true_y,thresh=None):
     negative_accuracies = []
     for c in range(num_cols):
         r = get_accuracy_stats_for_task(predictions, true_y, c)
-        negativeAccuracy_forTask = (r['accuratePredictions_negatives'])/(r['numNegatives_forTask']).astype("float");
+        negativeAccuracy_forTask = float(r['accuratePredictions_negatives'])/float(r['numNegatives_forTask'])
+        pdb.set_trace() 
         negative_accuracies.append(negativeAccuracy_forTask) 
     return negative_accuracies;
 
@@ -283,28 +285,47 @@ class GraphAccuracyStats(AbstractModelEvaluator):
         return is_larger_better_lookup[self.key_metric]
 
     #uses a generators to do batch predictions
-    def get_model_predictions(self,model_wrapper,data_generator,samples_to_use,batch_size):
+    def get_model_predictions(self,model_wrapper,data_generator,samples_to_use,batch_size_predict):
+        print("getting model predictions!!")
         data_batch=next(data_generator)
         x=data_batch[0]
         y=data_batch[1]
-        predictions=model_wrapper.get_model().predict_on_batch(x)
-        true_y=y 
-        samples_used=batch_size 
-        while len(x.values())>0: 
+        new_batch_predictions=model_wrapper.predict(x,50)
+        pdb.set_trace() 
+        #print("y.shape:"+str(y.shape))
+        #print("new_batch_predictions.shape:"+str(new_batch_predictions.shape))
+        true_y={}
+        predictions={} 
+        samples_used=0
+        #pre-allocate numpy arrays to avoid running slow numpy concatenation operations
+        sample_output_name=y.keys()[0]
+        y_shape=y[sample_output_name].shape 
+        for output_name in y.keys():
+            true_y[output_name]=np.zeros((samples_to_use,y_shape[1]))
+            true_y[output_name][samples_used:samples_used+y_shape[0]]=y[output_name]
+            predictions[output_name]=np.zeros((samples_to_use,y_shape[1]))
+            predictions[output_name][samples_used:samples_used+y_shape[0]]=new_batch_predictions[output_name] 
+        samples_used+=y_shape[0]
+        print(str(samples_used))
+        while len(x.values())>0:
             data_batch=next(data_generator)
             x=data_batch[0]
             y=data_batch[1]
-            if len(x.keys())==0:
+            if len(x.values())==0:
                 break
-            new_batch_predictions=model_wrapper.get_model().predict_on_batch(x)
+            new_batch_predictions=model_wrapper.predict(x,50)
+            y_shape=y[sample_output_name].shape 
             for output_name in y.keys():
-                true_y[output_name]=np.concatenate((true_y[output_name],y[output_name]),axis=0)
-                predictions[output_name]=np.concatenate((predictions[output_name],new_batch_predictions[output_name]))
-            samples_used+=batch_size
+                true_y[output_name][samples_used:samples_used+y_shape[0]]=y[output_name]
+                predictions[output_name][samples_used:samples_used+y_shape[0]]=new_batch_predictions[output_name]
+            samples_used+=y_shape[0]
+            print(str(samples_used))
         return predictions,true_y
     
     def compute_key_metric(self, model_wrapper, data_generator, samples_to_use, batch_size):
+        print("calling compute_key_metric:") 
         predictions,true_y=self.get_model_predictions(model_wrapper,data_generator,samples_to_use,batch_size)
+        print("got predictions!!") 
         return self.compute_summary_stat(
                     per_output_stats=self.compute_per_output_stats(
                                       predictions=predictions,
@@ -313,6 +334,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
                     summary_op=np.mean) 
 
     def compute_summary_stat(self, per_output_stats, summary_op):
+        print("computing summary stat:") 
         to_summarise = []
         for stats in per_output_stats.values():
             to_summarise.extend(stats)
@@ -336,6 +358,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
         to_return = OrderedDict() 
         output_names = sorted(true_y.keys()) 
         for output_name in output_names:
+            print("computing stat for output:"+str(output_name)) 
             to_return[output_name] = func(predictions=predictions[output_name],true_y=true_y[output_name],thresh=metric_thresh) 
         return to_return
 
