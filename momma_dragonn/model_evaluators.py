@@ -77,6 +77,7 @@ def get_accuracy_stats_for_task(predictions, true_y, c):
 
     accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0);
     accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0);
+    pdb.set_trace() 
     returnDict = {
         'accuratePredictions': accuratePredictions,
         'numPositives_forTask': numPositives_forTask,
@@ -107,7 +108,7 @@ def positives_accuracy(predictions,true_y,thresh=None):
     positive_accuracies = []
     for c in range(num_cols):
         r = get_accuracy_stats_for_task(predictions, true_y, c)
-        positiveAccuracy_forTask = r['accuratePredictions_positives']/(r['numPositives_forTask']).astype("float");
+        positiveAccuracy_forTask = float(r['accuratePredictions_positives'])/float(r['numPositives_forTask'])
         positive_accuracies.append(positiveAccuracy_forTask) 
     return positive_accuracies;
 
@@ -118,7 +119,8 @@ def negatives_accuracy(predictions,true_y,thresh=None):
     negative_accuracies = []
     for c in range(num_cols):
         r = get_accuracy_stats_for_task(predictions, true_y, c)
-        negativeAccuracy_forTask = (r['accuratePredictions_negatives'])/(r['numNegatives_forTask']).astype("float");
+        negativeAccuracy_forTask = float(r['accuratePredictions_negatives'])/float(r['numNegatives_forTask'])
+        pdb.set_trace() 
         negative_accuracies.append(negativeAccuracy_forTask) 
     return negative_accuracies;
 
@@ -285,11 +287,11 @@ class GraphAccuracyStats(AbstractModelEvaluator):
     #uses a generators to do batch predictions
     def get_model_predictions(self,model_wrapper,data_generator,samples_to_use,batch_size_predict):
         print("getting model predictions!!")
-        batch_size=50000
         data_batch=next(data_generator)
         x=data_batch[0]
         y=data_batch[1]
-        new_batch_predictions=model_wrapper.get_model().predict_on_batch(x)
+        new_batch_predictions=model_wrapper.get_model().predict(x)
+        pdb.set_trace() 
         #print("y.shape:"+str(y.shape))
         #print("new_batch_predictions.shape:"+str(new_batch_predictions.shape))
         true_y={}
