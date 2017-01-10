@@ -6,7 +6,7 @@ config = {
     'description': 'deep learning model training and tracking framework',
     'url': 'NA',
     'download_url': 'https://github.com/kundajelab/momma_dragonn',
-    'version': '0.2',
+    'version': '0.2.0',
     'packages': ['momma_dragonn'],
     'setup_requires': [],
     'install_requires': ['numpy', 'avutils'],
