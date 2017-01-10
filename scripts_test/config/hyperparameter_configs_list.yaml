@@ -30,6 +30,11 @@
                         #"nb_col":11,
                         #"nb_row":4,
                         "border_mode": "same",
+                        "W_constraint": {
+                            "autoload": true, #turn the dictionary into a class
+                            "class": "keras.constraints.maxnorm",
+                            "kwargs": {"m": 7, "axis": 1}
+                        }
                     }
                 },
                 {
