@@ -1,4 +1,3 @@
-import yaml
 from avutils import util
 import sys
 

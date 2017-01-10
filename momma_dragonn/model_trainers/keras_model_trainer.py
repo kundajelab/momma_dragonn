@@ -78,6 +78,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                     train_key_metric=train_key_metric,
                     valid_key_metric=valid_key_metric)
                 if (new_best):
+                    print("New best")
                     valid_all_stats = model_evaluator.compute_all_stats(
                                     model_wrapper=model_wrapper,
                                     data=valid_data,

@@ -88,10 +88,12 @@ def unbalanced_accuracy(predictions, true_y):
 
         unbalancedAccuracy_forTask = (r['accuratePredictions_positives'] + r['accuratePredictions_negatives'])/(r['numPositives_forTask']+r['numNegatives_forTask']).astype("float");
         unbalanced_accuracies.append(unbalancedAccuracy_forTask) 
-    return unbalanced_accuracies;
+    return unbalanced_accuracies
+
 
 def balanced_accuracy(predictions, true_y):
-    assert predictions.shape==true_y.shape;
+    assert predictions.shape==true_y.shape, ("Did you make sure your label "
+           "data have the same dims as the model's output?")
     assert len(predictions.shape)==2;
     [num_rows, num_cols]=true_y.shape 
     balanced_accuracies = [] 
@@ -106,6 +108,21 @@ def balanced_accuracy(predictions, true_y):
     return balanced_accuracies
 
 
+def spearman_corr(predictions, true_y):
+    import scipy.stats
+    #first return val is correlation, second return val is a p-value
+    #get task-specific correlations 
+    num_tasks=predictions.shape[1] 
+    task_correlations_all=[] 
+    task_pvalues_all=[] 
+    for t in range(num_tasks): 
+        task_cor,task_p=scipy.stats.spearmanr(predictions[:,t],true_y[:,t])
+        task_correlations_all.append(task_cor) 
+        task_pvalues_all.append(task_p) 
+    return task_correlations_all
+
+
+#for autoencoders
 def onehot_rows_crossent_func(predictions, true_y):
     #squeeze to get rid of channel axis 
     predictions, true_y = [np.squeeze(arr) for arr in [predictions, true_y]] 
@@ -128,12 +145,14 @@ AccuracyStats = util.enum(
     auPRC="auPRC",
     balanced_accuracy="balanced_accuracy",
     unbalanced_accuracy="unbalanced_accuracy",
+    spearman_corr="spearman_corr",
     onehot_rows_crossent="onehot_rows_crossent")
 compute_func_lookup = {
     AccuracyStats.auROC: auroc_func,
     AccuracyStats.auPRC: auprc_func,
     AccuracyStats.balanced_accuracy: balanced_accuracy,
     AccuracyStats.unbalanced_accuracy: unbalanced_accuracy,
+    AccuracyStats.spearman_corr: spearman_corr,
     AccuracyStats.onehot_rows_crossent:
         onehot_rows_crossent_func
 }
@@ -142,7 +161,8 @@ is_larger_better_lookup = {
     AccuracyStats.auPRC: True,
     AccuracyStats.balanced_accuracy: True,
     AccuracyStats.unbalanced_accuracy: True,
-    AccuracyStats.onehot_rows_crossent: False
+    AccuracyStats.spearman_corr: True,
+    AccuracyStats.onehot_rows_crossent: False,
 }
 
 
