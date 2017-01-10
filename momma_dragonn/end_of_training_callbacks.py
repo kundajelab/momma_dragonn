@@ -3,11 +3,57 @@ from avutils.dynamic_enum import Keys, Key
 from avutils import file_processing as fp
 from collections import OrderedDict
 import yaml
+import json
 
 class AbstractEndOfTrainingCallback(object):
 
     def __call__(self, **kwargs):
         raise NotImplementedError()
+
+
+class EmailCallback(AbstractEndOfTrainingCallback):
+
+    def __init__(self, to_emails, from_email, smtp_server, **kwargs):
+        self.to_emails = to_emails
+        self.from_email = from_email
+        self.smtp_server = smtp_server #eg: smtp.stanford.edu
+
+    def __call__(self, performance_history, model_wrapper, training_metadata,
+                       message, model_creator_info, model_trainer_info,
+                       other_data_loaders_info, **kwargs):
+        current_best_valid_perf_info =\
+            performance_history.get_best_valid_epoch_perf_info() 
+        current_best_valid_key_metric = current_best_valid_perf_info\
+                                        .valid_key_metric
+        subject = ("training ended"+
+                   (" for "+str(message)+" " if message!="" else "")+
+                   " with perf: "+str(current_best_valid_key_metric)) 
+
+        contents = json.dumps(OrderedDict([
+            ('training_metadata', training_metadata),
+            ('last_saved_files_config',
+             model_wrapper.get_last_saved_files_config()),
+            ('best_valid_perf_info',
+                current_best_valid_perf_info.get_jsonable_object()),
+            ('model_creator_info', model_creator_info),
+            ('model_trainer_info', model_trainer_info),
+            ('other_data_loaders_info', other_data_loaders_info)
+        ]), indent=4, separators=(',', ': '))
+        contents+="\n"
+        contents+="Performance History:\n"+\
+                "\n".join(["Epoch\tTrain\tValid"]+\
+    ["\t".join(y) for y in zip(
+     [str(x) for x in range(len(performance_history))],
+     [str(x) for x in performance_history.get_train_key_metric_history()],
+     [str(x) for x in performance_history.get_valid_key_metric_history()])])
+
+        util.send_email(
+            subject=subject,
+            to_addresses=self.to_emails,
+            sender=self.from_email,
+            smtp_server=self.smtp_server,
+            contents=contents)
+
 
 class WriteToDbCallback(AbstractEndOfTrainingCallback):
 
@@ -34,7 +80,7 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
 
     def __call__(self, performance_history, model_wrapper, training_metadata,
                        message, model_creator_info, model_trainer_info,
-                       other_data_loaders_info):
+                       other_data_loaders_info, **kwargs):
         if (training_metadata['total_epochs_trained_for'] > 0):
             #acquire lock on db file
             db_lock = fp.FileLockAsDir(self.db_path)  

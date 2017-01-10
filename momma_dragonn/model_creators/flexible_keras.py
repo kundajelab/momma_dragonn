@@ -1,10 +1,10 @@
 from .core import AbstractModelCreator
 from avutils.dynamic_enum import Key, Keys
-import keras
 from collections import OrderedDict
-import keras
 from ..model_wrappers import keras_model_wrappers
 from momma_dragonn.loaders import load_class_from_config
+#DO NOT import keras at the top level; the random
+#seed needs to be set BEFORE keras is imported
 
 
 class KerasModelFromFunc(AbstractModelCreator):
@@ -73,6 +73,9 @@ class FlexibleKerasGraph(FlexibleKeras):
                 ('loss_dictionary', self.loss_dictionary)])
 
     def _get_uncompiled_model(self):
+        #it is important that keras is only imported here so that
+        #the random seed can be set by the model trainer BEFORE the import
+        import keras
         from keras.models import Graph 
         graph = Graph()
         self._add_inputs(graph) 
@@ -147,6 +150,11 @@ class FlexibleKerasSequential(FlexibleKeras):
             return load_class_from_config(self.loss) 
 
     def _get_uncompiled_model(self):
+        #it is important that keras is only imported here so that
+        #the random seed can be set by the model trainer BEFORE the import
+        import numpy as np
+        np.random.seed(1234)
+        import keras
         from keras.models import Sequential
         model = Sequential()
         for layer_config in self.layers_config:

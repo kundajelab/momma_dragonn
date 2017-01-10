@@ -4,7 +4,6 @@ from momma_dragonn.performance_history import PerformanceHistory
 from collections import OrderedDict
 import avutils.util as util
 import traceback
-import numpy as np
 
 class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
@@ -12,7 +11,12 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                        stopping_criterion_config,
                        class_weight=None,
                        seed=1234):
+        self.seed = seed
+        import numpy as np
         np.random.seed(seed)
+        import random
+        random.seed(seed)
+        
 
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
@@ -24,6 +28,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
     def get_jsonable_object(self):
         return OrderedDict([
+                ('seed', self.seed),
                 ('samples_per_epoch', self.samples_per_epoch),
                 ('stopping_criterion_config', self.stopping_criterion_config),
                 ('class_weight', self.class_weight)])

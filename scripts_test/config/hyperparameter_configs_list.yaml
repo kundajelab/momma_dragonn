@@ -1,8 +1,10 @@
 [
 {
+    "message": "example model and training config",
     "other_data_loaders":{
         "train": {
-            "class": "hdf5_data_loader.MultimodalBatchDataLoader",
+            #"class": "hdf5_data_loader.MultimodalBatchDataLoader",
+            "class": "hdf5_data_loader.MultimodalAtOnceDataLoader",
             "kwargs": {
                 "batch_size": 50,
                 "path_to_hdf5": "train_data.hdf5",
@@ -92,6 +94,7 @@
     "model_trainer":{
         "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
         "kwargs": {
+            "seed": 1234,
             "samples_per_epoch": 3000,
             "stopping_criterion_config": {
                 "class": "EarlyStopping" ,
@@ -103,6 +106,5 @@
             #"class_weight": {"0":1, "1":25}
         }
     },
-    "message": "Test model"
 }
 ]
