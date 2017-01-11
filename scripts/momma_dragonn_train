@@ -37,7 +37,7 @@ def momma_dragonn_train(options):
 
         model_wrapper, performance_history, training_metadata =\
             model_trainer.train(
-                model_wrapper=model_creator.get_model_wrapper(),
+                model_creator=model_creator,
                 model_evaluator=model_evaluator,
                 valid_data_loader=valid_data_loader,
                 other_data_loaders=other_data_loaders,
