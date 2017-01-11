@@ -88,14 +88,14 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                     valid_key_metric=valid_key_metric)
                 if (new_best):
                     print("New best")
-                    valid_all_stats = model_evaluator.compute_all_stats(
+                    self.valid_all_stats = model_evaluator.compute_all_stats(
                                     model_wrapper=model_wrapper,
                                     data=valid_data,
                                     batch_size=train_data_loader.batch_size)
                     performance_history.update_best_valid_epoch_perf_info(
                         epoch=epoch, valid_key_metric=valid_key_metric,
                         train_key_metric=train_key_metric,
-                        valid_all_stats=valid_all_stats)
+                        valid_all_stats=self.valid_all_stats)
 
                 for end_of_epoch_callback in end_of_epoch_callbacks:
                     end_of_epoch_callback(#handles intermediate model saving
@@ -103,7 +103,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                         model_wrapper=model_wrapper,
                         valid_key_metric=valid_key_metric,
                         train_key_metric=train_key_metric,
-                        valid_all_stats=valid_all_stats,
+                        valid_all_stats=self.valid_all_stats,
                         is_new_best_valid_perf=new_best,
                         performance_history=performance_history)
 
