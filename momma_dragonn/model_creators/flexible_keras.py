@@ -14,7 +14,8 @@ class KerasModelFromFunc(AbstractModelCreator):
         self._last_model_created = None
         self.model_wrapper_class = model_wrapper_class
 
-    def get_model_wrapper(self):
+    def get_model_wrapper(self, seed):
+        #seed is ignored
         self.create_model()
         return self.model_wrapper_class(model=self._last_model_created) 
 
@@ -37,9 +38,9 @@ class FlexibleKeras(AbstractModelCreator):
     def _parse_loss(self):
         raise NotImplementedError()
 
-    def get_model(self):
+    def get_model(self, seed):
         print("Preparing uncompiled model")
-        model = self._get_uncompiled_model() 
+        model = self._get_uncompiled_model(seed) 
         print("Compiling model")
         self._compile_model(model)
         print("Done compiling model")
@@ -60,9 +61,9 @@ class FlexibleKerasGraph(FlexibleKeras):
         self.optimizer_config = optimizer_config
         self.loss_dictionary = loss_dictionary
 
-    def get_model_wrapper(self):
+    def get_model_wrapper(self, seed):
         return keras_model_wrappers.KerasGraphModelWrapper(
-                model=self.get_model())
+                model=self.get_model(seed=seed))
 
     def get_jsonable_object(self):
         return OrderedDict([
@@ -72,9 +73,13 @@ class FlexibleKerasGraph(FlexibleKeras):
                 ('optimizer_config', self.optimizer_config),
                 ('loss_dictionary', self.loss_dictionary)])
 
-    def _get_uncompiled_model(self):
+    def _get_uncompiled_model(self, seed):
         #it is important that keras is only imported here so that
         #the random seed can be set by the model trainer BEFORE the import
+        import numpy as np
+        np.random.seed(seed)
+        import random
+        random.seed(seed)
         import keras
         from keras.models import Graph 
         graph = Graph()
@@ -133,9 +138,9 @@ class FlexibleKerasSequential(FlexibleKeras):
         self.optimizer_config = optimizer_config
         self.loss = loss
 
-    def get_model_wrapper(self):
+    def get_model_wrapper(self, seed):
         return keras_model_wrappers.KerasModelWrapper(
-                model=self.get_model())
+                model=self.get_model(seed=seed))
 
     def get_jsonable_object(self):
         return OrderedDict([
@@ -149,11 +154,13 @@ class FlexibleKerasSequential(FlexibleKeras):
         else:
             return load_class_from_config(self.loss) 
 
-    def _get_uncompiled_model(self):
+    def _get_uncompiled_model(self, seed):
         #it is important that keras is only imported here so that
         #the random seed can be set by the model trainer BEFORE the import
         import numpy as np
-        np.random.seed(1234)
+        np.random.seed(seed)
+        import random
+        random.seed(seed)
         import keras
         from keras.models import Sequential
         model = Sequential()

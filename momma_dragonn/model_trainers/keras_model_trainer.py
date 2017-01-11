@@ -41,7 +41,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         import keras
 
         print("Getting model...")
-        model_wrapper = model_creator.get_model_wrapper()
+        model_wrapper = model_creator.get_model_wrapper(seed=self.seed)
         print("Got model")
 
         is_larger_better = model_evaluator.is_larger_better_for_key_metric()
