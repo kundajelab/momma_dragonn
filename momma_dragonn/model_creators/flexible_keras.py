@@ -17,7 +17,9 @@ class KerasModelFromFunc(AbstractModelCreator):
     def get_model_wrapper(self, seed):
         #seed is ignored
         self.create_model()
-        return self.model_wrapper_class(model=self._last_model_created) 
+        model_wrapper = self.model_wrapper_class()
+        model_wrapper.set_model(self._last_model_created) 
+        return model_wrapper
 
     def create_model(self):
         self._last_model_created = self.func()
@@ -62,8 +64,9 @@ class FlexibleKerasGraph(FlexibleKeras):
         self.loss_dictionary = loss_dictionary
 
     def get_model_wrapper(self, seed):
-        return keras_model_wrappers.KerasGraphModelWrapper(
-                model=self.get_model(seed=seed))
+        model_wrapper = keras_model_wrappers.KerasGraphModelWrapper()
+        model_wrapper.set_model(self.get_model(seed=seed))
+        return model_wrapper
 
     def get_jsonable_object(self):
         return OrderedDict([
@@ -78,8 +81,6 @@ class FlexibleKerasGraph(FlexibleKeras):
         #the random seed can be set by the model trainer BEFORE the import
         import numpy as np
         np.random.seed(seed)
-        import random
-        random.seed(seed)
         import keras
         from keras.models import Graph 
         graph = Graph()
@@ -139,8 +140,9 @@ class FlexibleKerasSequential(FlexibleKeras):
         self.loss = loss
 
     def get_model_wrapper(self, seed):
-        return keras_model_wrappers.KerasModelWrapper(
-                model=self.get_model(seed=seed))
+        model_wrapper = keras_model_wrappers.KerasModelWrapper()
+        model_wrapper.set_model(self.get_model(seed=seed))
+        return model_wrapper 
 
     def get_jsonable_object(self):
         return OrderedDict([

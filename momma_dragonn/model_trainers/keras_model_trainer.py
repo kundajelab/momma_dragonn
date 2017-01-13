@@ -34,8 +34,6 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         print("Setting seed "+str(self.seed))
         import numpy as np
         np.random.seed(self.seed)
-        import random
-        random.seed(self.seed)
 
         print("Importing keras...")
         import keras
