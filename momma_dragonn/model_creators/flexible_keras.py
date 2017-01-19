@@ -31,12 +31,13 @@ class KerasModelFromFunc(AbstractModelCreator):
 class FlexibleKerasGraph(AbstractModelCreator):
 
     def __init__(self, inputs_config, nodes_config, outputs_config,
-                       optimizer_config, loss_dictionary):
+                       optimizer_config, loss_dictionary,path_to_layer_init=None):
         self.inputs_config = inputs_config
         self.nodes_config = nodes_config
         self.outputs_config = outputs_config
         self.optimizer_config = optimizer_config
         self.loss_dictionary = loss_dictionary
+        self.path_to_layer_init=path_to_layer_init
 
     def get_model_wrapper(self):
         return keras_model_wrappers.KerasGraphModelWrapper(
@@ -110,5 +111,8 @@ class FlexibleKerasGraph(AbstractModelCreator):
             dict((key, (val if isinstance(val,dict)==False else
                         load_class_from_config(val))) for
                         (key,val) in self.loss_dictionary.items())
-        graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary) 
+        graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary)
+        if self.path_to_layer_init!=None:
+            graph.load_weights(self.path_to_layer_init)
+            print("Loaded custom layer initializations!") 
         

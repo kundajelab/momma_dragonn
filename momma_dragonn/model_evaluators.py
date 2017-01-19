@@ -77,7 +77,6 @@ def get_accuracy_stats_for_task(predictions, true_y, c):
 
     accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0);
     accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0);
-    pdb.set_trace() 
     returnDict = {
         'accuratePredictions': accuratePredictions,
         'numPositives_forTask': numPositives_forTask,
@@ -120,7 +119,6 @@ def negatives_accuracy(predictions,true_y,thresh=None):
     for c in range(num_cols):
         r = get_accuracy_stats_for_task(predictions, true_y, c)
         negativeAccuracy_forTask = float(r['accuratePredictions_negatives'])/float(r['numNegatives_forTask'])
-        pdb.set_trace() 
         negative_accuracies.append(negativeAccuracy_forTask) 
     return negative_accuracies;
 
@@ -290,8 +288,8 @@ class GraphAccuracyStats(AbstractModelEvaluator):
         data_batch=next(data_generator)
         x=data_batch[0]
         y=data_batch[1]
-        new_batch_predictions=model_wrapper.predict(x,50)
-        pdb.set_trace() 
+        new_batch_predictions=model_wrapper.predict(x,batch_size_predict)
+        #pdb.set_trace() 
         #print("y.shape:"+str(y.shape))
         #print("new_batch_predictions.shape:"+str(new_batch_predictions.shape))
         true_y={}
@@ -313,7 +311,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
             y=data_batch[1]
             if len(x.values())==0:
                 break
-            new_batch_predictions=model_wrapper.predict(x,50)
+            new_batch_predictions=model_wrapper.predict(x,batch_size_predict)
             y_shape=y[sample_output_name].shape 
             for output_name in y.keys():
                 true_y[output_name][samples_used:samples_used+y_shape[0]]=y[output_name]
