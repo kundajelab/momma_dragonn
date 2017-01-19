@@ -131,6 +131,8 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
     def balanced_generator(self,predict_mode=False):
         raise("Balanced generator not implemented!!")
     
+
+
     
     #generate at least one item in a batch for each class
     #only relevant for classification tasks (not regression)
@@ -204,7 +206,49 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
                     else:
                         yield tuple([x_batch, y_batch])
 
-    
+
+    @threadsafe_generator
+    def non_randomized_generator(self,predict_mode=False):
+        self.num_generated=0
+        self.permutation_index=0
+        while True:
+            if (self.num_generated >=self.num_items):
+                self.permutation_index=0
+            x_batch={}
+            y_batch={}
+            weight_batch={}
+            start_index=self.permutation_index
+            end_index=self.permutation_index+self.batch_size_train
+            for input_mode in self.input_modes:
+                x_batch[input_mode] = np.asarray(self.X[input_mode][start_index:end_index])
+            for output_mode in self.output_modes:
+                y_batch[output_mode] = np.asarray(self.Y[output_mode][start_index:end_index])
+            if self.use_weights:
+                for output_mode in self.weight:
+                    weight_batch[output_mode] = np.squeeze(np.asarray(self.weight[output_mode][start_index:end_index]))
+
+            self.permutation_index=end_index
+            self.num_generated+=(end_index-start_index)
+            if predict_mode==True:
+                #the generator will be used to generate values at test time of the model.
+                yield tuple([x_batch,y_batch])
+            
+            elif (self.bundle_x_and_y_in_generator):
+                #data_batch = tuple([x_batch,y_batch])
+                data_batch={} 
+                data_batch.update(x_batch)
+                data_batch.update(y_batch)
+                if self.use_weights:
+                    yield tuple([data_batch, weight_batch])
+                else:
+                    yield data_batch 
+            else:
+                if self.use_weights: 
+                    yield tuple([x_batch, y_batch, weight_batch])
+                else:
+                    yield tuple([x_batch, y_batch]) 
+
+            
     #this is for the training step, we cycle through all examples
     @threadsafe_generator
     def standard_generator(self,predict_mode=False):   
@@ -258,6 +302,8 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             return self.min1_per_class_batch_generator(predict_mode)
         elif self.generator_type=="balanced":
             return self.balanced_generator(predict_mode)
+        elif self.generator_type=="non_randomized":
+            return self.non_randomized_generator(predict_mode) 
         else:
             raise Exception("invalid type of generator specified!!")
 
