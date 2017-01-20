@@ -26,8 +26,8 @@ class EmailCallback(AbstractEndOfTrainingCallback):
                 performance_history.get_best_valid_epoch_perf_info() 
             current_best_valid_key_metric = current_best_valid_perf_info\
                                             .valid_key_metric
-            subject = ("training ended"+
-                       (" for "+str(message)+" " if message!="" else "")+
+            subject = ("finished"+
+                       (" "+str(message)+" " if message!="" else "")+
                        " with perf: "+str(current_best_valid_key_metric)) 
 
             contents = json.dumps(OrderedDict([
