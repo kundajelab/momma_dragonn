@@ -16,8 +16,11 @@ def momma_dragonn_train(options):
                             options.evaluator_config)
     larger_is_better = model_evaluator.is_larger_better_for_key_metric()
 
-    end_of_epoch_callbacks = momma_dragonn.loaders.load_end_of_epoch_callbacks(
+    end_of_epoch_callbacks = momma_dragonn.loaders.load_epoch_callbacks(
                                 config=options.end_of_epoch_callbacks_config)
+    start_of_epoch_callbacks = ([] if options.start_of_epoch_callbacks_config is None
+                                else momma_dragonn.loaders.load_epoch_callbacks(
+                                config=options.start_of_epoch_callbacks_config))
 
     end_of_training_callbacks =\
         momma_dragonn.loaders.load_end_of_training_callbacks(
@@ -42,6 +45,7 @@ def momma_dragonn_train(options):
                 valid_data_loader=valid_data_loader,
                 other_data_loaders=other_data_loaders,
                 end_of_epoch_callbacks=end_of_epoch_callbacks,
+                start_of_epoch_callbacks=start_of_epoch_callbacks,
                 error_callbacks=[])
 
         model_trainer_config = model_trainer
@@ -66,6 +70,7 @@ if __name__ == "__main__":
     parser.add_argument("--valid_data_loader_config", default="config/valid_data_loader_config.yaml")
     parser.add_argument("--evaluator_config", default="config/evaluator_config.yaml")
     parser.add_argument("--end_of_epoch_callbacks_config", default="config/end_of_epoch_callbacks_config.yaml")
+    parser.add_argument("--start_of_epoch_callbacks_config", default=None)
     parser.add_argument("--end_of_training_callbacks_config", default="config/end_of_training_callbacks_config.yaml")
     parser.add_argument("--hyperparameter_configs_list", default="config/hyperparameter_configs_list.yaml")
     options = parser.parse_args();

@@ -161,8 +161,6 @@ class FlexibleKerasSequential(FlexibleKeras):
         #the random seed can be set by the model trainer BEFORE the import
         import numpy as np
         np.random.seed(seed)
-        import random
-        random.seed(seed)
         import keras
         from keras.models import Sequential
         model = Sequential()

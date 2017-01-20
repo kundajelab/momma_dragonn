@@ -49,13 +49,13 @@ def load_model_evaluator(config, extra_kwargs={}):
                 module_prefix="momma_dragonn.model_evaluators.")
 
 
-def load_end_of_epoch_callbacks(config):
+def load_epoch_callbacks(config):
     config = fp.load_yaml_if_string(config)
-    end_of_epoch_callbacks = [
+    epoch_callbacks = [
         load_class_from_config(config=callback_config,
-            module_prefix="momma_dragonn.end_of_epoch_callbacks.")
+            module_prefix="momma_dragonn.epoch_callbacks.")
         for callback_config in config] 
-    return end_of_epoch_callbacks
+    return epoch_callbacks
 
 
 def load_end_of_training_callbacks(config, key_metric_name, larger_is_better):

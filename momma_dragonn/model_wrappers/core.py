@@ -3,8 +3,9 @@ from avutils import util
 class AbstractModelWrapper(object):
 
     def __init__(self):
-        import numpy as np
-        np.random.seed(None) #to make sure the id is randomly generated
+        #import numpy as np
+        import random
+        random.seed(None) #to make sure the id is randomly generated
         #randomly generated string to use as an id 
         self.random_string = util.get_random_string(5)
         print("Randomly generated id "+str(self.random_string))

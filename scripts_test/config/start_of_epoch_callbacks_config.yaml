@@ -1,0 +1,7 @@
+[
+    {"class": "SaveModelSnapshot",
+     "kwargs": {"prefix": "start",
+                "directory": "snapshots",
+                },
+    }
+]

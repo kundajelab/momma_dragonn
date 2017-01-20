@@ -16,7 +16,22 @@ class SaveBestValidModel(AbstractPerEpochCallback):
         if (is_new_best_valid_perf):
             model_wrapper.create_files_to_save(
                 directory=self.directory,
-                prefix="model_"+model_wrapper.random_string)
+                prefix="model_"+model_wrapper.random_string,
+                update_last_saved=True)
+
+
+class SaveModelSnapshot(AbstractPerEpochCallback):
+
+    def __init__(self, prefix, directory):
+        self.prefix = prefix
+        self.directory = directory
+
+    def  __call__(self, model_wrapper, epoch, **kwargs):
+        model_wrapper.create_files_to_save(
+            directory=self.directory+"/"+model_wrapper.random_string,
+            prefix=self.prefix+"_epoch"+str(epoch)
+                              +"_model_"+model_wrapper.random_string,
+            update_last_saved=False)
 
 
 class PrintPerfAfterEpoch(AbstractPerEpochCallback):

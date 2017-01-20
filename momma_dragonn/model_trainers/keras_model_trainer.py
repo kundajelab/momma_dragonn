@@ -29,7 +29,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
  
     def train(self, model_creator, model_evaluator,
                     valid_data_loader, other_data_loaders,
-                    end_of_epoch_callbacks, error_callbacks):
+                    end_of_epoch_callbacks, start_of_epoch_callbacks,
+                    error_callbacks):
 
         print("Setting seed "+str(self.seed))
         import numpy as np
@@ -62,6 +63,13 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         best_valid_perf_finder = util.init_get_best(is_larger_better)
 
         class MommaDragonnEpochEndCallback(keras.callbacks.Callback):
+
+            def on_epoch_begin(self, epoch, logs=None):
+                for start_of_epoch_callback in start_of_epoch_callbacks:
+                    start_of_epoch_callback( #written for snapshot saving
+                        epoch=epoch,
+                        model_wrapper=model_wrapper)
+
             def on_epoch_end(self, epoch, logs=None):
                 
                 epoch_external.var = epoch

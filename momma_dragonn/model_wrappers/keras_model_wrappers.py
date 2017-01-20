@@ -21,17 +21,18 @@ class KerasModelWrapper(AbstractModelWrapper):
         json_file = file_path_prefix+"_modelJson.json"
         return weights_file, json_file
 
-    def create_files_to_save(self, directory, prefix):
+    def create_files_to_save(self, directory, prefix, update_last_saved):
         util.create_dir_if_not_exists(directory)   
         weights_file, json_file = self.generate_file_names(
                                         directory, prefix)
         self.model.save_weights(weights_file,overwrite=True)
         fp.write_to_file(json_file, self.model.to_json())
-        self.last_saved_files_config =\
-            OrderedDict([('weights_file', weights_file),
-                         ('json_file', json_file),
-                         ('directory', directory),
-                         ('prefix', prefix)])
+        if (update_last_saved): #for tracking best validation set
+            self.last_saved_files_config =\
+                OrderedDict([('weights_file', weights_file),
+                             ('json_file', json_file),
+                             ('directory', directory),
+                             ('prefix', prefix)])
         
     def prefix_to_last_saved_files(self, prefix, new_directory=None):
         if new_directory is None:
