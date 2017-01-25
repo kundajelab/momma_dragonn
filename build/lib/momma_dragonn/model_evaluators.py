@@ -233,7 +233,9 @@ def recall_at_fdr_function(predictions,true_y,thresh):
                 break;
         for thresholdPair in thresholdPairs:
             toReturnDict[thresholdPairs[0][0]]=0.0
-        return [toReturnDict['recallAtFDR'+str(thresh)]]
+        recall_at_fdr_vals.append(toReturnDict['recallAtFDR'+str(thresh)])
+    return recall_at_fdr_vals
+
 
 AccuracyStats = util.enum(
     auROC="auROC",
