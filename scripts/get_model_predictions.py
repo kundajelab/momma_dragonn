@@ -5,7 +5,33 @@ import keras
 from keras.legacy.models import *
 from momma_dragonn.model_evaluators import *
 import pickle
+import numpy as np 
 import pdb
+
+@threadsafe_generator
+def get_predictions(hdf5_source,batch_size,individual_task_output_shape,output_task_names,model):
+    num_generated=0
+    total_entries=hdf5_source.values()[0].shape[0]
+    input_modes=hdf5_source.keys() 
+    print("total entries:"+str(total_entries))
+    predictions={}
+    for task in output_task_names:
+        predictions[task]=np.zeros(individual_task_output_shape)
+    print("initialized output dictionary for predictions")    
+    while num_generated < total_entries:
+        print str(num_generated) 
+        start_index=num_generated
+        end_index=min([total_entries,start_index+batch_size])
+        x_batch={}  
+        for input_mode in input_modes: 
+            x_batch[input_mode] = hdf5_source[input_mode][start_index:end_index]
+        predictions_batch=model.predict(x_batch)
+        #add the predictions to the dictionary
+        for task in output_task_names:
+            predictions[task][start_index:end_index]=predictions_batch[task]
+        num_generated+=(end_index-start_index)
+    return predictions 
+
 
 def parse_args():
     parser=argparse.ArgumentParser(description='Provide a model yaml & weights files & a dataset, get model predictions and accuracy metrics')
@@ -14,7 +40,8 @@ def parse_args():
     parser.add_argument('--data',help='hdf5 file that stores the data')
     parser.add_argument('--predictions_pickle',help='name of pickle to save predictions')
     parser.add_argument('--accuracy_metrics_file',help='file name to save accuracy metrics')
-    parser.add_argument('--predictions_pickle_to_load',help="if predictions have already been generated, provide a pickle with them to just compute the accuracy metrics",default=None) 
+    parser.add_argument('--predictions_pickle_to_load',help="if predictions have already been generated, provide a pickle with them to just compute the accuracy metrics",default=None)
+    parser.add_argument('--batch_size',type=int,help='batch size to use to make model predictions',default=50)
     return parser.parse_args()
 
 def main():
@@ -35,8 +62,13 @@ def main():
         model.load_weights(args.weights)
         print("loaded model weights")
 
-        #get the model predictions
-        predictions=model.predict(inputs)
+        #get the model predictions in a batch-like manner
+        batch_size=args.batch_size
+
+        output_task_names=outputs.keys()
+        individual_task_output_shape=outputs.values()[0].shape
+        predictions=get_predictions(inputs,args.batch_size,individual_task_output_shape,output_task_names,model)
+        #predictions=model.predict(inputs)
         print('got model predictions')
 
         #pickle the predictions in case an error occurs downstream
