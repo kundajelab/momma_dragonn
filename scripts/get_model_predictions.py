@@ -8,7 +8,6 @@ import pickle
 import numpy as np 
 import pdb
 
-@threadsafe_generator
 def get_predictions(hdf5_source,batch_size,individual_task_output_shape,output_task_names,model):
     num_generated=0
     total_entries=hdf5_source.values()[0].shape[0]
