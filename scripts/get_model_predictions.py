@@ -1,8 +1,8 @@
 import argparse
+import json
 import yaml 
 import h5py 
 import keras
-from keras.legacy.models import *
 from momma_dragonn.model_evaluators import *
 import pickle
 import numpy as np 
@@ -26,8 +26,12 @@ def get_predictions(hdf5_source,batch_size,individual_task_output_shape,output_t
             x_batch[input_mode] = hdf5_source[input_mode][start_index:end_index]
         predictions_batch=model.predict(x_batch)
         #add the predictions to the dictionary
+        #pdb.set_trace() 
         for task in output_task_names:
-            predictions[task][start_index:end_index]=predictions_batch[task]
+            if type(predictions_batch)!=type({}):
+                predictions[task][start_index:end_index]=predictions_batch#[task]
+            else:
+                predictions[task][start_index:end_index]=predictions_batch[task]
         num_generated+=(end_index-start_index)
     return predictions 
 
@@ -36,11 +40,13 @@ def parse_args():
     parser=argparse.ArgumentParser(description='Provide a model yaml & weights files & a dataset, get model predictions and accuracy metrics')
     parser.add_argument('--yaml',help='yaml file that stores model architecture')
     parser.add_argument('--weights',help='hdf5 file that stores model weights')
+    parser.add_argument('--model_hdf5',help="hdf5 file that stores model architecture & weights")
     parser.add_argument('--data',help='hdf5 file that stores the data')
     parser.add_argument('--predictions_pickle',help='name of pickle to save predictions')
     parser.add_argument('--accuracy_metrics_file',help='file name to save accuracy metrics')
     parser.add_argument('--predictions_pickle_to_load',help="if predictions have already been generated, provide a pickle with them to just compute the accuracy metrics",default=None)
     parser.add_argument('--batch_size',type=int,help='batch size to use to make model predictions',default=50)
+    parser.add_argument('--model_type',help="graph,functional,sequential")
     return parser.parse_args()
 
 def main():
@@ -51,16 +57,36 @@ def main():
     outputs=data['Y']
 
     if args.predictions_pickle_to_load==None: 
-        #get the model 
-        yaml_string=open(args.yaml,'r').read()
-        model_config=yaml.load(yaml_string)
-        model=Graph.from_config(model_config)
-        print("got model architecture")
+        #get the model
+        if (args.model_hdf5!=None):
+            model_hdf5=h5py.File(args.model_hdf5)
+            model_config=model_hdf5.attrs.get('model_config')
+            model_config=json.loads(model_config.decode('utf-8'))
 
-        #load the model weights
-        model.load_weights(args.weights)
-        print("loaded model weights")
+            model_weights=model_hdf5['model_weights']
 
+            if args.model_type=="graph":
+                from keras.legacy.models import *
+                model=Graph.from_config(model_config)
+            else:
+                from keras.models import *
+                model=model_from_config(model_config)
+            model.load_weights_from_hdf5_group(model_weights)
+        else:
+            yaml_string=open(args.yaml,'r').read()
+            model_config=yaml.load(yaml_string)
+            if args.model_type=="graph":
+                from keras.legacy.models import *
+                model=Graph.from_config(model_config)
+            else:
+                from keras.models import * 
+                model=model_from_config(model_config)
+            print("got model architecture")
+            #load the model weights
+            model.load_weights(args.weights)
+            #print(str(model.count_params()))
+            #pdb.set_trace() 
+            print("loaded model weights")
         #get the model predictions in a batch-like manner
         batch_size=args.batch_size
 
