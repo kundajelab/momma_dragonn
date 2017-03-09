@@ -12,7 +12,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
     def __init__(self, stopping_criterion_config,
                        class_weight=None,
                        seed=1234,
-                       nb_worker=1):
+                       nb_worker=1,
+                       max_q_size=10):
         np.random.seed(seed)
         self.stopping_criterion_config = stopping_criterion_config
         if (class_weight is not None):
@@ -22,10 +23,12 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
             self.class_weight = None
         self.seed=seed
         self.nb_worker=nb_worker
-
+        self.max_q_size=max_q_size
+        
     def get_jsonable_object(self):
         return OrderedDict([
                 ('nb_worker', self.nb_worker),
+                ('max_q_size',self.max_q_size),
                 ('stopping_criterion_config', self.stopping_criterion_config),
                 ('class_weight', self.class_weight)])
  
@@ -60,7 +63,6 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         #training phase
         train_gen=train_data_loader.get_batch_generator()
         valid_gen=valid_data_loader.get_batch_generator()
-
         try:
             while (not stopping_criterion.stop_training()):
                 model_wrapper.get_model().fit_generator(
@@ -70,8 +72,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                     nb_val_samples=valid_samples_per_epoch,
                     nb_epoch=1,
                     nb_worker=self.nb_worker,
-                    class_weight=self.class_weight)
-                
+                    max_q_size=self.max_q_size,
+                    class_weight=self.class_weight)                
 
                 #train_data_for_eval = train_data_loader.get_data_for_eval()
                 #anticipating very large unbalanced datasets,

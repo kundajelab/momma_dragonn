@@ -1,6 +1,7 @@
 from .core import AbstractModelCreator
 from avutils.dynamic_enum import Key, Keys
 import keras
+from keras.metrics import * 
 from collections import OrderedDict
 import keras
 from ..model_wrappers import keras_model_wrappers
@@ -111,7 +112,8 @@ class FlexibleKerasGraph(AbstractModelCreator):
             dict((key, (val if isinstance(val,dict)==False else
                         load_class_from_config(val))) for
                         (key,val) in self.loss_dictionary.items())
-        graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary)
+        #graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary,metrics=['accuracy','positive_accuracy','negative_accuracy','precision','recall','true_positives','false_positives','true_negatives','false_negatives'])
+        graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary,metrics=['positive_accuracy','negative_accuracy'])
         if self.path_to_layer_init!=None:
             graph.load_weights(self.path_to_layer_init)
             print("Loaded custom layer initializations!") 

@@ -220,12 +220,12 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             start_index=self.permutation_index
             end_index=self.permutation_index+self.batch_size_train
             for input_mode in self.input_modes:
-                x_batch[input_mode] = np.asarray(self.X[input_mode][start_index:end_index])
+                x_batch[input_mode] = self.X[input_mode][start_index:end_index]
             for output_mode in self.output_modes:
-                y_batch[output_mode] = np.asarray(self.Y[output_mode][start_index:end_index])
+                y_batch[output_mode] = self.Y[output_mode][start_index:end_index]
             if self.use_weights:
                 for output_mode in self.weight:
-                    weight_batch[output_mode] = np.squeeze(np.asarray(self.weight[output_mode][start_index:end_index]))
+                    weight_batch[output_mode] = np.squeeze(self.weight[output_mode][start_index:end_index])
 
             self.permutation_index=end_index
             self.num_generated+=(end_index-start_index)

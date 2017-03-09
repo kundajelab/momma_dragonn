@@ -247,6 +247,10 @@ AccuracyStats = util.enum(
     num_positives="num_positives",
     num_negatives="num_negatives",
     onehot_rows_crossent="onehot_rows_crossent",
+    recall_at_fdr50="recallAtFDR50",
+    recall_at_fdr20="recallAtFDR20",
+    recall_at_fdr10="recallAtFDR10",
+    recall_at_fdr1="recallAtFDR1",
     recall_at_fdr="recallAtFDR")
 
 compute_func_lookup = {
@@ -255,6 +259,10 @@ compute_func_lookup = {
     AccuracyStats.balanced_accuracy: balanced_accuracy,
     AccuracyStats.unbalanced_accuracy: unbalanced_accuracy,
     AccuracyStats.onehot_rows_crossent:onehot_rows_crossent_func,
+    AccuracyStats.recall_at_fdr50: recall_at_fdr_function,
+    AccuracyStats.recall_at_fdr20: recall_at_fdr_function,
+    AccuracyStats.recall_at_fdr10: recall_at_fdr_function,
+    AccuracyStats.recall_at_fdr1: recall_at_fdr_function,
     AccuracyStats.recall_at_fdr: recall_at_fdr_function,
     AccuracyStats.positives_accuracy:positives_accuracy,
     AccuracyStats.negatives_accuracy:negatives_accuracy,
@@ -267,6 +275,10 @@ is_larger_better_lookup = {
     AccuracyStats.balanced_accuracy: True,
     AccuracyStats.unbalanced_accuracy: True,
     AccuracyStats.onehot_rows_crossent: False,
+    AccuracyStats.recall_at_fdr50: True,
+    AccuracyStats.recall_at_fdr20: True,
+    AccuracyStats.recall_at_fdr10: True,
+    AccuracyStats.recall_at_fdr1: True,
     AccuracyStats.recall_at_fdr: True
 }
 
@@ -306,7 +318,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
             predictions[output_name]=np.zeros((samples_to_use,y_shape[1]))
             predictions[output_name][samples_used:samples_used+y_shape[0]]=new_batch_predictions[output_name] 
         samples_used+=y_shape[0]
-        print(str(samples_used))
+        #print(str(samples_used))
         while len(x.values())>0:
             data_batch=next(data_generator)
             x=data_batch[0]
@@ -319,7 +331,7 @@ class GraphAccuracyStats(AbstractModelEvaluator):
                 true_y[output_name][samples_used:samples_used+y_shape[0]]=y[output_name]
                 predictions[output_name][samples_used:samples_used+y_shape[0]]=new_batch_predictions[output_name]
             samples_used+=y_shape[0]
-            print(str(samples_used))
+            #print(str(samples_used))
         return predictions,true_y
     
     def compute_key_metric(self, model_wrapper, data_generator, samples_to_use, batch_size):

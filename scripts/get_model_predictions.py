@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument('--weights',help='hdf5 file that stores model weights')
     parser.add_argument('--model_hdf5',help="hdf5 file that stores model architecture & weights")
     parser.add_argument('--data',help='hdf5 file that stores the data')
-    parser.add_argument('--predictions_pickle',help='name of pickle to save predictions')
+    parser.add_argument('--predictions_pickle',help='name of pickle to save predictions',default=None)
     parser.add_argument('--accuracy_metrics_file',help='file name to save accuracy metrics')
     parser.add_argument('--predictions_pickle_to_load',help="if predictions have already been generated, provide a pickle with them to just compute the accuracy metrics",default=None)
     parser.add_argument('--batch_size',type=int,help='batch size to use to make model predictions',default=50)
@@ -62,7 +62,6 @@ def main():
             model_hdf5=h5py.File(args.model_hdf5)
             model_config=model_hdf5.attrs.get('model_config')
             model_config=json.loads(model_config.decode('utf-8'))
-
             model_weights=model_hdf5['model_weights']
 
             if args.model_type=="graph":
@@ -72,6 +71,7 @@ def main():
                 from keras.models import *
                 model=model_from_config(model_config)
             model.load_weights_from_hdf5_group(model_weights)
+            
         else:
             yaml_string=open(args.yaml,'r').read()
             model_config=yaml.load(yaml_string)
@@ -98,9 +98,10 @@ def main():
 
         #pickle the predictions in case an error occurs downstream
         #this will allow for easy recovery of model predictions without having to regenerate them
-        with open(args.predictions_pickle,'wb') as handle:
-            pickle.dump(predictions,handle,protocol=pickle.HIGHEST_PROTOCOL)
-        print("pickled the model predictions to file:"+str(args.predictions_pickle))
+        if args.predictions_pickle!=None:
+            with open(args.predictions_pickle,'wb') as handle:
+                pickle.dump(predictions,handle,protocol=pickle.HIGHEST_PROTOCOL)
+            print("pickled the model predictions to file:"+str(args.predictions_pickle))
     else:
         with open(args.predictions_pickle_to_load,'rb') as handle:
              predictions=pickle.load(handle)
