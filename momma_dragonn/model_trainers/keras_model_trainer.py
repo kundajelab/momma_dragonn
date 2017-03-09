@@ -4,7 +4,6 @@ from momma_dragonn.performance_history import PerformanceHistory
 from collections import OrderedDict
 import avutils.util as util
 import traceback
-import numpy as np
 
 class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
@@ -12,8 +11,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                        stopping_criterion_config,
                        class_weight=None,
                        seed=1234):
-        np.random.seed(seed)
-
+        self.seed = seed 
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
         if (class_weight is not None):
@@ -24,13 +22,26 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
     def get_jsonable_object(self):
         return OrderedDict([
+                ('seed', self.seed),
                 ('samples_per_epoch', self.samples_per_epoch),
                 ('stopping_criterion_config', self.stopping_criterion_config),
                 ('class_weight', self.class_weight)])
  
-    def train(self, model_wrapper, model_evaluator,
+    def train(self, model_creator, model_evaluator,
                     valid_data_loader, other_data_loaders,
-                    end_of_epoch_callbacks, error_callbacks):
+                    end_of_epoch_callbacks, start_of_epoch_callbacks,
+                    error_callbacks):
+
+        print("Setting seed "+str(self.seed))
+        import numpy as np
+        np.random.seed(self.seed)
+
+        print("Importing keras...")
+        import keras
+
+        print("Getting model...")
+        model_wrapper = model_creator.get_model_wrapper(seed=self.seed)
+        print("Got model")
 
         is_larger_better = model_evaluator.is_larger_better_for_key_metric()
 
@@ -48,16 +59,21 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         performance_history = PerformanceHistory()
 
         training_metadata = OrderedDict() 
-        epoch = 0
+        epoch_external = util.VariableWrapper(0)
         best_valid_perf_finder = util.init_get_best(is_larger_better)
-        try:
-            while (not stopping_criterion.stop_training()):
-                model_wrapper.get_model().fit_generator(
-                    train_data_loader.get_batch_generator(),
-                    samples_per_epoch=self.samples_per_epoch,
-                    nb_epoch=1,
-                    class_weight=self.class_weight)
 
+        class MommaDragonnEpochEndCallback(keras.callbacks.Callback):
+
+            def on_epoch_begin(self, epoch, logs=None):
+                for start_of_epoch_callback in start_of_epoch_callbacks:
+                    start_of_epoch_callback( #written for snapshot saving
+                        epoch=epoch,
+                        model_wrapper=model_wrapper)
+
+            def on_epoch_end(self, epoch, logs=None):
+                
+                epoch_external.var = epoch
+ 
                 train_data_for_eval = train_data_loader.get_data_for_eval()
 
                 train_key_metric = model_evaluator.compute_key_metric(
@@ -68,7 +84,6 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                                     model_wrapper=model_wrapper,
                                     data=valid_data,
                                     batch_size=train_data_loader.batch_size)
-                epoch += 1
 
                 new_best = best_valid_perf_finder.process(epoch,
                                                           valid_key_metric)
@@ -78,14 +93,15 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                     train_key_metric=train_key_metric,
                     valid_key_metric=valid_key_metric)
                 if (new_best):
-                    valid_all_stats = model_evaluator.compute_all_stats(
+                    print("New best")
+                    self.valid_all_stats = model_evaluator.compute_all_stats(
                                     model_wrapper=model_wrapper,
                                     data=valid_data,
                                     batch_size=train_data_loader.batch_size)
                     performance_history.update_best_valid_epoch_perf_info(
                         epoch=epoch, valid_key_metric=valid_key_metric,
                         train_key_metric=train_key_metric,
-                        valid_all_stats=valid_all_stats)
+                        valid_all_stats=self.valid_all_stats)
 
                 for end_of_epoch_callback in end_of_epoch_callbacks:
                     end_of_epoch_callback(#handles intermediate model saving
@@ -93,27 +109,37 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                         model_wrapper=model_wrapper,
                         valid_key_metric=valid_key_metric,
                         train_key_metric=train_key_metric,
-                        valid_all_stats=valid_all_stats,
+                        valid_all_stats=self.valid_all_stats,
                         is_new_best_valid_perf=new_best,
                         performance_history=performance_history)
 
+                if (stopping_criterion.stop_training()):
+                    self.model.stop_training = True 
+
+        try:
+            model_wrapper.get_model().fit_generator(
+                train_data_loader.get_batch_generator(),
+                samples_per_epoch=self.samples_per_epoch,
+                nb_epoch=10000,
+                class_weight=self.class_weight,
+                callbacks=[MommaDragonnEpochEndCallback()])
             training_metadata['termination_condition'] = "normal"
         except (KeyboardInterrupt):
             print("\nTraining was interrupted at epoch ",
-                     epoch,"with a keyboard interrupt")
+                     epoch_external.var,"with a keyboard interrupt")
             training_metadata['termination_condition']= "KeyboardInterrupt"
         except Exception as e:
             traceback_str = str(traceback.format_exc())
             print(traceback_str) 
             print("\nTraining was interrupted at epoch ",
-                     epoch,"with an exception")
+                     epoch_external.var,"with an exception")
             for error_callback in error_callbacks:
                 error_callback(exception=e,
                                traceback_str=traceback_str,
-                               epoch=epoch)
+                               epoch=epoch_external.var)
             training_metadata['termination_condition']= str(type(e)) 
         finally:
-            training_metadata['total_epochs_trained_for']=epoch
+            training_metadata['total_epochs_trained_for']=epoch_external.var
 
         return model_wrapper, performance_history, training_metadata
         
