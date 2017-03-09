@@ -63,6 +63,7 @@ class FlexibleKerasGraph(FlexibleKeras):
         self.optimizer_config = optimizer_config
         self.loss_dictionary = loss_dictionary
 
+
     def get_model_wrapper(self, seed):
         model_wrapper = keras_model_wrappers.KerasGraphModelWrapper()
         model_wrapper.set_model(self.get_model(seed=seed))
@@ -76,7 +77,7 @@ class FlexibleKerasGraph(FlexibleKeras):
                 ('optimizer_config', self.optimizer_config),
                 ('loss_dictionary', self.loss_dictionary)])
 
-    def _get_uncompiled_model(self):
+    def _get_uncompiled_model(self,seed):
         from keras.legacy.models import Graph 
         graph = Graph()
         self._add_inputs(graph) 

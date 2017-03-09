@@ -31,7 +31,6 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                     valid_data_loader, other_data_loaders,
                     end_of_epoch_callbacks, start_of_epoch_callbacks,
                     error_callbacks):
-
         print("Setting seed "+str(self.seed))
         import numpy as np
         np.random.seed(self.seed)

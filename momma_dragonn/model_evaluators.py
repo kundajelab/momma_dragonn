@@ -3,7 +3,7 @@ from sklearn.metrics import average_precision_score
 import numpy as np
 import avutils.util as util
 from collections import OrderedDict
-import pdb 
+
 
 class AbstractModelEvaluator(object):
 
@@ -180,7 +180,6 @@ class GraphAccuracyStats(AbstractModelEvaluator):
 
     def compute_key_metric(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
-        pdb.set_trace() 
         return self.compute_summary_stat(
                     per_output_stats=self.compute_per_output_stats(
                                       predictions=predictions,
@@ -205,7 +204,6 @@ class GraphAccuracyStats(AbstractModelEvaluator):
 
     def compute_all_stats(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
-        pdb.set_trace() 
         all_stats = OrderedDict()
         for metric_name in self.all_metrics:
             per_output_stats = self.compute_per_output_stats( 
@@ -234,14 +232,12 @@ class SequentialAccuracyStats(AbstractModelEvaluator):
 
     def compute_key_metric(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
-        pdb.set_trace() 
         return np.mean(compute_func_lookup[self.key_metric](
             predictions=predictions,
             true_y=data.Y))
 
     def compute_all_stats(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
-        pdb.set_trace() 
         all_stats = OrderedDict()
         for metric_name in self.all_metrics:
             per_output = compute_func_lookup[metric_name](
