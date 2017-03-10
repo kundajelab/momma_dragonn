@@ -38,9 +38,10 @@ def get_predictions(hdf5_source,batch_size,individual_task_output_shape,output_t
 
 def parse_args():
     parser=argparse.ArgumentParser(description='Provide a model yaml & weights files & a dataset, get model predictions and accuracy metrics')
-    parser.add_argument('--yaml',help='yaml file that stores model architecture')
-    parser.add_argument('--weights',help='hdf5 file that stores model weights')
-    parser.add_argument('--model_hdf5',help="hdf5 file that stores model architecture & weights")
+    parser.add_argument('--yaml',help='yaml file that stores model architecture',default=None)
+    parser.add_argument('--json',help='json file that stores model architecture',default=None)
+    parser.add_argument('--weights',help='hdf5 file that stores model weights',default=None)
+    parser.add_argument('--model_hdf5',help="hdf5 file that stores model architecture & weights",default=None)
     parser.add_argument('--data',help='hdf5 file that stores the data')
     parser.add_argument('--predictions_pickle',help='name of pickle to save predictions',default=None)
     parser.add_argument('--accuracy_metrics_file',help='file name to save accuracy metrics')
@@ -65,7 +66,8 @@ def main():
             model_weights=model_hdf5['model_weights']
 
             if args.model_type=="graph":
-                from keras.legacy.models import *
+                #from keras.legacy.models import *
+                from keras.models import * 
                 model=Graph.from_config(model_config)
             else:
                 from keras.models import *
@@ -73,10 +75,14 @@ def main():
             model.load_weights_from_hdf5_group(model_weights)
             
         else:
-            yaml_string=open(args.yaml,'r').read()
-            model_config=yaml.load(yaml_string)
+            if args.yaml!=None:
+                yaml_string=open(args.yaml,'r').read()
+                model_config=yaml.load(yaml_string)
+            else:
+                model_config=json.loads(open(args.json).read())
             if args.model_type=="graph":
-                from keras.legacy.models import *
+                #from keras.legacy.models import *
+                from keras.models import *
                 model=Graph.from_config(model_config)
             else:
                 from keras.models import * 
