@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=7 python deeplift.py --model_hdf5 ../models/optimal_deep_learning_model5.hdf5 --hdf5 ref.seq.inputs.hdf5 --gdl_file ref.seq.inputs.gdl --chromputer_mark david.bassetlike --output_dir david.bassetlike --save_scores --batch_size 100 --default_input_mode_name sequence --pre_activation_target_layer_name fc_2 --numtasks=61 --model_type sequential 

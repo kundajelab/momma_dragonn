@@ -48,6 +48,7 @@ def parse_args():
     parser.add_argument('--predictions_pickle_to_load',help="if predictions have already been generated, provide a pickle with them to just compute the accuracy metrics",default=None)
     parser.add_argument('--batch_size',type=int,help='batch size to use to make model predictions',default=50)
     parser.add_argument('--model_type',help="graph,functional,sequential")
+    parser.add_argument('--dot_file',help="dot file to write model for viewing") 
     return parser.parse_args()
 
 def main():
@@ -81,8 +82,8 @@ def main():
             else:
                 model_config=json.loads(open(args.json).read())
             if args.model_type=="graph":
-                #from keras.legacy.models import *
-                from keras.models import *
+                from keras.legacy.models import *
+                #from keras.models import *
                 model=Graph.from_config(model_config)
             else:
                 from keras.models import * 
@@ -90,9 +91,11 @@ def main():
             print("got model architecture")
             #load the model weights
             model.load_weights(args.weights)
-            #print(str(model.count_params()))
-            #pdb.set_trace() 
             print("loaded model weights")
+            #plot the model!
+        from keras.utils.visualize_util import model_to_dot
+        dot_object=model_to_dot(model,show_shapes=True,show_layer_names=True)
+        dot_object.write(args.dot_file)
         #get the model predictions in a batch-like manner
         batch_size=args.batch_size
 
