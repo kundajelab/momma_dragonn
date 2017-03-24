@@ -77,8 +77,13 @@ class FlexibleKerasGraph(FlexibleKeras):
                 ('optimizer_config', self.optimizer_config),
                 ('loss_dictionary', self.loss_dictionary)])
 
-    def _get_uncompiled_model(self,seed):
-        from keras.legacy.models import Graph 
+    def _get_uncompiled_model(self, seed):
+        #it is important that keras is only imported here so that
+        #the random seed can be set by the model trainer BEFORE the import
+        import numpy as np
+        np.random.seed(seed)
+        import keras
+        from keras.models import Graph
         graph = Graph()
         self._add_inputs(graph) 
         self._add_nodes(graph)
