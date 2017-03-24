@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import yaml
 from avutils import file_processing as fp
 from avutils import util
 import re

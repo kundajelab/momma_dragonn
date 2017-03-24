@@ -58,3 +58,9 @@ class KerasGraphModelWrapper(KerasModelWrapper):
 
     def predict(self, X, batch_size):
         return self.model.predict(X,batch_size=batch_size)
+
+
+class KerasFunctionalModelWrapper(KerasModelWrapper):
+
+    def predict(self, X, batch_size):
+        return self.model.predict(X,batch_size=batch_size)

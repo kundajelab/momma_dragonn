@@ -53,7 +53,16 @@ class FlexibleKeras(AbstractModelCreator):
         model.compile(optimizer=optimizer, loss=self._parse_loss()) 
 
 
-class FlexibleKerasGraph(FlexibleKeras):
+class ParseLossDictionaryMixin(object):
+    def _parse_loss(self):
+        parsed_loss_dictionary =\
+            dict((key, (val if isinstance(val,dict)==False else
+                        load_class_from_config(val))) for
+                        (key,val) in self.loss_dictionary.items())
+        return parsed_loss_dictionary
+
+
+class FlexibleKerasGraph(FlexibleKeras, ParseLossDictionaryMixin):
 
     def __init__(self, inputs_config, nodes_config, outputs_config,
                        optimizer_config, loss_dictionary):
@@ -125,12 +134,140 @@ class FlexibleKerasGraph(FlexibleKeras):
         for output_config in self.outputs_config:
             graph.add_output(**output_config) 
 
-    def _parse_loss(self):
-        parsed_loss_dictionary =\
-            dict((key, (val if isinstance(val,dict)==False else
-                        load_class_from_config(val))) for
-                        (key,val) in self.loss_dictionary.items())
-        return parsed_loss_dictionary
+
+class FlexibleKerasFunctional(FlexibleKeras, ParseLossDictionaryMixin):
+
+    def __init__(self, input_names,
+                       nodes_config,
+                       output_names,
+                       optimizer_config,
+                       loss_dictionary,
+                       shared_layers_config={}):
+        self.input_names = input_names
+        self.nodes_config = nodes_config
+        self.output_names = output_names
+        self.optimizer_config = optimizer_config
+        self.loss_dictionary = loss_dictionary
+        self.shared_layers_config = shared_layers_config
+
+    def get_model_wrapper(self, seed):
+        model_wrapper = keras_model_wrappers.KerasFunctionalModelWrapper()
+        model_wrapper.set_model(self.get_model(seed=seed))
+        return model_wrapper
+
+    def get_jsonable_object(self):
+        return OrderedDict([
+                ('input_names', self.input_names),
+                ('shared_layers_config', self.shared_layers_config),
+                ('nodes_config', self.nodes_config),
+                ('output_names', self.output_names),
+                ('optimizer_config', self.optimizer_config),
+                ('loss_dictionary', self.loss_dictionary)])
+
+    def _get_uncompiled_model(self, seed):
+        #it is important that keras is only imported here so that
+        #the random seed can be set by the model trainer BEFORE the import
+        import numpy as np
+        np.random.seed(seed)
+        import keras
+
+        #first load all the shared layers, indexed by their name
+        #every shared layer must be given a name so we can refer to
+        #it later on!
+        shared_layers = self._get_shared_layers()
+       
+        name_to_tensor = {} 
+        for node_name, node_config in nodes_config.items():
+            assert_attributes_in_config(node_config,
+                                        ["layer", "input_node_names"]) 
+
+            #collect all the input tensors
+            input_node_names = node_config['input_node_names']
+            if (isinstance(input_node_names, list)):
+                input_tensors = []
+                for node_name in input_node_names:
+                    assert node_name in name_to_tensor,\
+                     (node_name+" hasn't been declared already; declared "
+                      +"node names are: "+str(name_to_tensor.keys()))
+                    input_tensors.append(name_to_tensor[node_name])
+            elif (isinstance(input_node_names, str)):
+                assert node_name in name_to_tensor,\
+                 (node_name+" hasn't been declared already; declared "
+                  +"node names are: "+str(name_to_tensor.keys()))
+                input_tensors = name_to_tensor[node_name] 
+            else:
+                raise RuntimeError("Unsupported type for input_node_names: "
+                      +str(type(input_node_names)))
+
+            #now load the layer.
+            layer_config = node_config['layer']
+            #if 'layer_config' is just a string, it should refer to the
+            #name of a shared layer
+            if (isinstance(layer_config, str)): 
+                assert node_layer_config in shared_layers,\
+                (node_layer_config+" not in shared_layers; shared_layers are: "
+                 +str(shared_layers.keys()))
+                node_tensor = shared_layers[layer_config](input_tensors)
+            #if it's a dictionary, can either be a layer declaration or
+            #a merge function
+            elif (isinstance(layer_config, dict)):
+                assert_attributes_in_config(layer_config, ['class', 'kwargs'])
+                assert 'name' not in layer_config['kwargs'],\
+                 ("Don't declare 'name' within the kwargs; "
+                  +" will use the dictionary key for that. At: "
+                  +str(shared_layer_config))
+                layer_config_class = layer_config['class']
+                #when it's a merge function, we need to pass in input_tensors
+                #as the inputs argument
+                if layer_config_class.endswith('.merge'):
+                    node_tensor = load_class_from_config(
+                                   layer_config,
+                                   extra_kwargs={
+                                    'name': node_name, 
+                                    'inputs': input_tensors})
+                #otherwise, we call the layer object on the input
+                #tensor after it has been instantiated 
+                else:
+                    node_tensor = (load_class_from_config(layer_config,
+                                    extra_kwargs={'name': node_name})
+                                    (input_tensors))
+            else:
+                raise RuntimeError("Unsupported type for node_layer_config "
+                                   +str(type(layer_config)))
+            #record the node tensor according to node_name
+            name_to_tensor[node_name] = node_tensor
+
+        for name in self.input_names+self.output_names:
+            if name not in name_to_tensor:
+                raise RuntimeError("No node with name: "+name
+                  +" declared. Node names are: "+str(name_to_tensor.keys()))
+         
+        from keras.models import Model
+        model = Model(input=[name_to_tensor[x] for x in self.input_names],
+                      output=[name_to_tensor[x] for x in self.output_names])  
+        return model
+
+    def _get_shared_layers(self):
+        shared_layers = {}
+        for name,shared_layer_config in self.shared_layers_config.items():
+            assert_attributes_in_config(shared_layer_config,
+                                        ['class', 'kwargs'])
+            assert 'name' not in shared_layer_config['kwargs'],\
+             ("Don't declare 'name' within the kwargs; will use the dictionary"
+              +" key for that. At: "+str(shared_layer_config))
+            shared_layer = load_class_from_config(
+                            shared_layers_config,
+                            extra_kwargs={'name': name})
+            if (name in shared_layers):
+                raise RuntimeError("Duplicated shared layer: "+str(name))
+            shared_layers[name] = shared_layer
+        return shared_layers
+
+
+def assert_attributes_in_config(config, attributes):
+    for attribute in attributes:
+        assert attribute in config,\
+         "missing attribute "+str(attribute)+" from "+str(config)
 
 
 class FlexibleKerasSequential(FlexibleKeras):
