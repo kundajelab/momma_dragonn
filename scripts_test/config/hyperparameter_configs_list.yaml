@@ -8,7 +8,7 @@
             "kwargs": {
                 "batch_size": 50,
                 "path_to_hdf5": "train_data.hdf5",
-                "num_to_load_for_eval": 3000, #if my training data is YUGE
+                "num_to_load_for_eval": 3000, #if my training data is large
                 #and I only want to load a subset when I'm calculating the
                 #performance stats on the training data, specify this number,
                 #and only that many datapoints of the training data will be used

@@ -178,26 +178,27 @@ class FlexibleKerasFunctional(FlexibleKeras, ParseLossDictionaryMixin):
        
         name_to_tensor = {} 
         for node_name, node_config in nodes_config.items():
-            assert_attributes_in_config(node_config,
-                                        ["layer", "input_node_names"]) 
+            assert_attributes_in_config(node_config, ["layer"]) 
 
-            #collect all the input tensors
-            input_node_names = node_config['input_node_names']
-            if (isinstance(input_node_names, list)):
-                input_tensors = []
-                for node_name in input_node_names:
+            #if layer is not an input layer, collect all the input tensors
+            if (node_config['layer']['class'].endswith(".Input")==False):
+                assert_attributes_in_config(node_config, ["input_node_names"])
+                input_node_names = node_config['input_node_names']
+                if (isinstance(input_node_names, list)):
+                    input_tensors = []
+                    for node_name in input_node_names:
+                        assert node_name in name_to_tensor,\
+                         (node_name+" hasn't been declared already; declared "
+                          +"node names are: "+str(name_to_tensor.keys()))
+                        input_tensors.append(name_to_tensor[node_name])
+                elif (isinstance(input_node_names, str)):
                     assert node_name in name_to_tensor,\
                      (node_name+" hasn't been declared already; declared "
                       +"node names are: "+str(name_to_tensor.keys()))
-                    input_tensors.append(name_to_tensor[node_name])
-            elif (isinstance(input_node_names, str)):
-                assert node_name in name_to_tensor,\
-                 (node_name+" hasn't been declared already; declared "
-                  +"node names are: "+str(name_to_tensor.keys()))
-                input_tensors = name_to_tensor[node_name] 
-            else:
-                raise RuntimeError("Unsupported type for input_node_names: "
-                      +str(type(input_node_names)))
+                    input_tensors = name_to_tensor[node_name] 
+                else:
+                    raise RuntimeError("Unsupported type for input_node_names: "
+                          +str(type(input_node_names)))
 
             #now load the layer.
             layer_config = node_config['layer']
@@ -227,10 +228,13 @@ class FlexibleKerasFunctional(FlexibleKeras, ParseLossDictionaryMixin):
                                     'inputs': input_tensors})
                 #otherwise, we call the layer object on the input
                 #tensor after it has been instantiated 
-                else:
+                elif (layer_config_class.endswith('.Input')):
                     node_tensor = (load_class_from_config(layer_config,
                                     extra_kwargs={'name': node_name})
                                     (input_tensors))
+                else:
+                    node_tensor = load_class_from_config(layer_config,
+                                    extra_kwargs={'name': node_name})
             else:
                 raise RuntimeError("Unsupported type for node_layer_config "
                                    +str(type(layer_config)))
