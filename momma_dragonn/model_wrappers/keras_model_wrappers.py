@@ -62,5 +62,13 @@ class KerasGraphModelWrapper(KerasModelWrapper):
 
 class KerasFunctionalModelWrapper(KerasModelWrapper):
 
+    def __init__(self, output_names, **kwargs):
+        self.output_names = output_names
+        super(KerasFunctionalModelWrapper, self).__init__(**kwargs)
+
     def predict(self, X, batch_size):
-        return self.model.predict(X,batch_size=batch_size)
+        predictions = self.model.predict(X,batch_size=batch_size)
+        if (len(predictions) > len(self.output_names)
+            and len(self.output_names)==1):
+            predictions = [predictions] #got unlisted in background
+        return dict(zip(self.output_names,predictions))

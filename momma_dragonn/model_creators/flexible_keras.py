@@ -151,7 +151,8 @@ class FlexibleKerasFunctional(ParseLossDictionaryMixin, FlexibleKeras):
         self.shared_layers_config = shared_layers_config
 
     def get_model_wrapper(self, seed):
-        model_wrapper = keras_model_wrappers.KerasFunctionalModelWrapper()
+        model_wrapper = keras_model_wrappers.KerasFunctionalModelWrapper(
+                         self.output_names)
         model_wrapper.set_model(self.get_model(seed=seed))
         return model_wrapper
 
