@@ -135,7 +135,7 @@ class FlexibleKerasGraph(FlexibleKeras, ParseLossDictionaryMixin):
             graph.add_output(**output_config) 
 
 
-class FlexibleKerasFunctional(FlexibleKeras, ParseLossDictionaryMixin):
+class FlexibleKerasFunctional(ParseLossDictionaryMixin, FlexibleKeras):
 
     def __init__(self, input_names,
                        nodes_config,
@@ -177,25 +177,28 @@ class FlexibleKerasFunctional(FlexibleKeras, ParseLossDictionaryMixin):
         shared_layers = self._get_shared_layers()
        
         name_to_tensor = {} 
-        for node_name, node_config in nodes_config.items():
+        for node_name, node_config in self.nodes_config.items():
             assert_attributes_in_config(node_config, ["layer"]) 
 
             #if layer is not an input layer, collect all the input tensors
-            if (node_config['layer']['class'].endswith(".Input")==False):
+            if (isinstance(node_config['layer'],str)
+                or node_config['layer']['class'].endswith(".Input")==False):
                 assert_attributes_in_config(node_config, ["input_node_names"])
                 input_node_names = node_config['input_node_names']
                 if (isinstance(input_node_names, list)):
                     input_tensors = []
-                    for node_name in input_node_names:
-                        assert node_name in name_to_tensor,\
-                         (node_name+" hasn't been declared already; declared "
+                    for input_node_name in input_node_names:
+                        assert input_node_name in name_to_tensor,\
+                         (input_node_name
+                          +" hasn't been declared already; declared "
                           +"node names are: "+str(name_to_tensor.keys()))
-                        input_tensors.append(name_to_tensor[node_name])
+                        input_tensors.append(name_to_tensor[input_node_name])
                 elif (isinstance(input_node_names, str)):
-                    assert node_name in name_to_tensor,\
-                     (node_name+" hasn't been declared already; declared "
+                    assert input_node_names in name_to_tensor,\
+                     (input_node_names+" for "+str(node_config)+" hasn't been"
+                      +" declared already; declared "
                       +"node names are: "+str(name_to_tensor.keys()))
-                    input_tensors = name_to_tensor[node_name] 
+                    input_tensors = [name_to_tensor[input_node_names]]
                 else:
                     raise RuntimeError("Unsupported type for input_node_names: "
                           +str(type(input_node_names)))
@@ -205,8 +208,8 @@ class FlexibleKerasFunctional(FlexibleKeras, ParseLossDictionaryMixin):
             #if 'layer_config' is just a string, it should refer to the
             #name of a shared layer
             if (isinstance(layer_config, str)): 
-                assert node_layer_config in shared_layers,\
-                (node_layer_config+" not in shared_layers; shared_layers are: "
+                assert layer_config in shared_layers,\
+                (layer_config+" not in shared_layers; shared_layers are: "
                  +str(shared_layers.keys()))
                 node_tensor = shared_layers[layer_config](input_tensors)
             #if it's a dictionary, can either be a layer declaration or
@@ -229,12 +232,12 @@ class FlexibleKerasFunctional(FlexibleKeras, ParseLossDictionaryMixin):
                 #otherwise, we call the layer object on the input
                 #tensor after it has been instantiated 
                 elif (layer_config_class.endswith('.Input')):
+                    node_tensor = load_class_from_config(layer_config,
+                                    extra_kwargs={'name': node_name})
+                else:
                     node_tensor = (load_class_from_config(layer_config,
                                     extra_kwargs={'name': node_name})
                                     (input_tensors))
-                else:
-                    node_tensor = load_class_from_config(layer_config,
-                                    extra_kwargs={'name': node_name})
             else:
                 raise RuntimeError("Unsupported type for node_layer_config "
                                    +str(type(layer_config)))
@@ -260,7 +263,7 @@ class FlexibleKerasFunctional(FlexibleKeras, ParseLossDictionaryMixin):
              ("Don't declare 'name' within the kwargs; will use the dictionary"
               +" key for that. At: "+str(shared_layer_config))
             shared_layer = load_class_from_config(
-                            shared_layers_config,
+                            shared_layer_config,
                             extra_kwargs={'name': name})
             if (name in shared_layers):
                 raise RuntimeError("Duplicated shared layer: "+str(name))

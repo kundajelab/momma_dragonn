@@ -56,7 +56,7 @@
                 }, 
                 "revcomp_seq": {
                     "layer": {
-                        "class": "Compute1DReverseComplement",
+                        "class": "keras.layers.convolutional.Compute1DReverseComplement",
                         "kwargs": {}
                     }, 
                     "input_node_names": "sequence"
@@ -73,14 +73,14 @@
                     "layer": {
                         "class": "keras.layers.core.Activation", 
                         "kwargs": {"activation": "relu"}
-                    }
+                    },
                     "input_node_names": "fwd_conv1"
                 },
                 "rev_relu1": {
                     "layer": {
                         "class": "keras.layers.core.Activation", 
                         "kwargs": {"activation": "relu"}
-                    }
+                    },
                     "input_node_names": "rev_conv1"
                 },
                 "fwd_conv2": {
@@ -95,14 +95,14 @@
                     "layer": {
                         "class": "keras.layers.core.Activation", 
                         "kwargs": {"activation": "relu"}
-                    }
+                    },
                     "input_node_names": "fwd_conv2"
                 },
                 "rev_relu2": {
                     "layer": {
                         "class": "keras.layers.core.Activation", 
                         "kwargs": {"activation": "relu"}
-                    }
+                    },
                     "input_node_names": "rev_conv2"
                 },
                 "fwd_maxpool": {
@@ -152,7 +152,7 @@
                     "layer": {
                         "class": "keras.layers.core.Activation", 
                         "kwargs": {"activation": "sigmoid"}
-                    }
+                    },
                     "input_node_names": "mean_logits"
                 }
             },
