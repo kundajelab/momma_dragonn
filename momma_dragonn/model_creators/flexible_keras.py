@@ -220,7 +220,7 @@ class FlexibleKerasFunctional(ParseLossDictionaryMixin, FlexibleKeras):
                 assert 'name' not in layer_config['kwargs'],\
                  ("Don't declare 'name' within the kwargs; "
                   +" will use the dictionary key for that. At: "
-                  +str(shared_layer_config))
+                  +str(self.shared_layers_config))
                 layer_config_class = layer_config['class']
                 #when it's a merge function, we need to pass in input_tensors
                 #as the inputs argument
