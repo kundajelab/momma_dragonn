@@ -10,7 +10,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
     def __init__(self, samples_per_epoch,
                        stopping_criterion_config,
                        class_weight=None,
-                       seed=1234):
+                       seed=1234,
+                       csv_logger=None):
         self.seed = seed 
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
@@ -19,6 +20,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                                       key,val in class_weight.items())
         else:
             self.class_weight = None
+        self.csv_logger=csv_logger
+        
 
     def get_jsonable_object(self):
         return OrderedDict([
@@ -114,14 +117,19 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
                 if (stopping_criterion.stop_training()):
                     self.model.stop_training = True 
-
+        #additional user-supplied callbacks
+        extra_callbacks=[]
+        if self.csv_logger!=None:
+            from keras.callbacks import CSVLogger
+            csv_logger=CSVLogger(self.csv_logger,append=True)
+            extra_callbacks.append(csv_logger) 
         try:
             model_wrapper.get_model().fit_generator(
                 train_data_loader.get_batch_generator(),
                 samples_per_epoch=self.samples_per_epoch,
                 nb_epoch=10000,
                 class_weight=self.class_weight,
-                callbacks=[MommaDragonnEpochEndCallback()])
+                callbacks=[MommaDragonnEpochEndCallback()]+extra_callbacks)
             training_metadata['termination_condition'] = "normal"
         except (KeyboardInterrupt):
             print("\nTraining was interrupted at epoch ",
