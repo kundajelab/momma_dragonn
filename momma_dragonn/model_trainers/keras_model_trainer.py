@@ -13,7 +13,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                        class_weight=None,
                        seed=1234,
                        nb_worker=1,
-                       max_q_size=10):
+                       max_q_size=10,
+                       csv_logger=None):
         np.random.seed(seed)
         self.stopping_criterion_config = stopping_criterion_config
         if (class_weight is not None):
@@ -24,6 +25,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         self.seed=seed
         self.nb_worker=nb_worker
         self.max_q_size=max_q_size
+        self.csv_logger=csv_logger
         
     def get_jsonable_object(self):
         return OrderedDict([
@@ -34,7 +36,6 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
  
     def train(self, model_wrapper,model_evaluator,data_loaders,
                     end_of_epoch_callbacks, error_callbacks):
-
         is_larger_better = model_evaluator.is_larger_better_for_key_metric()
 
         stopping_criterion =\
@@ -63,6 +64,13 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         #training phase
         train_gen=train_data_loader.get_batch_generator()
         valid_gen=valid_data_loader.get_batch_generator()
+
+        extra_callbacks=[] 
+        #create a csv logger if specified in arguments
+        if self.csv_logger!=None:
+            from keras.callbacks import CSVLogger
+            csvlogger=CSVLogger(self.csv_logger,append=True)
+            extra_callbacks.append(csvlogger) 
         try:
             while (not stopping_criterion.stop_training()):
                 model_wrapper.get_model().fit_generator(
@@ -73,7 +81,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                     epochs=1,
                     workers=self.nb_worker,
                     max_q_size=self.max_q_size,
-                    class_weight=self.class_weight)                
+                    class_weight=self.class_weight,
+                    callbacks=extra_callbacks)                
 
                 
                 #train_data_for_eval = train_data_loader.get_data_for_eval()

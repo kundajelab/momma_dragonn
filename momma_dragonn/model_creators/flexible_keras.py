@@ -43,7 +43,7 @@ class FlexibleKeras(AbstractModelCreator):
 
     def _compile_model(self, model):
         optimizer = load_class_from_config(self.optimizer_config)
-        model.compile(optimizer=optimizer, loss=self._parse_loss()) 
+        model.compile(optimizer=optimizer, loss=self._parse_loss(),metrics=self.metrics) 
 
 
 class ParseLossDictionaryMixin(object):
@@ -60,13 +60,14 @@ class ParseLossDictionaryMixin(object):
 class FlexibleKerasGraph(AbstractModelCreator):
 
     def __init__(self, inputs_config, nodes_config, outputs_config,
-                       optimizer_config, loss_dictionary,path_to_layer_init=None):
+                       optimizer_config, loss_dictionary,metrics=[],path_to_layer_init=None):
         self.inputs_config = inputs_config
         self.nodes_config = nodes_config
         self.outputs_config = outputs_config
         self.optimizer_config = optimizer_config
         self.loss_dictionary = loss_dictionary
         self.path_to_layer_init=path_to_layer_init
+        self.metrics=metrics 
 
     def get_model_wrapper(self):
         return keras_model_wrappers.KerasGraphModelWrapper(
@@ -140,8 +141,7 @@ class FlexibleKerasGraph(AbstractModelCreator):
             dict((key, (val if isinstance(val,dict)==False else
                         load_class_from_config(val))) for
                         (key,val) in self.loss_dictionary.items())
-        #graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary,metrics=['accuracy','positive_accuracy','negative_accuracy','precision','recall','true_positives','false_positives','true_negatives','false_negatives'])
-        graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary,metrics=['positive_accuracy','negative_accuracy'])
+        graph.compile(optimizer=optimizer, loss=parsed_loss_dictionary,metrics=self.metrics)
         if self.path_to_layer_init!=None:
             graph.load_weights(self.path_to_layer_init)
             print("Loaded custom layer initializations!") 
@@ -155,6 +155,7 @@ class FlexibleKerasFunctional(ParseLossDictionaryMixin, FlexibleKeras):
                        optimizer_config,
                        loss_dictionary,
                        seed,
+                       metrics=[],
                        shared_layers_config={}):
         self.input_names = input_names
         self.nodes_config = nodes_config
@@ -163,6 +164,7 @@ class FlexibleKerasFunctional(ParseLossDictionaryMixin, FlexibleKeras):
         self.loss_dictionary = loss_dictionary
         self.shared_layers_config = shared_layers_config
         self.seed=seed
+        self.metrics=metrics 
     def get_model_wrapper(self):
         model_wrapper = keras_model_wrappers.KerasFunctionalModelWrapper(
                          self.output_names)
