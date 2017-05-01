@@ -50,7 +50,7 @@ class FlexibleKeras(AbstractModelCreator):
 
     def _compile_model(self, model):
         optimizer = load_class_from_config(self.optimizer_config)
-        model.compile(optimizer=optimizer, loss=self._parse_loss()) 
+        model.compile(optimizer=optimizer, loss=self._parse_loss(),metrics=self.metrics) 
 
 
 class ParseLossDictionaryMixin(object):
@@ -65,12 +65,13 @@ class ParseLossDictionaryMixin(object):
 class FlexibleKerasGraph(FlexibleKeras, ParseLossDictionaryMixin):
 
     def __init__(self, inputs_config, nodes_config, outputs_config,
-                       optimizer_config, loss_dictionary):
+                       optimizer_config, loss_dictionary,metrics=[]):
         self.inputs_config = inputs_config
         self.nodes_config = nodes_config
         self.outputs_config = outputs_config
         self.optimizer_config = optimizer_config
         self.loss_dictionary = loss_dictionary
+        self.metrics=[] 
 
 
     def get_model_wrapper(self, seed):
@@ -142,13 +143,15 @@ class FlexibleKerasFunctional(ParseLossDictionaryMixin, FlexibleKeras):
                        output_names,
                        optimizer_config,
                        loss_dictionary,
-                       shared_layers_config={}):
+                       shared_layers_config={},
+                       metrics=[]):
         self.input_names = input_names
         self.nodes_config = nodes_config
         self.output_names = output_names
         self.optimizer_config = optimizer_config
         self.loss_dictionary = loss_dictionary
         self.shared_layers_config = shared_layers_config
+        self.metrics=metrics 
 
     def get_model_wrapper(self, seed):
         model_wrapper = keras_model_wrappers.KerasFunctionalModelWrapper(
@@ -280,10 +283,11 @@ def assert_attributes_in_config(config, attributes):
 
 class FlexibleKerasSequential(FlexibleKeras):
 
-    def __init__(self, layers_config, optimizer_config, loss):
+    def __init__(self, layers_config, optimizer_config, loss,metrics=[]):
         self.layers_config = layers_config
         self.optimizer_config = optimizer_config
         self.loss = loss
+        self.metrics=metrics
 
     def get_model_wrapper(self, seed):
         model_wrapper = keras_model_wrappers.KerasModelWrapper()
