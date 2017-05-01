@@ -199,7 +199,7 @@ class FlexibleKerasFunctional(ParseLossDictionaryMixin, FlexibleKeras):
                      (input_node_names+" for "+str(node_config)+" hasn't been"
                       +" declared already; declared "
                       +"node names are: "+str(name_to_tensor.keys()))
-                    input_tensors = [name_to_tensor[input_node_names]]
+                    input_tensors = name_to_tensor[input_node_names]
                 else:
                     raise RuntimeError("Unsupported type for input_node_names: "
                           +str(type(input_node_names)))
