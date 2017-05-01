@@ -329,18 +329,12 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
     def get_data(self):
         return util.enum(X=self.X, Y=self.Y)
 
-    def get_samples_per_epoch(self,train=True):
-        #This needs to be a multiple of the batch size to avoid warnings about dimensions not matching.
-        if train==True: 
-            if self.num_to_load_for_training % self.batch_size_train !=0:
-                return (self.num_to_load_for_training/self.batch_size_train+1)*self.batch_size_train
-            else:
-                return self.num_to_load_for_training
+    def get_steps_per_epoch(self,train=True):
+        print("WARNING! We are now computing STEPS (i.e. batches) per epoch, rather than samples per epoch, as per API change in Keras 2") 
+        if train==True:
+            return self.num_to_load_for_training/self.batch_size_train
         else:
-            if self.num_to_load_for_eval % self.batch_size_predict !=0:
-                return (self.num_to_load_for_eval/self.batch_size_predict+1)*self.batch_size_predict
-            else:
-                return self.num_to_load_for_eval
+            return self.num_to_load_for_eval/self.batch_size_predict
     
 class AbstractAtOnceDataLoader(AbstractDataLoader):
 

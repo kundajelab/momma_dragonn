@@ -43,9 +43,9 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                 extra_kwargs={'larger_is_better':is_larger_better})
 
         train_data_loader = data_loaders['train']
-        train_samples_per_epoch=train_data_loader.get_samples_per_epoch(train=True) 
+        train_steps_per_epoch=train_data_loader.get_steps_per_epoch(train=True) 
         valid_data_loader = data_loaders['validate']
-        valid_samples_per_epoch=valid_data_loader.get_samples_per_epoch(train=True)
+        valid_steps_per_epoch=valid_data_loader.get_steps_per_epoch(train=True)
         test_data_loader=data_loaders['test']
 
         train_num_to_load_for_eval=train_data_loader.num_to_load_for_eval
@@ -68,13 +68,14 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                 model_wrapper.get_model().fit_generator(
                     train_gen,
                     validation_data=valid_gen,
-                    samples_per_epoch=train_samples_per_epoch,
-                    nb_val_samples=valid_samples_per_epoch,
-                    nb_epoch=1,
-                    nb_worker=self.nb_worker,
+                    steps_per_epoch=train_steps_per_epoch,
+                    validation_steps=valid_steps_per_epoch,
+                    epochs=1,
+                    workers=self.nb_worker,
                     max_q_size=self.max_q_size,
                     class_weight=self.class_weight)                
 
+                
                 #train_data_for_eval = train_data_loader.get_data_for_eval()
                 #anticipating very large unbalanced datasets,
                 #we use generators for evaluation as well ;)
