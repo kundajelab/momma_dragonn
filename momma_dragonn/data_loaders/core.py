@@ -1,3 +1,4 @@
+from __future__ import print_function
 from collections import OrderedDict
 import numpy as np
 from avutils import util
@@ -59,8 +60,9 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         self.num_items = len(self.X[self.input_modes[0]])
         if (num_to_load_for_eval is None or
             num_to_load_for_eval > self.num_items):
-            print("num_to_load_for_eval is ",num_to_load_for_eval,
-                  "but num_items is",self.num_items,"- fixing")
+            if (num_to_load_for_eval is not None):
+                print("num_to_load_for_eval is ",num_to_load_for_eval,
+                      "but num_items is",self.num_items,"- fixing")
             num_to_load_for_eval = self.num_items
         self.num_to_load_for_eval = num_to_load_for_eval
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from .core import (BatchDataLoader_XYDictAPI, AtOnceDataLoader_XYDictAPI)
 import h5py
 import numpy as np
