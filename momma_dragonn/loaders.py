@@ -67,28 +67,22 @@ def load_end_of_training_callbacks(config, key_metric_name, larger_is_better):
         for callback_config in config] 
     return end_of_training_callbacks 
     
-
-def load_hyperparameter_configs_list(hyperparameter_configs_list):
-    list_of_hyperparameter_settings = []   
-    for hyperparameter_configs in\
-        fp.load_yaml_if_string(hyperparameter_configs_list):
-        other_data_loaders = OrderedDict([
+def load_hyperparameter_block(hyperparameter_configs):
+    other_data_loaders = OrderedDict([
             (split_name, load_data_loader(data_loader_config))
             for (split_name, data_loader_config) in
             hyperparameter_configs["other_data_loaders"].items()])
-        model_creator = load_class_from_config(
-                            config=hyperparameter_configs["model_creator"],
-                            module_prefix="momma_dragonn.model_creators.") 
-        model_trainer = load_class_from_config(
-                            config=hyperparameter_configs["model_trainer"],
-                            module_prefix="momma_dragonn.model_trainers.")
-        if ('message' in hyperparameter_configs):
-            message = hyperparameter_configs['message']
-        else:
-            message = ""
-        list_of_hyperparameter_settings.append(
-            {'other_data_loaders':other_data_loaders,
+    model_creator = load_class_from_config(
+                        config=hyperparameter_configs["model_creator"],
+                        module_prefix="momma_dragonn.model_creators.") 
+    model_trainer = load_class_from_config(
+                        config=hyperparameter_configs["model_trainer"],
+                        module_prefix="momma_dragonn.model_trainers.")
+    if ('message' in hyperparameter_configs):
+        message = hyperparameter_configs['message']
+    else:
+        message = ""
+    return {'other_data_loaders':other_data_loaders,
              'model_creator':model_creator,
              'model_trainer':model_trainer,
-             'message': message})
-    return list_of_hyperparameter_settings 
+             'message': message}
