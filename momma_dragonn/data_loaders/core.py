@@ -166,6 +166,7 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
     def __init__(self, X_full, Y_full,
                        strip_enclosing_dictionary=False,
                        max_to_load=None,
+                       max_to_load_is_random=False
                        #arguments below are only relevant if
                        #want to use in batches as well; listing them
                        #out here to indicate their defaults
@@ -175,7 +176,7 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
                        **kwargs):
         self.max_to_load = max_to_load
         self.strip_enclosing_dictionary = strip_enclosing_dictionary
-
+	
         if (strip_enclosing_dictionary): #for sequential models
             assert len(X_full.keys())==1
             assert len(Y_full.keys())==1
@@ -186,14 +187,19 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
             if (self.max_to_load is None):
                 the_arr = np.array(X_full[input_mode])
             else:
-                the_arr = np.array(X_full[input_mode][:self.max_to_load])
+                if (max_to_load_is_random == False):
+                    the_arr = np.array(X_full[input_mode][:self.max_to_load])
+                else:
+                    the_arr = np.random.choice(X_full[input_mode], size = self.max_to_load, replace = False)
             X[input_mode] = the_arr
         for output_mode in Y_full:
             if (self.max_to_load is None):
                 the_arr = np.array(Y_full[output_mode])
             else:
-                the_arr = np.array(Y_full[output_mode]
-                                                [:self.max_to_load])
+                if (max_to_load_is_random == False):
+                    the_arr = np.array(Y_full[output_mode][:self.max_to_load])
+                else:
+                    the_arr = np.random.choice(Y_full[output_mode], size = self.max_to_load, replace = False)
             Y[output_mode] = the_arr
 
         super(AtOnceDataLoader_XYDictAPI, self).__init__(
