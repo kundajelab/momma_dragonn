@@ -1,5 +1,6 @@
 from avutils import util
 import sys
+import os
 
 class AbstractPerEpochCallback(object):
 
@@ -19,6 +20,20 @@ class SaveBestValidModel(AbstractPerEpochCallback):
                 prefix="model_"+model_wrapper.random_string,
                 update_last_saved=True)
 
+class SuccessiveHalvingSaveBestValidModel(AbstractPerEpochCallback):
+    def __init__(self, model_folder=None, **kwargs):
+        self.model_folder = model_folder
+
+    def save_model(self,model_wrapper):
+        model_wrapper.create_files_to_save(
+            directory=self.model_folder,
+            prefix="bestModel",
+            update_last_saved=True)
+
+    def __call__(self, epoch, model_wrapper, valid_key_metric, train_key_metric,
+    valid_all_stats, is_new_best_valid_perf, performance_history):
+        if (is_new_best_valid_perf):
+            self.save_model(model_wrapper)
 
 class SaveModelSnapshot(AbstractPerEpochCallback):
 

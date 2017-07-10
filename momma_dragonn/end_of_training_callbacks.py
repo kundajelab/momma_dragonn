@@ -4,6 +4,10 @@ from avutils import file_processing as fp
 from collections import OrderedDict
 import yaml
 import json
+import os
+import json
+import momma_dragonn.performance_history
+import json
 
 class AbstractEndOfTrainingCallback(object):
 
@@ -169,4 +173,26 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
             file_handle.close()
 
             #release the lock on the db file
-            db_lock.release() 
+            db_lock.release()
+
+class SuccessiveHalvingWriteToFolder(object):
+    def __init__(self, model_folder=None, **kwargs):
+        self.model_folder=model_folder
+
+    def __call__(self, performance_history, model_wrapper, training_metadata,
+                       message, model_creator_info, model_trainer_info,
+                       other_data_loaders_info, **kwargs):
+        self.save_weights(model_wrapper)
+        self.record_performance_history(performance_history)
+
+    def save_weights(self, model_wrapper):
+        initial_weights_file= self.model_folder + "/initial_weights.h5"
+        model = model_wrapper.get_model()
+        model.save_weights(initial_weights_file, overwrite=True)
+
+    def record_performance_history(self, performance_history):
+        performance_history_file= self.model_folder + "/initial_performance_history.json"
+        ph_file=open(performance_history_file,"w")
+        ph_content=performance_history.get_jsonable_object()
+        json.dump(ph_content, ph_file, indent=4)
+        ph_file.close()

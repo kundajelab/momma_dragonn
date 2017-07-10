@@ -6,3 +6,6 @@
 **/*modelYaml.yaml
 **/*.db
 **/.ipynb_checkpoints*
+**/.project
+**/.pydevproject
+**/.DS_Store

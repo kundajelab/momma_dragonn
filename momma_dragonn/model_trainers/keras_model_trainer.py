@@ -1,20 +1,28 @@
 from .core import AbstractModelTrainer
 import momma_dragonn
-from momma_dragonn.performance_history import PerformanceHistory
+from momma_dragonn.performance_history import PerformanceHistory, PerfInfo
 from collections import OrderedDict
 import avutils.util as util
+import os
+import json
+from collections import OrderedDict
 import traceback
+
 
 class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
     def __init__(self, samples_per_epoch,
-                       stopping_criterion_config,
-                       class_weight=None,
-                       seed=1234,
-                       csv_logger=None):
+                 stopping_criterion_config,
+                 class_weight=None,
+                 seed=1234,
+                 initial_performance_history_file=None,
+                 base_epoch=0,
+                 csv_logger=None):
+        self.initial_performance_history_file=initial_performance_history_file
         self.seed = seed 
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
+        self.base_epoch = int(base_epoch)
         if (class_weight is not None):
             self.class_weight = dict((int(key),val) for
                                       key,val in class_weight.items())
@@ -60,19 +68,45 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
         performance_history = PerformanceHistory()
 
+        previous_best_epoch_info_exists = False
+        if self.initial_performance_history_file is not None:
+            if os.path.exists(self.initial_performance_history_file):
+                ph_file=open(self.initial_performance_history_file,"r")
+                ph_file_content = json.load(ph_file, object_pairs_hook=OrderedDict)
+                train_key_metric_history=ph_file_content["train_key_metric_history"]
+                valid_key_metric_history=ph_file_content["valid_key_metric_history"]
+                best_valid_epoch_perf_info=ph_file_content["best_valid_epoch_perf_info"]
+                setattr(performance_history,"_train_key_metric_history",train_key_metric_history)
+                setattr(performance_history, "_valid_key_metric_history", valid_key_metric_history)
+                if best_valid_epoch_perf_info is not None:
+                    previous_best_epoch_info_exists = True
+                    setattr(performance_history,"_best_valid_epoch_perf_info",PerfInfo(**best_valid_epoch_perf_info))
+                ph_file.close()
+
         training_metadata = OrderedDict() 
         epoch_external = util.VariableWrapper(0)
         best_valid_perf_finder = util.init_get_best(is_larger_better)
+        if previous_best_epoch_info_exists:
+            #If we restored an existing PerformanceHistory, we must also restore same info in best_valid_perf_finder
+            previous_best_epoch =int(best_valid_epoch_perf_info["epoch"])
+            previous_best_val = best_valid_epoch_perf_info["valid_key_metric"]
+            best_valid_perf_finder.set_initial_values(previous_best_epoch, previous_best_val)
 
         class MommaDragonnEpochEndCallback(keras.callbacks.Callback):
+            def __init__(self, base_epoch = 0):
+                self.base_epoch = base_epoch
 
             def on_epoch_begin(self, epoch, logs=None):
+                print "on_epoch_begin: relative epoch number " + str(epoch) + \
+                      ", absolute epoch number " + str(epoch + self.base_epoch)
+                epoch = epoch + self.base_epoch
                 for start_of_epoch_callback in start_of_epoch_callbacks:
                     start_of_epoch_callback( #written for snapshot saving
                         epoch=epoch,
                         model_wrapper=model_wrapper)
 
             def on_epoch_end(self, epoch, logs=None):
+                epoch = epoch + self.base_epoch
                 
                 epoch_external.var = epoch
  
@@ -129,7 +163,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                 samples_per_epoch=self.samples_per_epoch,
                 nb_epoch=10000,
                 class_weight=self.class_weight,
-                callbacks=[MommaDragonnEpochEndCallback()]+extra_callbacks)
+                callbacks=[MommaDragonnEpochEndCallback(self.base_epoch)]+extra_callbacks)
             training_metadata['termination_condition'] = "normal"
         except (KeyboardInterrupt):
             print("\nTraining was interrupted at epoch ",
@@ -137,7 +171,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
             training_metadata['termination_condition']= "KeyboardInterrupt"
         except Exception as e:
             traceback_str = str(traceback.format_exc())
-            print(traceback_str) 
+            print(traceback_str)
             print("\nTraining was interrupted at epoch ",
                      epoch_external.var,"with an exception")
             for error_callback in error_callbacks:

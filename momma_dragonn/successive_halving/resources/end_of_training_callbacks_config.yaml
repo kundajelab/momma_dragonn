@@ -1,0 +1,8 @@
+[
+    {
+      "class":"SuccessiveHalvingWriteToFolder",
+      "kwargs":{
+        "model_folder": ""
+      }
+    }
+]

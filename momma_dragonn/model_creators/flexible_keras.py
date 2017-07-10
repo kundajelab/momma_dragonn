@@ -3,6 +3,7 @@ from avutils.dynamic_enum import Key, Keys
 from collections import OrderedDict
 from ..model_wrappers import keras_model_wrappers
 from momma_dragonn.loaders import load_class_from_config
+import os
 #DO NOT import keras at the top level; the random
 #seed needs to be set BEFORE keras is imported
 
@@ -42,15 +43,16 @@ class FlexibleKeras(AbstractModelCreator):
 
     def get_model(self, seed):
         print("Preparing uncompiled model")
-        model = self._get_uncompiled_model(seed) 
-        print("Compiling model")
+        model = self._get_uncompiled_model(seed)
+	print("Compiling model")
         self._compile_model(model)
         print("Done compiling model")
         return model
 
     def _compile_model(self, model):
         optimizer = load_class_from_config(self.optimizer_config)
-        model.compile(optimizer=optimizer, loss=self._parse_loss(),metrics=self.metrics) 
+        model.compile(optimizer=optimizer, loss=self._parse_loss(),metrics=self.metrics)
+
 
 
 class ParseLossDictionaryMixin(object):
@@ -65,18 +67,25 @@ class ParseLossDictionaryMixin(object):
 class FlexibleKerasGraph(FlexibleKeras, ParseLossDictionaryMixin):
 
     def __init__(self, inputs_config, nodes_config, outputs_config,
-                       optimizer_config, loss_dictionary,metrics=[]):
+                       optimizer_config, loss_dictionary,metrics=[], initial_weights_file=None):
         self.inputs_config = inputs_config
         self.nodes_config = nodes_config
         self.outputs_config = outputs_config
         self.optimizer_config = optimizer_config
         self.loss_dictionary = loss_dictionary
-        self.metrics=[] 
+        self.metrics=[]
+        self.initial_weights_file = initial_weights_file
 
 
     def get_model_wrapper(self, seed):
         model_wrapper = keras_model_wrappers.KerasGraphModelWrapper()
-        model_wrapper.set_model(self.get_model(seed=seed))
+        initial_model = self.get_model(seed=seed)
+        if (not self.initial_weights_file == None):
+            print "Loading initial weights from file " + self.initial_weights_file
+            initial_model.load_weights(self.initial_weights_file)
+        else:
+            print "Initial weights file is none"
+        model_wrapper.set_model(initial_model)
         return model_wrapper
 
     def get_jsonable_object(self):
@@ -144,19 +153,26 @@ class FlexibleKerasFunctional(ParseLossDictionaryMixin, FlexibleKeras):
                        optimizer_config,
                        loss_dictionary,
                        shared_layers_config={},
-                       metrics=[]):
+                       metrics=[],initial_weights_file=None):
         self.input_names = input_names
         self.nodes_config = nodes_config
         self.output_names = output_names
         self.optimizer_config = optimizer_config
         self.loss_dictionary = loss_dictionary
         self.shared_layers_config = shared_layers_config
-        self.metrics=metrics 
+        self.metrics=metrics
+        self.initial_weights_file=initial_weights_file
 
     def get_model_wrapper(self, seed):
         model_wrapper = keras_model_wrappers.KerasFunctionalModelWrapper(
                          self.output_names)
-        model_wrapper.set_model(self.get_model(seed=seed))
+        initial_model = self.get_model(seed=seed)
+        if (not self.initial_weights_file == None):
+            print "Loading initial weights from file " + self.initial_weights_file
+            initial_model.load_weights(self.initial_weights_file)
+        else:
+            print "Initial weights file is none"
+        model_wrapper.set_model(initial_model)
         return model_wrapper
 
     def get_jsonable_object(self):
@@ -283,15 +299,22 @@ def assert_attributes_in_config(config, attributes):
 
 class FlexibleKerasSequential(FlexibleKeras):
 
-    def __init__(self, layers_config, optimizer_config, loss,metrics=[]):
+    def __init__(self, layers_config, optimizer_config, loss,metrics=[], initial_weights_file=None):
         self.layers_config = layers_config
         self.optimizer_config = optimizer_config
         self.loss = loss
         self.metrics=metrics
+        self.initial_weights_file = initial_weights_file
 
     def get_model_wrapper(self, seed):
         model_wrapper = keras_model_wrappers.KerasModelWrapper()
-        model_wrapper.set_model(self.get_model(seed=seed))
+        initial_model = self.get_model(seed=seed)
+        if (self.initial_weights_file is not None) and (os.path.exists(self.initial_weights_file)):
+            print "Ignoring seed, instead loading initial weights from file " + self.initial_weights_file
+            initial_model.load_weights(self.initial_weights_file)
+        else:
+            print "Using initial seed " + str(seed)
+        model_wrapper.set_model(initial_model)
         return model_wrapper 
 
     def get_jsonable_object(self):

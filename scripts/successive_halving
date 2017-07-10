@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+from momma_dragonn.successive_halving.prepare_successive_halving import SuccessiveHalvingConfiguration
+from momma_dragonn.successive_halving.execute_successive_halving import RunSuccessiveHalvingIteration
+from momma_dragonn.successive_halving.execute_successive_halving import RunSuccessiveHalving
+import os
+import argparse;
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--valid_data_loader_config", default="config/valid_data_loader_config.yaml")
+parser.add_argument("--evaluator_config", default="config/evaluator_config.yaml")
+parser.add_argument("--hyperparameter_configs_list", default="config/successive_halving_hyperparameter_configs_list.yaml")
+parser.add_argument("--starting_epochs", default=50)
+parser.add_argument("--successive_halving_folder", default="sh_files")
+options = parser.parse_args();
+
+a = SuccessiveHalvingConfiguration(starting_epochs=options.starting_epochs,
+	hyperparams_config_file=options.hyperparameter_configs_list,
+	evaluator_config=options.evaluator_config,
+	valid_data_loader_config=options.valid_data_loader_config,
+	successive_halving_folder=options.successive_halving_folder)
+a.initialize_successive_halving()
+os.chdir(options.successive_halving_folder)
+print "Current directory is now " + os.getcwd()
+b=RunSuccessiveHalving()
+b()

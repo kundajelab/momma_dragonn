@@ -40,5 +40,13 @@ class PerformanceHistory(object):
     def get_valid_key_metric_history(self):
         return self._valid_key_metric_history
 
+    def get_jsonable_object(self):
+        returnable =  OrderedDict([
+            ('train_key_metric_history', self._train_key_metric_history),
+            ('valid_key_metric_history', self._valid_key_metric_history)])
+        if self._best_valid_epoch_perf_info is not None:
+            returnable.update({'best_valid_epoch_perf_info': self._best_valid_epoch_perf_info.get_jsonable_object()})
+        return returnable
+
     def __len__(self):
         return len(self._train_key_metric_history)
