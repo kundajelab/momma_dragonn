@@ -93,11 +93,8 @@ class FlexibleKerasGraph(FlexibleKeras, ParseLossDictionaryMixin):
         import numpy as np
         np.random.seed(seed)
         import keras
-        # keras Graph module is deprecated in keras 1
         from keras.models import Graph
         graph = Graph()
-        #from keras.models import Model
-        #graph = Model()
         self._add_inputs(graph) 
         self._add_nodes(graph)
         self._add_outputs(graph)

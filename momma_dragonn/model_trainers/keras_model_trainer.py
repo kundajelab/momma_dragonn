@@ -124,9 +124,6 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
             csv_logger=CSVLogger(self.csv_logger,append=True)
             extra_callbacks.append(csv_logger) 
         try:
-            #print(self.samples_per_epoch)
-            #print(train_data_loader)
-            #print(train_data_loader.get_batch_generator())
             model_wrapper.get_model().fit_generator(
                 train_data_loader.get_batch_generator(),
                 samples_per_epoch=self.samples_per_epoch,
