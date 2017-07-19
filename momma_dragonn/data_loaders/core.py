@@ -166,7 +166,7 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
     def __init__(self, X_full, Y_full,
                        strip_enclosing_dictionary=False,
                        max_to_load=None,
-                       max_to_load_is_random=False
+                       max_to_load_is_random=False,
                        #arguments below are only relevant if
                        #want to use in batches as well; listing them
                        #out here to indicate their defaults
