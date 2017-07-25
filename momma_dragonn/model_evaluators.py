@@ -121,6 +121,30 @@ def spearman_corr(predictions, true_y):
         task_pvalues_all.append(task_p) 
     return task_correlations_all
 
+def pearson_corr(predictions, true_y):
+    import scipy.stats
+    #first return val is correlation, second return val is a p-value
+    #get task-specific correlations 
+    num_tasks=predictions.shape[1]
+    task_correlations_all=[]
+    task_pvalues_all=[]
+    for t in range(num_tasks):
+        task_cor,task_p=scipy.stats.pearsonr(predictions[:,t],true_y[:,t])
+        task_correlations_all.append(np.asscalar(task_cor))
+        task_pvalues_all.append(np.asscalar(task_p))
+    return task_correlations_all
+
+def mean_squared_error(predictions, true_y):
+    from sklearn.metrics import mean_squared_error
+    #first return val is correlation, second return val is a p-value
+    #get task-specific correlations 
+    num_tasks=predictions.shape[1]
+    task_mses_all=[]
+    for t in range(num_tasks):
+        task_mse=mean_squared_error(true_y[:,t],predictions[:,t])
+        task_mses_all.append(np.asscalar(task_mse))
+    return task_mses_all
+
 
 #for autoencoders
 def onehot_rows_crossent_func(predictions, true_y):
@@ -146,6 +170,8 @@ AccuracyStats = util.enum(
     balanced_accuracy="balanced_accuracy",
     unbalanced_accuracy="unbalanced_accuracy",
     spearman_corr="spearman_corr",
+    pearson_corr="pearson_corr",
+    mean_squared_error="mean_squared_error",
     onehot_rows_crossent="onehot_rows_crossent")
 compute_func_lookup = {
     AccuracyStats.auROC: auroc_func,
@@ -153,6 +179,8 @@ compute_func_lookup = {
     AccuracyStats.balanced_accuracy: balanced_accuracy,
     AccuracyStats.unbalanced_accuracy: unbalanced_accuracy,
     AccuracyStats.spearman_corr: spearman_corr,
+    AccuracyStats.pearson_corr: pearson_corr,
+    AccuracyStats.mean_squared_error: mean_squared_error,
     AccuracyStats.onehot_rows_crossent:
         onehot_rows_crossent_func
 }
@@ -162,6 +190,8 @@ is_larger_better_lookup = {
     AccuracyStats.balanced_accuracy: True,
     AccuracyStats.unbalanced_accuracy: True,
     AccuracyStats.spearman_corr: True,
+    AccuracyStats.pearson_corr: True,
+    AccuracyStats.mean_squared_error: False,
     AccuracyStats.onehot_rows_crossent: False,
 }
 
