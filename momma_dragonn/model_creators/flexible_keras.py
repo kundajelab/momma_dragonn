@@ -29,7 +29,39 @@ class KerasModelFromFunc(AbstractModelCreator):
         if (self._last_model_created is None):
             print("jsonable object requested but model not created; creating")
             self.create_model()
-        return OrderedDict(['model_json', self._last_model_created.to_json()])
+        return OrderedDict([('model_json',
+                              self._last_model_created.to_json())])
+
+
+class KerasModelFromSavedFile(AbstractModelCreator):
+
+    def __init__(self, weight_file, json_file):
+        self.weight_file = weight_file
+        self.json_file = json_file
+
+    def get_model_wrapper(self, seed):
+        #create the model
+        from keras.models import model_from_json 
+        model = model_from_json(open(self.json_file).read())
+        model.load_weights(self.weight_file)
+
+        if type(model).__name__ == "Sequential":
+            model_wrapper  = keras_model_wrappers.KerasModelWrapper() 
+        elif type(model).__name__ == "Model":
+            output_names = model.output_names 
+            model_wrapper  =\
+                keras_model_wrappers.KerasFunctionalModelWrapper(
+                    output_names=output_names) 
+        else:
+            raise RuntimeError("Unrecognized model name: "
+                               +type(model).__name__)
+
+        model_wrapper.set_model(model) 
+        return model_wrapper
+
+    def get_jsonable_object(self):
+        return OrderedDict([('weight_file', self.weight_file),
+                            ('json_file', self.json_file)])
 
 
 class FlexibleKeras(AbstractModelCreator):
