@@ -60,8 +60,7 @@ class KerasModelFromSavedFile(AbstractModelCreator):
     
 
     def get_model_wrapper(self, seed):
-        #create the model
-        
+        #create the model 
         from keras.models import model_from_json 
         model = model_from_json(open(self.json_file).read())
 
@@ -77,7 +76,6 @@ class KerasModelFromSavedFile(AbstractModelCreator):
                                +type(model).__name__)
 
         model_wrapper.set_model(self.get_model(seed=seed))
-
         return model_wrapper
 
     def get_jsonable_object(self):
