@@ -35,15 +35,35 @@ class KerasModelFromFunc(AbstractModelCreator):
 
 class KerasModelFromSavedFile(AbstractModelCreator):
 
-    def __init__(self, weight_file, json_file):
+    def __init__(self, weight_file, json_file, optimizer_config, loss, metrics=[]):
         self.weight_file = weight_file
         self.json_file = json_file
+        self.optimizer_config = optimizer_config
+        self.loss = loss
+        self.metrics = metrics
+
+    def get_model(self, seed):
+        print("Preparing uncompiled model")
+        model = self._get_uncompiled_model(seed) 
+        print("Compiling model")
+        self._compile_model(model)
+        print("Done compiling model")
+        return model
+
+    def _compile_model(self, model):
+        optimizer = load_class_from_config(self.optimizer_config)
+        if (isinstance(self.loss, str)):
+            loss = self.loss
+        else:
+            loss = load_class_from_config(self.loss) 
+        model.compile(optimizer=optimizer, loss=loss, metrics=self.metrics) 
+    
 
     def get_model_wrapper(self, seed):
         #create the model
+        
         from keras.models import model_from_json 
         model = model_from_json(open(self.json_file).read())
-        model.load_weights(self.weight_file)
 
         if type(model).__name__ == "Sequential":
             model_wrapper  = keras_model_wrappers.KerasModelWrapper() 
@@ -56,12 +76,26 @@ class KerasModelFromSavedFile(AbstractModelCreator):
             raise RuntimeError("Unrecognized model name: "
                                +type(model).__name__)
 
-        model_wrapper.set_model(model) 
+        model_wrapper.set_model(self.get_model(seed=seed))
+
         return model_wrapper
 
     def get_jsonable_object(self):
         return OrderedDict([('weight_file', self.weight_file),
-                            ('json_file', self.json_file)])
+                            ('json_file', self.json_file),
+                            ('optimizer_config', self.optimizer_config),
+                            ('loss', self.loss)])
+
+    def _get_uncompiled_model(self, seed):
+        #it is important that keras is only imported here so that
+        #the random seed can be set by the model trainer BEFORE the import
+        import numpy as np
+        np.random.seed(seed)
+        import keras
+        from keras.models import model_from_json
+        model = model_from_json(open(self.json_file).read())
+        model.load_weights(self.weight_file)
+        return model
 
 
 class FlexibleKeras(AbstractModelCreator):
