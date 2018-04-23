@@ -52,8 +52,6 @@ class PrintPerfAfterEpoch(AbstractPerEpochCallback):
         print("Valid key metric:\t"+str(valid_key_metric))
         print("Train key metric:\t"+str(train_key_metric))
         print("Best valid perf info:")
-        print(best_valid_perf_info.get_jsonable_object())
-        print(util.format_as_json(best_valid_perf_info.get_jsonable_object()))
         if (self.print_trend):
             valid_key_metric_trend = performance_history\
                                      .get_valid_key_metric_history()
