@@ -67,6 +67,7 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
                        Key('model_trainer_info'),
                        Key('model_creator_info'),
                        Key('key_metric_history'),
+                       Key('all_valid_metrics_history'),
                        Key('saved_files_config'))
 
     def __init__(self, db_path, key_metric_name, larger_is_better,
@@ -147,6 +148,8 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
                 [('train','valid')]+\
                 zip(performance_history.get_train_key_metric_history(),
                     performance_history.get_valid_key_metric_history())
+            entry[self.record_keys.k.all_valid_metrics_history] =\
+                performance_history.get_all_metrics_valid_history() 
             entry[self.record_keys.k.saved_files_config] =\
                 model_wrapper.get_last_saved_files_config()
             entry[self.record_keys.k.model_creator_info] = model_creator_info

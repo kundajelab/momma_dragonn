@@ -27,6 +27,33 @@ def remove_ambiguous_peaks(predictions, true_y):
     return predictions_filtered, true_y_filtered
 
 
+def binarycrossent_func(predictions, true_y):
+    [num_rows, num_cols] = true_y.shape 
+    binary_crossents=[]
+    for c in range(num_cols): 
+        true_y_for_task = true_y[:,c]
+        predictions_for_task = predictions[:,c]
+        predictions_for_task_filtered, true_y_for_task_filtered = \
+         remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
+
+        #1E-7 is the "epsilon" used by keras as of April 23rd 2018
+        #(see keras/backend/common.py)
+        predictions_for_task_filtered =\
+            np.maximum(0.0000001, predictions_for_task_filtered)
+        predictions_for_task_filtered =\
+            np.minimum(0.9999999, predictions_for_task_filtered)
+
+        task_binarycrossent =\
+            -np.mean(
+                true_y_for_task_filtered
+                *np.log(predictions_for_task_filtered)
+              + (1-true_y_for_task_filtered)
+                *np.log(1-predictions_for_task_filtered)) 
+
+        binary_crossents.append(float(task_binarycrossent)) 
+    return binary_crossents
+
+
 def auroc_func(predictions, true_y):
     [num_rows, num_cols] = true_y.shape 
     aurocs=[]
@@ -39,6 +66,7 @@ def auroc_func(predictions, true_y):
                                    y_score=predictions_for_task_filtered)
         aurocs.append(task_auroc) 
     return aurocs
+
 
 def auprc_func(predictions, true_y):
     # sklearn only supports 2 classes (0,1) for the auPRC calculation 
@@ -165,6 +193,7 @@ def onehot_rows_crossent_func(predictions, true_y):
 
 
 AccuracyStats = util.enum(
+    binary_crossent="binary_crossent",
     auROC="auROC",
     auPRC="auPRC",
     balanced_accuracy="balanced_accuracy",
@@ -174,6 +203,7 @@ AccuracyStats = util.enum(
     mean_squared_error="mean_squared_error",
     onehot_rows_crossent="onehot_rows_crossent")
 compute_func_lookup = {
+    AccuracyStats.binary_crossent: binarycrossent_func,
     AccuracyStats.auROC: auroc_func,
     AccuracyStats.auPRC: auprc_func,
     AccuracyStats.balanced_accuracy: balanced_accuracy,
@@ -185,6 +215,7 @@ compute_func_lookup = {
         onehot_rows_crossent_func
 }
 is_larger_better_lookup = {
+    AccuracyStats.binary_crossent: False,
     AccuracyStats.auROC: True,
     AccuracyStats.auPRC: True,
     AccuracyStats.balanced_accuracy: True,

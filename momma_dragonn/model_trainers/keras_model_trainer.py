@@ -11,10 +11,13 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                        stopping_criterion_config,
                        class_weight=None,
                        seed=1234,
-                       csv_logger=None):
+                       csv_logger=None,
+                       report_all_valid_metrics_every_epoch=False):
         self.seed = seed 
         self.samples_per_epoch = samples_per_epoch 
         self.stopping_criterion_config = stopping_criterion_config
+        self.report_all_valid_metrics_every_epoch =\
+            report_all_valid_metrics_every_epoch
         if (class_weight is not None):
             self.class_weight = dict((int(key),val) for
                                       key,val in class_weight.items())
@@ -51,6 +54,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
             momma_dragonn.loaders.load_stopping_criterion(
                 config=self.stopping_criterion_config,
                 extra_kwargs={'larger_is_better':is_larger_better})
+        report_all_valid_metrics_every_epoch =\
+            self.report_all_valid_metrics_every_epoch
 
         train_data_loader = other_data_loaders['train']
         print("Loading validation data into memory")
@@ -91,15 +96,32 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                                                           valid_key_metric)
 
                 stopping_criterion.update(valid_key_metric)
-                performance_history.epoch_update(
-                    train_key_metric=train_key_metric,
-                    valid_key_metric=valid_key_metric)
-                if (new_best):
-                    print("New best")
-                    self.valid_all_stats = model_evaluator.compute_all_stats(
+
+                if (report_all_valid_metrics_every_epoch):
+                    this_epoch_valid_all_stats =\
+                                model_evaluator.compute_all_stats(
                                     model_wrapper=model_wrapper,
                                     data=valid_data,
                                     batch_size=train_data_loader.batch_size)
+                else:
+                    this_epoch_valid_all_stats = {}
+
+                performance_history.epoch_update(
+                    train_key_metric=train_key_metric,
+                    valid_key_metric=valid_key_metric,
+                    valid_all_stats = this_epoch_valid_all_stats)
+                    
+
+                if (new_best):
+                    print("New best")
+                    if (not report_all_valid_metrics_every_epoch):
+                        self.valid_all_stats =\
+                                model_evaluator.compute_all_stats(
+                                    model_wrapper=model_wrapper,
+                                    data=valid_data,
+                                    batch_size=train_data_loader.batch_size)
+                    else:
+                        self.valid_all_stats = this_epoch_valid_all_stats
                     performance_history.update_best_valid_epoch_perf_info(
                         epoch=epoch, valid_key_metric=valid_key_metric,
                         train_key_metric=train_key_metric,
@@ -117,6 +139,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
 
                 if (stopping_criterion.stop_training()):
                     self.model.stop_training = True 
+
         #additional user-supplied callbacks
         extra_callbacks=[]
         if self.csv_logger!=None:
