@@ -4,5 +4,6 @@
 **/*.swp
 **/*modelWeights.h5
 **/*modelYaml.yaml
+**/*modelJson.json
 **/*.db
 **/.ipynb_checkpoints*
