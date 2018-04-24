@@ -37,11 +37,16 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
     def __init__(self, X, Y, weight, bundle_x_and_y_in_generator,
                        num_to_load_for_eval,
                        strip_enclosing_dictionary=False,
+                       rc_augment=False,
                        **kwargs):
         super(BatchDataLoader_XYDictAPI, self).__init__(**kwargs)
         self.X = X
         self.Y = Y
         self.weight = weight
+        self.rc_augment = rc_augment
+        if (self.rc_augment):
+            assert len(self.X.keys()) == 1
+            assert len(self.X[self.X.keys()[0]].shape)==3
 
         self.strip_enclosing_dictionary = strip_enclosing_dictionary
         if (strip_enclosing_dictionary): #for sequential models
@@ -76,6 +81,8 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             self.bundle_x_and_y_in_generator
         the_dict['strip_enclosing_dictionary'] =\
             self.strip_enclosing_dictionary 
+        the_dict['rc_augment'] =\
+            self.rc_augment
         return the_dict 
 
     def get_batch_generator(self):
@@ -89,6 +96,9 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
             for input_mode in self.input_modes:
                 the_arr = self.X[input_mode][self.start_index:end_index] 
+                if (self.rc_augment):
+                    the_arr = np.concatenate([the_arr, the_arr[:,::-1,::-1]],
+                                             axis=0)
                 if (self.strip_enclosing_dictionary):
                     x_batch = the_arr
                 else:
@@ -96,6 +106,9 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
             for output_mode in self.output_modes:
                 the_arr = self.Y[output_mode][self.start_index:end_index]
+                if (self.rc_augment):
+                    the_arr = np.concatenate([the_arr, the_arr],
+                                             axis=0)
                 if (self.strip_enclosing_dictionary):
                     y_batch = the_arr
                 else:
@@ -103,6 +116,9 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
             for output_mode in self.weight:
                 the_arr = self.weight[output_mode][self.start_index:end_index]
+                if (self.rc_augment):
+                    the_arr = np.concatenate([the_arr, the_arr],
+                                             axis=0)
                 if (self.strip_enclosing_dictionary):
                     weight_batch = the_arr
                 else:
@@ -174,9 +190,13 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
                        num_to_load_for_eval=None,
                        bundle_x_and_y_in_generator=None,
                        batch_size=None, 
+                       rc_augment=False,
                        **kwargs):
-        self.max_to_load = max_to_load
+
         self.strip_enclosing_dictionary = strip_enclosing_dictionary
+        self.max_to_load = max_to_load
+        self.max_to_load_is_random = max_to_load_is_random
+        self.seed = seed
 	
         if (strip_enclosing_dictionary): #for sequential models
             assert len(X_full.keys())==1
@@ -211,12 +231,13 @@ class AtOnceDataLoader_XYDictAPI(BatchDataLoader_XYDictAPI):
             bundle_x_and_y_in_generator=bundle_x_and_y_in_generator,
             batch_size=batch_size,
             strip_enclosing_dictionary=strip_enclosing_dictionary,
+            rc_augment=rc_augment,
             **kwargs)
 
     def get_jsonable_object(self):
         the_dict = super(AtOnceDataLoader_XYDictAPI, self)\
                    .get_jsonable_object()
         the_dict['max_to_load'] = self.max_to_load
-        the_dict['strip_enclosing_dictionary'] =\
-            self.strip_enclosing_dictionary
+        the_dict['max_to_load_is_random'] = self.max_to_load_is_random
+        the_dict['seed'] = self.seed
         return the_dict

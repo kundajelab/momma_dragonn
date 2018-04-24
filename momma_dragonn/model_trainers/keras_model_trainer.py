@@ -31,7 +31,9 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                 ('seed', self.seed),
                 ('samples_per_epoch', self.samples_per_epoch),
                 ('stopping_criterion_config', self.stopping_criterion_config),
-                ('class_weight', self.class_weight)])
+                ('class_weight', self.class_weight),
+                ('report_all_valid_metrics_every_epoch',
+                  self.report_all_valid_metrics_every_epoch)])
  
     def train(self, model_creator, model_evaluator,
                     valid_data_loader, other_data_loaders,

@@ -131,7 +131,11 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
                 performance_history.get_best_valid_epoch_perf_info() 
             current_best_valid_key_metric = current_best_valid_perf_info\
                                             .valid_key_metric
-            if (previous_best_valid_key_metric < current_best_valid_key_metric):
+            if ((previous_best_valid_key_metric is None) or 
+                (((-1 if self.larger_is_better else 1)
+                 *previous_best_valid_key_metric) >
+                 ((-1 if self.larger_is_better else 1)
+                  *current_best_valid_key_metric))):
                 metadata['best_valid_key_metric'] = current_best_valid_key_metric
                 metadata['best_saved_files_config'] =\
                     model_wrapper.get_last_saved_files_config()
