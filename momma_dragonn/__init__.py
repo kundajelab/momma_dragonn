@@ -1,9 +1,10 @@
-import model_creators
-import model_wrappers
-import model_trainers
-import model_evaluators
-import data_loaders
-import loaders
-import end_of_training_callbacks
-import epoch_callbacks
-import stopping_criteria
+from __future__ import absolute_import
+from . import model_creators
+from . import model_wrappers
+from . import model_trainers
+from . import model_evaluators
+from . import data_loaders
+from . import loaders
+from . import end_of_training_callbacks
+from . import epoch_callbacks
+from . import stopping_criteria

@@ -5,7 +5,7 @@
         "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
         "kwargs": {
             "seed": 1234,
-            "samples_per_epoch": 3000,
+            "samples_per_epoch": 30,
             "stopping_criterion_config": {
                 "class": "EarlyStopping" ,
                 "kwargs": {
@@ -30,11 +30,11 @@
                         #"nb_col":11,
                         #"nb_row":4,
                         "border_mode": "same",
-                        "W_constraint": {
-                            "autoload": true, #turn the dictionary into a class
-                            "class": "keras.constraints.maxnorm",
-                            "kwargs": {"m": 7, "axis": 1}
-                        }
+                        #"W_constraint": {
+                        #    "autoload": true, #turn the dictionary into a class
+                        #    "class": "keras.constraints.maxnorm",
+                        #    "kwargs": {"m": 7, "axis": 1}
+                        #}
                     }
                 },
                 {
@@ -94,7 +94,7 @@
             #"class": "hdf5_data_loader.MultimodalBatchDataLoader",
             "class": "hdf5_data_loader.MultimodalAtOnceDataLoader",
             "kwargs": {
-                "batch_size": 50,
+                "batch_size": 10,
                 "path_to_hdf5": "train_data.hdf5",
                 "num_to_load_for_eval": 1000, #if my training data is large
                 #and I only want to load a subset when I'm calculating the
@@ -113,7 +113,7 @@
             "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
             "kwargs": {
                 "seed": 4567,
-                "samples_per_epoch": 3000,
+                "samples_per_epoch": 30,
                 "stopping_criterion_config": {
                     "class": "EarlyStopping" ,
                     "kwargs": {
@@ -138,11 +138,11 @@
                         #"nb_col":11,
                         #"nb_row":4,
                         "border_mode": "same",
-                        "W_constraint": {
-                            "autoload": true, #turn the dictionary into a class
-                            "class": "keras.constraints.maxnorm",
-                            "kwargs": {"m": 7, "axis": 1}
-                        }
+                        #"W_constraint": {
+                        #    "autoload": true, #turn the dictionary into a class
+                        #    "class": "keras.constraints.maxnorm",
+                        #    "kwargs": {"m": 7, "axis": 1}
+                        #}
                     }
                 },
                 {
@@ -202,7 +202,7 @@
             #"class": "hdf5_data_loader.MultimodalBatchDataLoader",
             "class": "hdf5_data_loader.MultimodalAtOnceDataLoader",
             "kwargs": {
-                "batch_size": 50,
+                "batch_size": 10,
                 "path_to_hdf5": "train_data.hdf5",
                 "num_to_load_for_eval": 1000, #if my training data is YUGE
                 #and I only want to load a subset when I'm calculating the
