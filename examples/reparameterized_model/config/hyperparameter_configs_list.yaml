@@ -1,0 +1,164 @@
+[
+    {
+        "message": "wide init",
+        "model_trainer":{
+            "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
+            "kwargs": {
+                "seed": null,
+                "samples_per_epoch": 60,
+                "stopping_criterion_config": {
+                    "class": "EarlyStopping" ,
+                    "kwargs": {
+                       "max_epochs": 60, 
+                       "epochs_to_wait": 30
+                    } 
+                },
+                #"class_weight": {"0":1, "1":25}
+            }
+        },
+        "model_creator":{
+            "class": "flexible_keras.FlexibleKerasSequential",
+            "kwargs": {
+                "layers_config": [
+                    {
+                        "class": "keras.layers.convolutional.Convolution1D", 
+                        "kwargs": {
+                            "input_shape": [200,4],
+                            "nb_filter": 10,
+                            "filter_length": 21,
+                            "bias": False
+                        }
+                    },
+                    {
+                        "class": "keras.layers.convolutional.Convolution1D", 
+                        "kwargs": {
+                            "nb_filter": 2,
+                            "filter_length": 1,
+                            "bias": True,
+                            "init": "he_normal"
+                        }
+                    },
+                    {
+                        "class": "keras.layers.core.Activation", 
+                        "kwargs": {"activation": "relu"}
+                    },
+                    {
+                        "class": "keras.layers.convolutional.MaxPooling1D", 
+                        "kwargs": {"pool_length": 40, "stride": 40}
+                    },
+                    {
+                        "class": "keras.layers.core.Flatten", 
+                        "kwargs": {}
+                    },
+                    {
+                        "class": "keras.layers.core.Dense", 
+                        "kwargs": {"output_dim": 2}
+                    },
+                    {
+                        "class": "keras.layers.core.Activation", 
+                        "kwargs": {"activation": "sigmoid"}
+                    }
+                ],
+                "optimizer_config": {
+                    "class": "keras.optimizers.Adam",
+                    "kwargs": {"lr": 0.001}
+                },
+                "loss": "binary_crossentropy" 
+            } 
+        },
+        "other_data_loaders":{
+            "train": {
+                "class": "hdf5_data_loader.MultimodalAtOnceDataLoader",
+                "kwargs": {
+                    "batch_size": 10,
+                    "path_to_hdf5": "train_data.hdf5",
+                    "num_to_load_for_eval": 1000, #if my training data is large
+                    #and I only want to load a subset when I'm calculating the
+                    #performance stats on the training data, specify this number,
+                    #and only that many datapoints of the training data will be used
+                    #for performance stat calculation
+                    "bundle_x_and_y_in_generator": False,
+                    "strip_enclosing_dictionary": True,
+                    "rc_augment": True
+                }
+            }
+        }
+    },
+    {
+        "message": "normal init",
+        "model_trainer":{
+            "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
+            "kwargs": {
+                "seed": null,
+                "samples_per_epoch": 60,
+                "stopping_criterion_config": {
+                    "class": "EarlyStopping" ,
+                    "kwargs": {
+                       "max_epochs": 60, 
+                       "epochs_to_wait": 30
+                    } 
+                },
+                #"class_weight": {"0":1, "1":25}
+            }
+        },
+        "model_creator":{
+            "class": "flexible_keras.FlexibleKerasSequential",
+            "kwargs": {
+                "layers_config": [
+                    {
+                        "class": "keras.layers.convolutional.Convolution1D", 
+                        "kwargs": {
+                            "input_shape": [200,4],
+                            "nb_filter": 2,
+                            "filter_length": 21,
+                            "bias": True,
+                            "init": "he_normal"
+                        }
+                    },
+                    {
+                        "class": "keras.layers.core.Activation", 
+                        "kwargs": {"activation": "relu"}
+                    },
+                    {
+                        "class": "keras.layers.convolutional.MaxPooling1D", 
+                        "kwargs": {"pool_length": 40, "stride": 40}
+                    },
+                    {
+                        "class": "keras.layers.core.Flatten", 
+                        "kwargs": {}
+                    },
+                    {
+                        "class": "keras.layers.core.Dense", 
+                        "kwargs": {"output_dim": 2}
+                    },
+                    {
+                        "class": "keras.layers.core.Activation", 
+                        "kwargs": {"activation": "sigmoid"}
+                    }
+                ],
+                "optimizer_config": {
+                    "class": "keras.optimizers.Adam",
+                    "kwargs": {"lr": 0.001}
+                },
+                "loss": "binary_crossentropy" 
+            } 
+        },
+        "other_data_loaders":{
+            "train": {
+                "class": "hdf5_data_loader.MultimodalAtOnceDataLoader",
+                "kwargs": {
+                    "batch_size": 10,
+                    "path_to_hdf5": "train_data.hdf5",
+                    "num_to_load_for_eval": 1000, #if my training data is large
+                    #and I only want to load a subset when I'm calculating the
+                    #performance stats on the training data, specify this number,
+                    #and only that many datapoints of the training data will be used
+                    #for performance stat calculation
+                    "bundle_x_and_y_in_generator": False,
+                    "strip_enclosing_dictionary": True,
+                    "rc_augment": True
+                }
+            }
+        }
+    },
+]

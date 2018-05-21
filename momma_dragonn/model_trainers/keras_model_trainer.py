@@ -118,7 +118,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                                     model_wrapper=model_wrapper,
                                     data=valid_data,
                                     batch_size=train_data_loader.batch_size)
-                new_best = best_valid_perf_finder.process(epoch,
+                new_best = best_valid_perf_finder.process(epochs_trained,
                                                           valid_key_metric)
                 stopping_criterion.update(valid_key_metric)
                 if (report_all_valid_metrics_every_epoch):
@@ -144,7 +144,8 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                     else:
                         self.valid_all_stats = this_epoch_valid_all_stats
                     performance_history.update_best_valid_epoch_perf_info(
-                        epoch=epoch, valid_key_metric=valid_key_metric,
+                        epoch=epochs_trained,
+                        valid_key_metric=valid_key_metric,
                         train_key_metric=train_key_metric,
                         valid_all_stats=self.valid_all_stats)
                 for end_of_epoch_callback in end_of_epoch_callbacks:
