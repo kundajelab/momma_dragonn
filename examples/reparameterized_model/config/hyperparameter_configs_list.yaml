@@ -5,15 +5,27 @@
             "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
             "kwargs": {
                 "seed": null,
-                "samples_per_epoch": 60,
+                "samples_per_epoch": 200,
                 "stopping_criterion_config": {
                     "class": "EarlyStopping" ,
                     "kwargs": {
-                       "max_epochs": 60, 
-                       "epochs_to_wait": 30
+                       "max_epochs": 30, 
+                       "epochs_to_wait": 10
                     } 
                 },
                 #"class_weight": {"0":1, "1":25}
+                "reparameterizer": {
+                    "autoload": True,
+                    "class": "momma_dragonn.model_reparameterizers.CollapseFirstTwoKerasConv",
+                    "kwargs": {
+                        "reparam_epoch": 20,
+                        "optimizer_config": {
+                            "class": "keras.optimizers.Adam",
+                            "kwargs": {"lr": 0.001}
+                        },
+                        "loss": "binary_crossentropy" 
+                    }
+                }
             }
         },
         "model_creator":{
@@ -24,7 +36,7 @@
                         "class": "keras.layers.convolutional.Convolution1D", 
                         "kwargs": {
                             "input_shape": [200,4],
-                            "nb_filter": 10,
+                            "nb_filter": 12,
                             "filter_length": 21,
                             "bias": False
                         }
@@ -32,7 +44,7 @@
                     {
                         "class": "keras.layers.convolutional.Convolution1D", 
                         "kwargs": {
-                            "nb_filter": 2,
+                            "nb_filter": 4,
                             "filter_length": 1,
                             "bias": True,
                             "init": "he_normal"
@@ -70,7 +82,7 @@
             "train": {
                 "class": "hdf5_data_loader.MultimodalAtOnceDataLoader",
                 "kwargs": {
-                    "batch_size": 10,
+                    "batch_size": 50,
                     "path_to_hdf5": "train_data.hdf5",
                     "num_to_load_for_eval": 1000, #if my training data is large
                     #and I only want to load a subset when I'm calculating the
@@ -90,12 +102,12 @@
             "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
             "kwargs": {
                 "seed": null,
-                "samples_per_epoch": 60,
+                "samples_per_epoch": 200,
                 "stopping_criterion_config": {
                     "class": "EarlyStopping" ,
                     "kwargs": {
-                       "max_epochs": 60, 
-                       "epochs_to_wait": 30
+                       "max_epochs": 30, 
+                       "epochs_to_wait": 10
                     } 
                 },
                 #"class_weight": {"0":1, "1":25}
@@ -109,7 +121,7 @@
                         "class": "keras.layers.convolutional.Convolution1D", 
                         "kwargs": {
                             "input_shape": [200,4],
-                            "nb_filter": 2,
+                            "nb_filter": 4,
                             "filter_length": 21,
                             "bias": True,
                             "init": "he_normal"
@@ -147,7 +159,7 @@
             "train": {
                 "class": "hdf5_data_loader.MultimodalAtOnceDataLoader",
                 "kwargs": {
-                    "batch_size": 10,
+                    "batch_size": 50,
                     "path_to_hdf5": "train_data.hdf5",
                     "num_to_load_for_eval": 1000, #if my training data is large
                     #and I only want to load a subset when I'm calculating the

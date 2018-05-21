@@ -8,3 +8,4 @@ from . import loaders
 from . import end_of_training_callbacks
 from . import epoch_callbacks
 from . import stopping_criteria
+from . import model_reparameterizers
