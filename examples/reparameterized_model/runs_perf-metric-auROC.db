@@ -1,0 +1,526 @@
+{
+    "metadata": {
+        "total_records": 2,
+        "best_valid_key_metric": 0.7587066501611279,
+        "best_saved_files_config": {
+            "weights_file": "model_files/record_1_model_YQJLl_modelWeights.h5",
+            "json_file": "model_files/record_1_model_YQJLl_modelJson.json",
+            "directory": "model_files",
+            "prefix": "model_YQJLl"
+        }
+    },
+    "records": [
+        {
+            "record_number": 1,
+            "message": "wide init",
+            "best_valid_key_metric": 0.7587066501611279,
+            "best_valid_perf_info": {
+                "epoch": 30,
+                "valid_key_metric": 0.7587066501611279,
+                "train_key_metric": 0.817718429956356,
+                "valid_all_stats": {
+                    "per_output_auROC": [
+                        0.7197279582080726,
+                        0.7976853421141833
+                    ],
+                    "mean_auROC": 0.7587066501611279,
+                    "per_output_auPRC": [
+                        0.8236559689916518,
+                        0.8989494153384103
+                    ],
+                    "mean_auPRC": 0.8613026921650311,
+                    "per_output_balanced_accuracy": [
+                        0.6018185402395151,
+                        0.6757299888625248
+                    ],
+                    "mean_balanced_accuracy": 0.6387742645510199,
+                    "per_output_unbalanced_accuracy": [
+                        0.69,
+                        0.7033333333333334
+                    ],
+                    "mean_unbalanced_accuracy": 0.6966666666666667
+                }
+            },
+            "training_metadata": {
+                "termination_condition": "normal",
+                "total_epochs_trained_for": 30
+            },
+            "other_data_loaders_info": {
+                "train": {
+                    "batch_size": 50,
+                    "num_to_load_for_eval": 1000,
+                    "bundle_x_and_y_in_generator": false,
+                    "strip_enclosing_dictionary": true,
+                    "rc_augment": true,
+                    "max_to_load": null,
+                    "max_to_load_is_random": false,
+                    "seed": 1,
+                    "path_to_hdf5": "train_data.hdf5"
+                }
+            },
+            "model_trainer_info": {
+                "seed": null,
+                "samples_per_epoch": 200,
+                "stopping_criterion_config": {
+                    "class": "EarlyStopping",
+                    "kwargs": {
+                        "max_epochs": 30,
+                        "epochs_to_wait": 10
+                    }
+                },
+                "class_weight": null,
+                "report_all_valid_metrics_every_epoch": false,
+                "reparameterizer": {
+                    "class": "momma_dragonn.model_reparameterizersCollapseFirstTwoKerasConv",
+                    "reparam_epoch": 20,
+                    "optimizer_config": {
+                        "class": "keras.optimizers.Adam",
+                        "kwargs": {
+                            "lr": 0.001
+                        }
+                    },
+                    "loss": "binary_crossentropy"
+                }
+            },
+            "model_creator_info": {
+                "layers_config": [
+                    {
+                        "class": "keras.layers.convolutional.Convolution1D",
+                        "kwargs": {
+                            "input_shape": [
+                                200,
+                                4
+                            ],
+                            "nb_filter": 12,
+                            "filter_length": 21,
+                            "bias": false
+                        }
+                    },
+                    {
+                        "class": "keras.layers.convolutional.Convolution1D",
+                        "kwargs": {
+                            "nb_filter": 4,
+                            "filter_length": 1,
+                            "bias": true,
+                            "init": "he_normal"
+                        }
+                    },
+                    {
+                        "class": "keras.layers.core.Activation",
+                        "kwargs": {
+                            "activation": "relu"
+                        }
+                    },
+                    {
+                        "class": "keras.layers.convolutional.MaxPooling1D",
+                        "kwargs": {
+                            "pool_length": 40,
+                            "stride": 40
+                        }
+                    },
+                    {
+                        "class": "keras.layers.core.Flatten",
+                        "kwargs": {}
+                    },
+                    {
+                        "class": "keras.layers.core.Dense",
+                        "kwargs": {
+                            "output_dim": 2
+                        }
+                    },
+                    {
+                        "class": "keras.layers.core.Activation",
+                        "kwargs": {
+                            "activation": "sigmoid"
+                        }
+                    }
+                ],
+                "optimizer_config": {
+                    "class": "keras.optimizers.Adam",
+                    "kwargs": {
+                        "lr": 0.001
+                    }
+                },
+                "loss": "binary_crossentropy"
+            },
+            "key_metric_history": [
+                [
+                    "train",
+                    "valid"
+                ],
+                [
+                    0.5519174925749104,
+                    0.4904770879810328
+                ],
+                [
+                    0.5831720570178731,
+                    0.516238629877083
+                ],
+                [
+                    0.6162434072723904,
+                    0.5380980330687551
+                ],
+                [
+                    0.6986753504779752,
+                    0.6062660952741982
+                ],
+                [
+                    0.7360890098088861,
+                    0.6549299491822581
+                ],
+                [
+                    0.7412588520123602,
+                    0.6650569679183951
+                ],
+                [
+                    0.7606596293442331,
+                    0.6666529226045479
+                ],
+                [
+                    0.7722537787519325,
+                    0.67238696480995
+                ],
+                [
+                    0.7513517988403848,
+                    0.6736580115381439
+                ],
+                [
+                    0.7660733227296962,
+                    0.6736485611281906
+                ],
+                [
+                    0.7720687513507324,
+                    0.6755572790409254
+                ],
+                [
+                    0.7479157857917093,
+                    0.6769857812926323
+                ],
+                [
+                    0.7730806883661935,
+                    0.6792854824728175
+                ],
+                [
+                    0.7656363792443356,
+                    0.686684834872975
+                ],
+                [
+                    0.7682675929268906,
+                    0.6907111569757218
+                ],
+                [
+                    0.8001516455086013,
+                    0.6968990551191366
+                ],
+                [
+                    0.774960978797135,
+                    0.7007674921342818
+                ],
+                [
+                    0.8002766887439455,
+                    0.7078801677803828
+                ],
+                [
+                    0.8059604502132168,
+                    0.7159633110361809
+                ],
+                [
+                    0.7865034057164044,
+                    0.7192724532212523
+                ],
+                [
+                    0.8027421600088944,
+                    0.7243448855900319
+                ],
+                [
+                    0.7950806767303018,
+                    0.7299797760511058
+                ],
+                [
+                    0.802561649715927,
+                    0.7353959002608603
+                ],
+                [
+                    0.8129795901167827,
+                    0.7396945671891346
+                ],
+                [
+                    0.8080974928561319,
+                    0.7421578547269666
+                ],
+                [
+                    0.8127630115285213,
+                    0.746253649275207
+                ],
+                [
+                    0.8169370696648532,
+                    0.7492371413110326
+                ],
+                [
+                    0.8107236518812061,
+                    0.7542545500997386
+                ],
+                [
+                    0.8169574781144876,
+                    0.7566487947561662
+                ],
+                [
+                    0.817718429956356,
+                    0.7587066501611279
+                ]
+            ],
+            "all_valid_metrics_history": {},
+            "saved_files_config": {
+                "weights_file": "model_files/record_1_model_YQJLl_modelWeights.h5",
+                "json_file": "model_files/record_1_model_YQJLl_modelJson.json",
+                "directory": "model_files",
+                "prefix": "model_YQJLl"
+            }
+        },
+        {
+            "record_number": 2,
+            "message": "normal init",
+            "best_valid_key_metric": 0.6812840580335261,
+            "best_valid_perf_info": {
+                "epoch": 19,
+                "valid_key_metric": 0.6812840580335261,
+                "train_key_metric": 0.7643817735962958,
+                "valid_all_stats": {
+                    "per_output_auROC": [
+                        0.6177615691685969,
+                        0.7448065468984553
+                    ],
+                    "mean_auROC": 0.6812840580335261,
+                    "per_output_auPRC": [
+                        0.745153794530377,
+                        0.8734476171980348
+                    ],
+                    "mean_auPRC": 0.8093007058642059,
+                    "per_output_balanced_accuracy": [
+                        0.547434823320684,
+                        0.60415960486175
+                    ],
+                    "mean_balanced_accuracy": 0.5757972140912171,
+                    "per_output_unbalanced_accuracy": [
+                        0.6733333333333333,
+                        0.63
+                    ],
+                    "mean_unbalanced_accuracy": 0.6516666666666666
+                }
+            },
+            "key_metric_history": [
+                [
+                    "train",
+                    "valid"
+                ],
+                [
+                    0.5683820570096603,
+                    0.5062014282189781
+                ],
+                [
+                    0.5760633256070575,
+                    0.5156998359931468
+                ],
+                [
+                    0.6065614108601378,
+                    0.5251953155721103
+                ],
+                [
+                    0.6399549530430431,
+                    0.5552652492501118
+                ],
+                [
+                    0.6773499557427851,
+                    0.5953856986865035
+                ],
+                [
+                    0.6999655959189072,
+                    0.635588585051235
+                ],
+                [
+                    0.7116934328117017,
+                    0.6582649833427814
+                ],
+                [
+                    0.7422119539615728,
+                    0.667280636254864
+                ],
+                [
+                    0.7291741398591824,
+                    0.6715891831571806
+                ],
+                [
+                    0.736492029280073,
+                    0.6724802983473421
+                ],
+                [
+                    0.753788681377928,
+                    0.6723350269319144
+                ],
+                [
+                    0.7295322334274075,
+                    0.6735265649269737
+                ],
+                [
+                    0.7510061437257447,
+                    0.6753636625737713
+                ],
+                [
+                    0.7438790700714208,
+                    0.6763001946204539
+                ],
+                [
+                    0.730202774712388,
+                    0.6778084788557854
+                ],
+                [
+                    0.7593300564542698,
+                    0.6796336656449875
+                ],
+                [
+                    0.7388705247978442,
+                    0.6808220403778263
+                ],
+                [
+                    0.7399901451029863,
+                    0.6801496914389842
+                ],
+                [
+                    0.7643817735962958,
+                    0.6812840580335261
+                ],
+                [
+                    0.7465801789394801,
+                    0.6804132886691368
+                ],
+                [
+                    0.763723019897038,
+                    0.6769667635358347
+                ],
+                [
+                    0.7680710220662097,
+                    0.673442721176243
+                ],
+                [
+                    0.7400797282053173,
+                    0.6737197912067473
+                ],
+                [
+                    0.7703232448759876,
+                    0.6725728109400313
+                ],
+                [
+                    0.7594633319193935,
+                    0.6716554923404534
+                ],
+                [
+                    0.752658529992158,
+                    0.6707377441767868
+                ],
+                [
+                    0.7772347473149459,
+                    0.6720162498080893
+                ],
+                [
+                    0.753224174468875,
+                    0.6715358778334622
+                ],
+                [
+                    0.7669420279415706,
+                    0.6720357365056839
+                ]
+            ],
+            "all_valid_metrics_history": {},
+            "saved_files_config": {
+                "weights_file": "model_files/record_2_model_f5cQe_modelWeights.h5",
+                "json_file": "model_files/record_2_model_f5cQe_modelJson.json",
+                "directory": "model_files",
+                "prefix": "model_f5cQe"
+            },
+            "model_creator_info": {
+                "layers_config": [
+                    {
+                        "class": "keras.layers.convolutional.Convolution1D",
+                        "kwargs": {
+                            "input_shape": [
+                                200,
+                                4
+                            ],
+                            "nb_filter": 4,
+                            "filter_length": 21,
+                            "bias": true,
+                            "init": "he_normal"
+                        }
+                    },
+                    {
+                        "class": "keras.layers.core.Activation",
+                        "kwargs": {
+                            "activation": "relu"
+                        }
+                    },
+                    {
+                        "class": "keras.layers.convolutional.MaxPooling1D",
+                        "kwargs": {
+                            "pool_length": 40,
+                            "stride": 40
+                        }
+                    },
+                    {
+                        "class": "keras.layers.core.Flatten",
+                        "kwargs": {}
+                    },
+                    {
+                        "class": "keras.layers.core.Dense",
+                        "kwargs": {
+                            "output_dim": 2
+                        }
+                    },
+                    {
+                        "class": "keras.layers.core.Activation",
+                        "kwargs": {
+                            "activation": "sigmoid"
+                        }
+                    }
+                ],
+                "optimizer_config": {
+                    "class": "keras.optimizers.Adam",
+                    "kwargs": {
+                        "lr": 0.001
+                    }
+                },
+                "loss": "binary_crossentropy"
+            },
+            "other_data_loaders_info": {
+                "train": {
+                    "batch_size": 50,
+                    "num_to_load_for_eval": 1000,
+                    "bundle_x_and_y_in_generator": false,
+                    "strip_enclosing_dictionary": true,
+                    "rc_augment": true,
+                    "max_to_load": null,
+                    "max_to_load_is_random": false,
+                    "seed": 1,
+                    "path_to_hdf5": "train_data.hdf5"
+                }
+            },
+            "model_trainer_info": {
+                "seed": null,
+                "samples_per_epoch": 200,
+                "stopping_criterion_config": {
+                    "class": "EarlyStopping",
+                    "kwargs": {
+                        "max_epochs": 30,
+                        "epochs_to_wait": 10
+                    }
+                },
+                "class_weight": null,
+                "report_all_valid_metrics_every_epoch": false,
+                "reparameterizer": null
+            },
+            "training_metadata": {
+                "termination_condition": "normal",
+                "total_epochs_trained_for": 29
+            }
+        }
+    ]
+}
