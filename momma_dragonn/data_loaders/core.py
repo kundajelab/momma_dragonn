@@ -81,8 +81,7 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
             self.bundle_x_and_y_in_generator
         the_dict['strip_enclosing_dictionary'] =\
             self.strip_enclosing_dictionary 
-        the_dict['rc_augment'] =\
-            self.rc_augment
+        the_dict['rc_augment'] = self.rc_augment
         return the_dict 
 
     def get_batch_generator(self):
