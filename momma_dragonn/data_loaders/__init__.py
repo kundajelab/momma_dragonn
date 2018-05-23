@@ -1,2 +1,3 @@
 import core
 import hdf5_data_loader
+import bed_fasta_data_loader

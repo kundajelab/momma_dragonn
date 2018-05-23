@@ -31,6 +31,13 @@ class AbstractBatchDataLoader(AbstractDataLoader):
         #produce a hunk of data to run evaluation on
         raise NotImplementedError()
 
+    def get_data(self):
+        #returns an object with pointers to all the X and Y
+        #data at once; only needed for validation set, which
+        #as of the time of writing
+        #should be small enough to fit in memory
+        raise NotImplementedError()
+
 
 class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 

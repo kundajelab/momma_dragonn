@@ -4,6 +4,7 @@ momma_dragonn/end_of_training_callbacks.py
 momma_dragonn/epoch_callbacks.py
 momma_dragonn/loaders.py
 momma_dragonn/model_evaluators.py
+momma_dragonn/model_reparameterizers.py
 momma_dragonn/output_saver.py
 momma_dragonn/performance_history.py
 momma_dragonn/stopping_criteria.py
@@ -13,6 +14,7 @@ momma_dragonn.egg-info/dependency_links.txt
 momma_dragonn.egg-info/requires.txt
 momma_dragonn.egg-info/top_level.txt
 momma_dragonn/data_loaders/__init__.py
+momma_dragonn/data_loaders/bed_fasta_data_loader.py
 momma_dragonn/data_loaders/core.py
 momma_dragonn/data_loaders/hdf5_data_loader.py
 momma_dragonn/model_creators/__init__.py
