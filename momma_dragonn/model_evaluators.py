@@ -281,9 +281,10 @@ class GraphAccuracyStats(AbstractModelEvaluator):
 
 class SequentialAccuracyStats(AbstractModelEvaluator):
 
-    def __init__(self, key_metric, all_metrics):
+    def __init__(self, key_metric, all_metrics, tasks_subset=None):
         self.key_metric = key_metric 
         self.all_metrics = all_metrics 
+        self.tasks_subset = tasks_subset
 
     def get_key_metric_name(self):
         return self.key_metric
@@ -293,17 +294,27 @@ class SequentialAccuracyStats(AbstractModelEvaluator):
 
     def compute_key_metric(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
-        return np.mean(compute_func_lookup[self.key_metric](
-            predictions=predictions,
-            true_y=data.Y))
+        if (self.tasks_subset is None):
+            return np.mean(compute_func_lookup[self.key_metric](
+                predictions=predictions,
+                true_y=data.Y))
+        else:
+            return np.mean(compute_func_lookup[self.key_metric](
+                            predictions=predictions[:,self.tasks_subset],
+                            true_y=data.Y[:,self.tasks_subset]))
 
     def compute_all_stats(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
         all_stats = OrderedDict()
         for metric_name in self.all_metrics:
-            per_output = compute_func_lookup[metric_name](
-                            predictions=predictions,
-                            true_y=data.Y)
+            if (self.tasks_subset is None):
+                per_output = compute_func_lookup[metric_name](
+                                predictions=predictions[:,:],
+                                true_y=data.Y[:,:])
+            else:
+                per_output = compute_func_lookup[metric_name](
+                                predictions=predictions[:,self.tasks_subset],
+                                true_y=data.Y[:,self.tasks_subset])
             mean = np.mean(per_output) 
             all_stats["per_output_"+metric_name] = per_output
             all_stats["mean_"+metric_name] = mean

@@ -61,8 +61,12 @@ class KerasModelFromSavedFile(AbstractModelCreator):
 
     def get_model_wrapper(self, seed):
         #create the model 
-        from keras.models import model_from_json 
-        model = model_from_json(open(self.json_file).read())
+        if (self.json_file is not None):
+            from keras.models import model_from_json 
+            model = model_from_json(open(self.json_file).read())
+        else:
+            from keras.models import load_model 
+            model = load_model(self.weight_file)
 
         if type(model).__name__ == "Sequential":
             model_wrapper  = keras_model_wrappers.KerasModelWrapper() 
@@ -90,9 +94,14 @@ class KerasModelFromSavedFile(AbstractModelCreator):
         import numpy as np
         np.random.seed(seed)
         import keras
-        from keras.models import model_from_json
-        model = model_from_json(open(self.json_file).read())
-        model.load_weights(self.weight_file)
+        if (self.json_file is not None):
+            from keras.models import model_from_json
+            model = model_from_json(open(self.json_file).read())
+            model.load_weights(self.weight_file)
+        else:
+            from keras.models import load_model 
+            model = load_model(self.weight_file)
+            
         return model
 
 
