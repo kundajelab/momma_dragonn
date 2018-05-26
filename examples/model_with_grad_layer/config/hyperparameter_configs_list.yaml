@@ -1,0 +1,231 @@
+[
+    {
+        "message": "Test basset functional model",
+        "other_data_loaders":{
+            "train": {
+                "class": "hdf5_data_loader.MultimodalBatchDataLoader",
+                "kwargs": {
+                    "batch_size": 50,
+                    "path_to_hdf5": "train_data.hdf5",
+                    "num_to_load_for_eval": 3000, #if my training data is large
+                    #and I only want to load a subset when I'm calculating the
+                    #performance stats on the training data, specify this number,
+                    #and only that many datapoints of the training data will be used
+                    #for performance stat calculation
+                    "bundle_x_and_y_in_generator": False, 
+                }
+            }
+        },
+        "model_creator":{
+            "class": "flexible_keras.FlexibleKerasFunctional",
+            "kwargs": {
+                "input_names": ["sequence"],
+                "shared_layers_config": {},
+                "nodes_config": {
+                    "sequence": {
+                        "layer": {
+                            "class": "keras.layers.Input",
+                            "kwargs": {"shape": [200,4]}
+                        } 
+                    }, 
+                    "conv1": {
+                        "layer": {
+                            "class": "keras.layers.convolutional.Conv1D",
+                            "kwargs": {
+                                "filters": 200,
+                                "kernel_size": 19,
+                                "padding": "same",
+                            }
+                        },
+                        "input_node_names": "sequence" 
+                    },
+                    "batchnorm1": {
+                        "layer": {
+                            "class": "keras.layers.normalization.BatchNormalization", 
+                            "kwargs": {}
+                        },
+                        "input_node_names": "conv1"
+                    },
+                    "relu1": {
+                        "layer": {
+                            "class": "keras.layers.core.Activation", 
+                            "kwargs": {"activation": "relu"}
+                        },
+                        "input_node_names": "batchnorm1"
+                    },
+                    "maxpooling1": {
+                        "layer": {
+                            "class": "keras.layers.convolutional.MaxPooling1D",
+                            "kwargs": {"pool_size": 3, "strides": 3}
+                        },
+                        "input_node_names": "relu1"
+                    },
+                    "conv2": {
+                        "layer": {
+                            "class": "keras.layers.convolutional.Conv1D", 
+                            "kwargs": {
+                                "filters": 200,
+                                "kernel_size": 11,
+                                "padding": "same",
+                            }
+                        },
+                        "input_node_names": "maxpooling1"
+                    },
+                    "batchnorm2": {
+                        "layer": {
+                            "class": "keras.layers.normalization.BatchNormalization", 
+                            "kwargs": {}
+                        },
+                        "input_node_names": "conv2" 
+                    },
+                    "relu2": {
+                        "layer": {
+                            "class": "keras.layers.core.Activation", 
+                            "kwargs": {"activation": "relu"}
+                        },
+                        "input_node_names": "batchnorm2"
+                    },
+                    "maxpooling2": {
+                        "layer": {
+                            "class": "keras.layers.convolutional.MaxPooling1D", 
+                            "kwargs": {"pool_size": 4,
+                                       "strides": 4}
+                        },
+                        "input_node_names": "relu2"
+                    },
+                    "conv3": {
+                        "layer": {
+                            "class": "keras.layers.convolutional.Conv1D", 
+                            "kwargs": {
+                                "filters": 200,
+                                "kernel_size": 7,
+                                "padding": "same",
+                            }
+                        },
+                        "input_node_names": "maxpooling2"
+                    },
+                    "batchnorm3": {
+                        "layer": { 
+                            "class": "keras.layers.normalization.BatchNormalization", 
+                            "kwargs": {}
+                        },
+                        "input_node_names": "conv3"
+                    },
+                    "relu3": {
+                        "layer": {
+                            "class": "keras.layers.core.Activation", 
+                            "kwargs": {"activation": "relu"}
+                        },
+                        "input_node_names": "batchnorm3"
+                    },
+                    "maxpooling3": {
+                        "layer": {
+                            "class": "keras.layers.convolutional.MaxPooling1D", 
+                            "kwargs": {"pool_size": 4, "strides": 4}
+                        },
+                        "input_node_names": "relu3"
+                    },
+                    "flatten": {
+                        "layer": {
+                            "class": "keras.layers.core.Flatten", 
+                            "kwargs": {}
+                        },
+                        "input_node_names": "maxpooling3"
+                    },
+                    "dense1": {
+                        "layer": {
+                            "class": "keras.layers.core.Dense", 
+                            "kwargs": {"units": 1000}
+                        },
+                        "input_node_names": "flatten"
+                    },
+                    "batchnormafterdense1": {
+                        "layer": {
+                            "class": "keras.layers.normalization.BatchNormalization", 
+                            "kwargs": {}
+                        },
+                        "input_node_names": "dense1"
+                    },
+                    "reluafterdense1": {
+                        "layer": {
+                            "class": "keras.layers.core.Activation", 
+                            "kwargs": {"activation": "relu"}
+                        },
+                        "input_node_names": "batchnormafterdense1"
+                    },
+                    "dropoutafterdense1": {
+                        "layer": {
+                            "class": "keras.layers.core.Dropout", 
+                            "kwargs": {"rate": 0.3}
+                        },
+                        "input_node_names": "reluafterdense1"
+                    },
+                    "dense2": {
+                        "layer": {
+                            "class": "keras.layers.core.Dense", 
+                            "kwargs": {"units": 1000}
+                        },
+                        "input_node_names": "dropoutafterdense1"
+                    },
+                    "batchnormafterdense2": {
+                        "layer": {
+                            "class": "keras.layers.normalization.BatchNormalization", 
+                            "kwargs": {}
+                        },
+                        "input_node_names": "dense2"
+                    },
+                    "reluafterdense2": {
+                        "layer": {
+                            "class": "keras.layers.core.Activation", 
+                            "kwargs": {"activation": "relu"}
+                        },
+                        "input_node_names": "batchnormafterdense2"
+                    },
+                    "dropoutafterdense2": {
+                        "layer": {
+                            "class": "keras.layers.core.Dropout", 
+                            "kwargs": {"rate": 0.3}
+                        },
+                        "input_node_names": "reluafterdense2"
+                    },
+                    "output_preact": {
+                        "layer": {
+                            "class": "keras.layers.core.Dense", 
+                            "kwargs": {"output_dim": 2}
+                        },
+                        "input_node_names": "dropoutafterdense2"
+                    },
+                    "output": {
+                        "layer": {
+                            "class": "keras.layers.core.Activation", 
+                            "kwargs": {"activation": "sigmoid"}
+                        },
+                        "input_node_names": "output_preact"
+                    }
+                },
+                "output_names": ["output"], 
+                "optimizer_config": {
+                    "class": "keras.optimizers.Adam",
+                    "kwargs": {"lr": 0.001}
+                },
+                "loss_dictionary": {
+                    "output": "binary_crossentropy"
+                }  
+            } 
+        },
+        "model_trainer":{
+            "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
+            "kwargs": {
+                "samples_per_epoch": 150,
+                "stopping_criterion_config": {
+                    "class": "EarlyStopping" ,
+                    "kwargs": {
+                       "max_epochs": 300, 
+                       "epochs_to_wait": 3
+                    } 
+                },
+                #"class_weight": {"0":1, "1":25}
+            }
+        }
+    }
+]
