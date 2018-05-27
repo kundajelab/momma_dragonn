@@ -195,6 +195,22 @@
                         },
                         "input_node_names": "dropoutafterdense2"
                     },
+                    "input_grad": {
+                        "layer": {
+                            "class": "keras.layers.Grad",
+                            "kwargs": {
+                                "activity_regularizer": {
+                                    "autoload": True,
+                                    "class": "keras.regularizers.L1L2",
+                                    "kwargs": {
+                                        "l1": 0.01
+                                    } 
+                                }
+                            }
+                        },
+                        "input_node_names": ["output_preact",
+                                             "sequence"]
+                    },
                     "output": {
                         "layer": {
                             "class": "keras.layers.core.Activation", 
@@ -203,13 +219,13 @@
                         "input_node_names": "output_preact"
                     }
                 },
-                "output_names": ["output"], 
+                "output_names": ["output", "input_grad"], 
                 "optimizer_config": {
                     "class": "keras.optimizers.Adam",
                     "kwargs": {"lr": 0.001}
                 },
                 "loss_dictionary": {
-                    "output": "binary_crossentropy"
+                    "output": "binary_crossentropy",
                 }  
             } 
         },

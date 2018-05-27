@@ -67,7 +67,9 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         self.output_modes = self.Y.keys()
         print("Output modes",self.output_modes)
 
-        assert len(self.X) == len(self.Y)
+        assert (len(self.X[self.X.keys()[0]])
+                == len(self.Y[self.Y.keys()[0]])), (str(len(self.X))
+                                                    +"\t"+str(len(self.Y)))
 
         self.num_items = len(self.X[self.input_modes[0]])
         if (num_to_load_for_eval is None or

@@ -1,7 +1,8 @@
-{
-    "labels": {
-       "file_name": "labels.txt.gz",
-       "output_mode_name": "output"
+[
+    {
+        "labels": {
+           "file_name": "labels.txt.gz",
+           "output_mode_name": "output"
+        },
     }
-
-}
+]
