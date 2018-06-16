@@ -2,14 +2,16 @@ from __future__ import print_function
 from .core import AbstractBatchDataLoader
 import numpy as np
 from avutils import util
-import pysam
-import pandas as pd
 
 
 def get_fasta_batch_generator(
     batch_size, ref_fasta, bed_source,
     read_in_order,
     rc_augment, loop_infinitely): 
+
+    import pysam
+    import pandas as pd
+
     #produces the generator for batches 
     #open the reference file 
     ref=pysam.FastaFile(ref_fasta) 
@@ -83,7 +85,8 @@ class FastaBatchDataLoader(AbstractBatchDataLoader):
                        rc_augment,
                        ref_fasta,
                        num_to_load_for_eval,
-                       read_in_order):
+                       read_in_order,
+                       wrap_in_keys=None):
         super(FastaBatchDataLoader, self).__init__(batch_size=batch_size)
         self.bed_source = bed_source
         self.rc_augment = rc_augment
@@ -92,6 +95,7 @@ class FastaBatchDataLoader(AbstractBatchDataLoader):
         self.to_load_for_eval_x = []
         self.to_load_for_eval_y = []
         self.read_in_order = read_in_order
+        self.wrap_in_keys = wrap_in_keys
 
     def get_jsonable_object(self):
         the_dict = super(FastaBatchDataLoader, self).get_jsonable_object()
@@ -117,11 +121,20 @@ class FastaBatchDataLoader(AbstractBatchDataLoader):
                 self.to_load_for_eval_y =\
                     self.to_load_for_eval_y[-self.num_to_load_for_eval:]
 
-            yield (x_batch, y_batch)        
+            if (self.wrap_in_keys is not None):
+                yield ({self.wrap_in_keys[0]: x_batch},
+                       {self.wrap_in_keys[1]: y_batch})
+            else:
+                yield (x_batch, y_batch)        
 
     def get_data_for_eval(self):
-        return util.enum(X=np.array(self.to_load_for_eval_x),
-                         Y=np.array(self.to_load_for_eval_y))
+        if (self.wrap_in_keys is not None):
+            return util.enum(
+                X={self.wrap_in_keys[0]: np.array(self.to_load_for_eval_x)},
+                Y={self.wrap_in_keys[1]: np.array(self.to_load_for_eval_y)})
+        else:
+            return util.enum(X=np.array(self.to_load_for_eval_x),
+                             Y=np.array(self.to_load_for_eval_y))
 
     def get_data(self):
         fasta_batch_generator = get_fasta_batch_generator(
@@ -133,6 +146,10 @@ class FastaBatchDataLoader(AbstractBatchDataLoader):
         for (x_batch, y_batch, bed_entries) in fasta_batch_generator:
             X.extend(x_batch)
             Y.extend(y_batch)
-        return util.enum(X=np.array(X), Y=np.array(Y))
+        if (self.wrap_in_keys is not None):
+            return util.enum(X={self.wrap_in_keys[0]: np.array(X)},
+                             Y={self.wrap_in_keys[1]: np.array(Y)})
+        else:
+            return util.enum(X=np.array(X), Y=np.array(Y))
 
 
