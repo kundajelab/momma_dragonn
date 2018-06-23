@@ -6,7 +6,7 @@ from avutils import file_processing as fp
 from collections import namedtuple
 
 
-Interval = namedtuple("Interval", ["chrom", "start", "end", "labels"])
+Interval = namedtuple("Interval", ["chrom", "start", "stop", "labels"])
 
 
 class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
@@ -44,6 +44,11 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
                 x,y,coor = fasta_generator.next()
                 x_batch.append(x)
                 y_batch.append(y)
+                if (self.rc_augment):
+                    x_batch.append(x[::-1,::-1])
+                    y_batch.append(y)
+            x_batch = np.array(x_batch)
+            y_batch = np.array(y_batch)
             self.to_load_for_eval_x.extend(x_batch)
             self.to_load_for_eval_y.extend(y_batch)
             if (len(self.to_load_for_eval_x) > self.num_to_load_for_eval):
@@ -115,19 +120,25 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
         for a_row in bed_fh:
             a_row = a_row.rstrip().split("\t")
             data.append(Interval(
-                chrom=a_row[0], start=int(a_row[1]), end=int(a_row[2]),
+                chrom=a_row[0], start=int(a_row[1]), stop=int(a_row[2]),
                 labels=[self.labels_dtype(x) for x in a_row[3:]]))
         print("Finished reading bed file into memory")
 
         #Set up the genomelake extractors
         import genomelake
+        import genomelake.extractors
         extractor = genomelake.extractors.ArrayExtractor(
             datafile=self.genomelake_data_source)
 
         idx = 0
         while (idx < len(data)):
     
-            yield extractor(data[idx:idx+1])[0]
+            to_extract = data[idx:idx+1]
+            to_yield = extractor(to_extract)[0]
+            yield (to_yield, to_extract[0].labels,
+                   (to_extract[0].chrom,
+                    to_extract[0].start,
+                    to_extract[0].stop))
 
             idx += 1
             if (idx==len(data)):
