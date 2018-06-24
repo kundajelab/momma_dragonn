@@ -24,7 +24,7 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
         self.wrap_in_keys = wrap_in_keys
 
     def get_jsonable_object(self):
-        the_dict = super(SeqOnlyDataLoader, self).get_jsonable_object()
+        the_dict = super(AbstractSeqOnlyDataLoader, self).get_jsonable_object()
         the_dict['rc_augment'] = self.rc_augment
         the_dict['num_to_load_for_eval'] = self.num_to_load_for_eval
         the_dict['wrap_in_keys'] = self.wrap_in_keys
@@ -93,6 +93,8 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
                        genomelake_data_source,
                        rc_augment,
                        num_to_load_for_eval,
+                       randomize_after_pass=True,
+                       random_seed=1,
                        labels_dtype="int",
                        wrap_in_keys=None):
         super(SingleStreamSeqOnly, self).__init__(
@@ -103,6 +105,8 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
         self.bed_source = bed_source
         self.genomelake_data_source = genomelake_data_source
         self.str_labels_dtype = labels_dtype
+        self.randomize_after_pass = randomize_after_pass
+        self.random_seed = random_seed
         self.labels_dtype=eval(labels_dtype)
 
     def get_jsonable_object(self):
@@ -110,6 +114,8 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
         the_dict['bed_source'] = self.bed_source
         the_dict['genomelake_data_source'] = self.genomelake_data_source
         the_dict['labels_dtype'] = self.str_labels_dtype 
+        the_dict['randomize_after_pass'] = self.randomize_after_pass
+        the_dict['random_seed'] = self.random_seed
         return the_dict
 
     def get_generator(self, loop_infinitely):
@@ -122,7 +128,15 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
             data.append(Interval(
                 chrom=a_row[0], start=int(a_row[1]), stop=int(a_row[2]),
                 labels=[self.labels_dtype(x) for x in a_row[3:]]))
-        print("Finished reading bed file into memory")
+        print("Finished reading bed file into memory; got "
+              +str(len(data))+"rows")
+        if (self.num_to_load_for_eval > len(data)):
+            print("num_to_load_for_eval is "+str(self.num_to_load_for_eval)
+                  +" but length of data is "+str(len(data))+"; adjusting")
+            self.num_to_load_for_eval = len(data)
+        random_obj = np.random.RandomState(self.random_seed)
+        if (self.randomize_after_pass):
+            data = shuffle_array(arr=data, random_obj=random_obj)
 
         #Set up the genomelake extractors
         import genomelake
@@ -143,8 +157,20 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
             idx += 1
             if (idx==len(data)):
                 if (loop_infinitely):
+                    if (self.randomize_after_pass):
+                        data = shuffle_array(arr=data, random_obj=random_obj)
                     idx=0
                 else:
                     raise StopIteration() 
 
 
+#randomly shuffles the input array
+#mutates arr!
+def shuffle_array(arr, random_obj):
+    for i in xrange(0,len(arr)-1):
+        #randomly select index:
+        chosen_index = random_obj.randint(i,len(arr)-1)
+        val_at_index = arr[chosen_index]
+        arr[chosen_index] = arr[i]
+        arr[i] = val_at_index
+    return arr

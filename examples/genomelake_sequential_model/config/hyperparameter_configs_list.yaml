@@ -1,0 +1,106 @@
+[
+    {
+        "message": "example model and training config",
+        "model_trainer":{
+            "class": "keras_model_trainer.KerasFitGeneratorModelTrainer",
+            "kwargs": {
+                "seed": 1234,
+                "samples_per_epoch": 30,
+                "stopping_criterion_config": {
+                    "class": "EarlyStopping" ,
+                    "kwargs": {
+                       "max_epochs": 300, 
+                       "epochs_to_wait": 3
+                    } 
+                },
+                #"class_weight": {"0":1, "1":25}
+            }
+        },
+        "model_creator":{
+            "class": "flexible_keras.FlexibleKerasSequential",
+            "kwargs": {
+                "layers_config": [
+                    {
+                        "class": "keras.layers.convolutional.Convolution1D", 
+                        "kwargs": {
+                            #"input_shape": [1,4,200],
+                            "input_shape": [101,4],
+                            "nb_filter": 51,
+                            "filter_length": 11,
+                            #"nb_col":11,
+                            #"nb_row":4,
+                            "border_mode": "same",
+                            #"W_constraint": {
+                            #    "autoload": true, #turn the dictionary into a class
+                            #    "class": "keras.constraints.maxnorm",
+                            #    "kwargs": {"m": 7, "axis": 1}
+                            #}
+                        }
+                    },
+                    {
+                        "class": "keras.layers.core.Activation", 
+                        "kwargs": {"activation": "relu"}
+                    },
+                    {
+                        "class": "keras.layers.convolutional.Convolution1D", 
+                        "kwargs": {
+                            "nb_filter": 49,
+                            "filter_length": 10,
+                            #"nb_row": 1,
+                            #"nb_col": 10,
+                            "border_mode": "same"
+                        }
+                    },
+                    {
+                        "class": "keras.layers.core.Activation", 
+                        "kwargs": {"activation": "relu"}
+                    },
+                    {
+                        "class": "keras.layers.convolutional.Convolution1D", 
+                        "kwargs": {"nb_filter": 10, "filter_length": 10}
+                        #"kwargs": {"nb_filter": 10, "nb_row": 1, "nb_col": 10}
+                    },
+                    {
+                        "class": "keras.layers.core.Activation", 
+                        "kwargs": {"activation": "relu"}
+                    },
+                    {
+                        "class": "keras.layers.convolutional.MaxPooling1D", 
+                        "kwargs": {"pool_length": 40, "stride": 40}
+                        #"kwargs": {"pool_size": [1,40], "strides": [1,40]}
+                    },
+                    {
+                        "class": "keras.layers.core.Flatten", 
+                        "kwargs": {}
+                    },
+                    {
+                        "class": "keras.layers.core.Dense", 
+                        "kwargs": {"output_dim": 1}
+                    },
+                    {
+                        "class": "keras.layers.core.Activation", 
+                        "kwargs": {"activation": "sigmoid"}
+                    }
+                ],
+                "optimizer_config": {
+                    "class": "keras.optimizers.Adam",
+                    "kwargs": {"lr": 0.001}
+                },
+                "loss": "binary_crossentropy" 
+            } 
+        },
+        "other_data_loaders":{
+            "train": {
+                "class": "genomelake_data_loader.SingleStreamSeqOnly",
+                "kwargs": {
+                   "batch_size": 50, 
+                   "bed_source": "/users/avanti/momma_dragonn/examples/genomelake_sequential_model/train_JUND.HepG2.chr22.101bp_intervals.tsv.gz",
+                   "genomelake_data_source": "/srv/scratch/genomelake_data/hg19.genome.fa",
+                   "rc_augment": true,
+                   "num_to_load_for_eval": 10000,
+                   "labels_dtype": "int"
+                }
+            }
+        },
+    }
+]

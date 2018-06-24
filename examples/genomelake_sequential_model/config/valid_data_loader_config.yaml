@@ -1,0 +1,11 @@
+{
+    "class": "genomelake_data_loader.SingleStreamSeqOnly",
+    "kwargs": {
+       "batch_size": null, 
+       "bed_source": "/users/avanti/momma_dragonn/examples/genomelake_sequential_model/valid_JUND.HepG2.chr22.101bp_intervals.tsv.gz",
+       "genomelake_data_source": "/srv/scratch/genomelake_data/hg19.genome.fa",
+       "rc_augment": true,
+       "num_to_load_for_eval": null,
+       "labels_dtype": "int"
+    }
+}
