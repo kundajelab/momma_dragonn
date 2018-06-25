@@ -86,7 +86,10 @@
                     "class": "keras.optimizers.Adam",
                     "kwargs": {"lr": 0.001}
                 },
-                "loss": "binary_crossentropy" 
+                "loss": {
+                    "modules_to_load": ["keras_genomics"],
+                    "func": "keras_genomics.losses.ambig_binary_crossentropy"
+                } 
             } 
         },
         "other_data_loaders":{

@@ -7,6 +7,11 @@ import re
 def load_class_from_config(config, extra_kwargs={}, module_prefix=""):
     import momma_dragonn
     config = fp.load_yaml_if_string(config)
+    if ('modules_to_load' in config):
+        for a_module in config['modules_to_load']:
+            exec("import "+a_module)
+    if ('func' in config):
+        return eval(config['func'])
     path_to_class = module_prefix+config['class']
     print("Loading "+path_to_class)
     try:
