@@ -1,4 +1,5 @@
-import core
-import hdf5_data_loader
-import bed_fasta_data_loader
-import genomelake_data_loader
+from __future__ import absolute_import
+from . import core
+from . import hdf5_data_loader
+from . import bed_fasta_data_loader
+from . import genomelake_data_loader
