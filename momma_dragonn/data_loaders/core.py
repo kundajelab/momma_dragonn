@@ -54,7 +54,6 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
         if (self.rc_augment):
             assert len(self.X.keys()) == 1
             assert len(self.X[self.X.keys()[0]].shape)==3
-
         self.strip_enclosing_dictionary = strip_enclosing_dictionary
         if (strip_enclosing_dictionary): #for sequential models
             assert len(X.keys())==1
@@ -62,13 +61,13 @@ class BatchDataLoader_XYDictAPI(AbstractBatchDataLoader):
 
         self.bundle_x_and_y_in_generator = bundle_x_and_y_in_generator
 
-        self.input_modes = self.X.keys()
+        self.input_modes = list(self.X.keys())
         print("Input modes",self.input_modes)
-        self.output_modes = self.Y.keys()
+        self.output_modes = list(self.Y.keys())
         print("Output modes",self.output_modes)
 
-        assert (len(self.X[self.X.keys()[0]])
-                == len(self.Y[self.Y.keys()[0]])), (str(len(self.X))
+        assert (len(self.X[list(self.X.keys())[0]])
+                == len(self.Y[list(self.Y.keys())[0]])), (str(len(self.X))
                                                     +"\t"+str(len(self.Y)))
 
         self.num_items = len(self.X[self.input_modes[0]])
