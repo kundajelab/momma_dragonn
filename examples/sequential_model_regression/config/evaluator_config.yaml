@@ -1,0 +1,5 @@
+{
+    "class": "SequentialAccuracyStats",
+    "kwargs": {"key_metric": "spearman_corr",
+               "all_metrics": ["spearman_corr", "pearson_corr", "mean_squared_error"]}
+}

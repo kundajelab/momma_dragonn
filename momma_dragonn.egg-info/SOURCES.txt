@@ -16,6 +16,7 @@ momma_dragonn.egg-info/top_level.txt
 momma_dragonn/data_loaders/__init__.py
 momma_dragonn/data_loaders/bed_fasta_data_loader.py
 momma_dragonn/data_loaders/core.py
+momma_dragonn/data_loaders/genomelake_data_loader.py
 momma_dragonn/data_loaders/hdf5_data_loader.py
 momma_dragonn/model_creators/__init__.py
 momma_dragonn/model_creators/core.py

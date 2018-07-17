@@ -1,0 +1,8 @@
+{
+    "labels": {
+       "file_name": "regression_labels.txt.gz",
+       "output_mode_name": "output",
+       "content_type": "float"
+    }
+
+}
