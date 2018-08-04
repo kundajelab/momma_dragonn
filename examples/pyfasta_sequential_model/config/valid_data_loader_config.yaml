@@ -2,8 +2,8 @@
     "class": "pyfasta_data_loader.SingleStreamSeqOnly",
     "kwargs": {
        "batch_size": null,
-       "bed_source": "valid.bed.gz",
-       "fasta_data_source": "hg19.fa",
+       "bed_source": "/scratch/users/jocelins/momma_dragonn/examples/pyfasta_sequential_model/valid.bed.gz",
+       "fasta_data_source": "/scratch/users/jocelins/momma_dragonn/examples/pyfasta_sequential_model/hg19.fa",
        "rc_augment": true,
        "num_to_load_for_eval": null,
        "labels_dtype": "int"
