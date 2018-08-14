@@ -3,6 +3,7 @@ from sklearn.metrics import average_precision_score
 import numpy as np
 import avutils.util as util
 from collections import OrderedDict
+import pandas as pd
 
 
 class AbstractModelEvaluator(object):
@@ -197,6 +198,74 @@ def onehot_rows_crossent_func(predictions, true_y):
     #compute categ crossentropy
     return [-np.mean(np.sum(true_y*np.log(predictions),axis=-1))]
 
+def recallAtFDRs_singleTask(predictedY, trueYs):
+    #group by predicted prob
+    from collections import defaultdict
+    predictedProbToLabels = defaultdict(list)
+    for predictedProb, trueY in zip(predictedY, trueYs):
+        predictedProbToLabels[predictedProb].append(trueY)
+    #sort in ascending order of confidence
+    sortedThresholds = sorted(predictedProbToLabels.keys())
+    toReturnDict = OrderedDict();
+    #sort desired recall thresholds by descending order of fdr
+    thresholdPairs = [("recallAtFDR50", 0.5),
+                      ("recallAtFDR25", 0.25),
+                      ("recallAtFDR10", 0.10),
+                      ("recallAtFDR05", 0.05),]
+    sortedThresholdPairs = sorted(thresholdPairs, key=lambda x: -x[1])
+    totalPositives = np.sum(trueYs)
+    totalNegatives = np.sum(1-trueYs)
+    #start at 100% recall
+    confusionMatrixStatsSoFar = [[0,totalNegatives]
+                                ,[0,totalPositives]]
+    recallsForThresholds = []; #for debugging
+    fdrsForThresholds = [];
+    #iterate over thresholds in ascending order
+    #that way highest recall comes first
+    for threshold in sortedThresholds:
+        labelsAtThreshold = predictedProbToLabels[threshold];
+        positivesAtThreshold = sum(labelsAtThreshold)
+        negativesAtThreshold = len(labelsAtThreshold)-positivesAtThreshold
+        #when you cross this threshold they all get predicted as negatives.
+        confusionMatrixStatsSoFar[0][0] += negativesAtThreshold
+        confusionMatrixStatsSoFar[0][1] -= negativesAtThreshold
+        confusionMatrixStatsSoFar[1][0] += positivesAtThreshold
+        confusionMatrixStatsSoFar[1][1] -= positivesAtThreshold
+        totalPredictedPositives = confusionMatrixStatsSoFar[0][1]\
+                                  + confusionMatrixStatsSoFar[1][1]
+        fdr = 1 - (confusionMatrixStatsSoFar[1][1]/
+                   float(totalPredictedPositives))\
+                   if totalPredictedPositives > 0 else 0.0
+        recall = confusionMatrixStatsSoFar[1][1]/float(totalPositives)
+        recallsForThresholds.append(recall)
+        fdrsForThresholds.append(fdr)
+        #first index of a thresholdPair is the name, second idx
+        #is the actual threshold
+        while (len(thresholdPairs) > 0 and fdr <= thresholdPairs[0][1]):
+            toReturnDict[thresholdPairs[0][0]] = recall
+            thresholdPairs = thresholdPairs[1:]
+        if len(thresholdPairs) == 0:
+            break;
+    for thresholdPair in thresholdPairs:
+        toReturnDict[thresholdPair[0]] = 0.0
+
+    #toReturnSeries = pd.Series(toReturnDict, dtype=np.float32)
+
+    return toReturnDict
+
+def recall_at_fdr_func(predictions, true_y):
+    # sklearn only supports 2 classes (0,1) for the auPRC calculation
+    [num_rows, num_cols]=true_y.shape
+    all_recall_at_fdr=[]
+    for c in range(num_cols):
+        true_y_for_task=np.squeeze(true_y[:,c])
+        predictions_for_task=np.squeeze(predictions[:,c])
+        predictions_for_task_filtered,true_y_for_task_filtered = \
+         remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
+        task_recall_at_fdr = recallAtFDRs_singleTask(predictions_for_task_filtered, true_y_for_task_filtered);
+        all_recall_at_fdr.append(task_recall_at_fdr)
+    return all_recall_at_fdr
+
 
 AccuracyStats = util.enum(
     binary_crossent="binary_crossent",
@@ -207,7 +276,9 @@ AccuracyStats = util.enum(
     spearman_corr="spearman_corr",
     pearson_corr="pearson_corr",
     mean_squared_error="mean_squared_error",
-    onehot_rows_crossent="onehot_rows_crossent")
+    onehot_rows_crossent="onehot_rows_crossent",
+    recall_at_fdr="recall_at_fdr")
+
 compute_func_lookup = {
     AccuracyStats.binary_crossent: binarycrossent_func,
     AccuracyStats.auROC: auroc_func,
@@ -217,8 +288,9 @@ compute_func_lookup = {
     AccuracyStats.spearman_corr: spearman_corr,
     AccuracyStats.pearson_corr: pearson_corr,
     AccuracyStats.mean_squared_error: mean_squared_error,
-    AccuracyStats.onehot_rows_crossent:
-        onehot_rows_crossent_func
+    AccuracyStats.onehot_rows_crossent: onehot_rows_crossent_func,
+    AccuracyStats.recall_at_fdr: recall_at_fdr_func,
+
 }
 is_larger_better_lookup = {
     AccuracyStats.binary_crossent: False,
@@ -230,8 +302,8 @@ is_larger_better_lookup = {
     AccuracyStats.pearson_corr: True,
     AccuracyStats.mean_squared_error: False,
     AccuracyStats.onehot_rows_crossent: False,
+    AccuracyStats.recall_at_fdr: True,
 }
-
 
 class GraphAccuracyStats(AbstractModelEvaluator):
 
@@ -309,19 +381,24 @@ class SequentialAccuracyStats(AbstractModelEvaluator):
                             predictions=predictions[:,self.tasks_subset],
                             true_y=data.Y[:,self.tasks_subset]))
 
-    def compute_all_stats(self, model_wrapper, data, batch_size):
-        predictions = model_wrapper.predict(data.X, batch_size)
+    def compute_all_stats_from_predictions(self, Y, predictions):
         all_stats = OrderedDict()
         for metric_name in self.all_metrics:
             if (self.tasks_subset is None):
                 per_output = compute_func_lookup[metric_name](
                                 predictions=predictions[:,:],
-                                true_y=data.Y[:,:])
+                                true_y=Y[:,:])
             else:
                 per_output = compute_func_lookup[metric_name](
                                 predictions=predictions[:,self.tasks_subset],
-                                true_y=data.Y[:,self.tasks_subset])
-            mean = np.mean(per_output) 
+                                true_y=Y[:,self.tasks_subset])
+            df = pd.DataFrame(per_output)
+            mean = df.mean(axis=0).tolist()
             all_stats["per_output_"+metric_name] = per_output
             all_stats["mean_"+metric_name] = mean
         return all_stats
+
+
+    def compute_all_stats(self, model_wrapper, data, batch_size):
+        predictions = model_wrapper.predict(data.X, batch_size)
+        self.compute_all_stats_from_predictions(data.Y, predictions)

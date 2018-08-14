@@ -1,0 +1,236 @@
+#!/usr/bin/env python
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+import sys
+import os
+import momma_dragonn
+from collections import OrderedDict
+import avutils.file_processing as fp
+from momma_dragonn.performance_history import PerformanceHistory
+from momma_dragonn.model_evaluators import SequentialAccuracyStats, remove_ambiguous_peaks
+import numpy as np
+import itertools
+
+
+def eval_model(model_creator, model_evaluator,
+               valid_data_loader, other_data_loaders):
+    print("Setting seed " + str(self.seed))
+    import numpy as np
+    seed = 1234
+    np.random.seed(seed)
+
+    print("Importing keras...")
+    import keras
+
+    print("Getting model...")
+    model_wrapper = model_creator.get_model_wrapper(seed=self.seed)
+    print("Got model")
+
+    train_data_loader = other_data_loaders['train']
+
+    print("Loading validation data into memory")
+    valid_data = valid_data_loader.get_data()
+    # TODO: deal with weights
+    print("Loaded")
+
+    print("Evaluate Results")
+    valid_all_stats = \
+        model_evaluator.compute_all_stats(
+            model_wrapper=model_wrapper,
+            data=valid_data,
+            batch_size=train_data_loader.batch_size)
+
+    return valid_all_stats
+
+def gen_predictions(keras_model, valid_data_loader):
+    fasta_generator = valid_data_loader.get_generator(loop_infinitely=False)
+    x_batch = []
+    y_batch = []
+    batch_size = 200
+
+    all_predictions = []
+    all_y = []
+    count = 0
+    for x,y,coor in fasta_generator:
+
+        x_batch.append(x)
+        y_batch.append(y)
+
+        if len(x_batch) < batch_size:
+            continue
+        # a batch is ready
+        predictions = keras_model.predict_proba(np.array(x_batch))
+        all_predictions.extend(predictions)
+        all_y.extend(y_batch)
+        x_batch = []
+        y_batch = []
+        #print("batch ", count)
+        count += 1
+
+    if len(x_batch) != 0:
+        predictions = keras_model.predict_proba(np.array(x_batch))
+        all_predictions.extend(predictions)
+        all_y.extend(y_batch)
+
+    all_y = np.array(all_y)
+    all_predictions = np.array(all_predictions)
+    return all_y, all_predictions
+
+def draw_roc_curves(prefix, all_y, all_predictions, task_id=-1, tf_name=""):
+    import matplotlib as mpl
+    mpl.use("Agg")
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import roc_curve, auc
+
+    n_classes = all_y.shape[1]
+
+    # Compute ROC curve and ROC area for each class
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    for i in range(n_classes):
+        if task_id != -1 and i != task_id:
+            continue
+        true_y_for_task = all_y[:,i]
+        predictions_for_task = all_predictions[:,i]
+        predictions_for_task_filtered, true_y_for_task_filtered = \
+         remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
+        fpr[i], tpr[i], _ = roc_curve(true_y_for_task_filtered,
+                                      predictions_for_task_filtered)
+        roc_auc[i] = auc(fpr[i], tpr[i])
+    plt.figure()
+    lw=1
+    color_list = np.linspace(0, 1, n_classes)
+
+    for i in range(n_classes):
+        color = plt.cm.plasma(color_list[i])
+        if task_id != -1 and i != task_id:
+            continue
+        plt.plot(fpr[i], tpr[i], color=color, lw=lw,
+                 label='ROC curve of class {0} (area = {1:0.2f})'
+                 ''.format(i, roc_auc[i]))
+    plt.plot([0, 1], [0, 1], 'k--', lw=lw)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title(tf_name + ' Receiver Operating Characteristics')
+    #plt.legend(loc="lower right")
+    #plt.show()
+    plt.savefig(prefix + "ROC.png")
+
+def draw_prc_curves(prefix, all_y, all_predictions, task_id=-1, tf_name=""):
+    import matplotlib as mpl
+    mpl.use("Agg")
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import precision_recall_curve, auc, average_precision_score
+
+    n_classes = all_y.shape[1]
+
+    # Compute ROC curve and ROC area for each class
+    precision = dict()
+    recall = dict()
+    prc_auc = dict()
+    for i in range(n_classes):
+        if task_id != -1 and i != task_id:
+            continue
+        true_y_for_task = all_y[:,i]
+        predictions_for_task = all_predictions[:,i]
+        predictions_for_task_filtered, true_y_for_task_filtered = \
+         remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
+        precision[i], recall[i], _ = precision_recall_curve(true_y_for_task_filtered,
+                                                            predictions_for_task_filtered)
+        prc_auc[i] = auc(recall[i], precision[i])
+        prc_auc[i] = average_precision_score(true_y_for_task_filtered, predictions_for_task_filtered)
+
+    plt.figure()
+    lw=1
+    color_list = np.linspace(0, 1, n_classes)
+
+    for i in range(n_classes):
+        color = plt.cm.plasma(color_list[i])
+        if task_id != -1 and i != task_id:
+            continue
+        plt.plot(recall[i], precision[i], color=color, lw=lw,
+                 label='PRC curve of class {0} (area = {1:0.2f})'
+                 ''.format(i, prc_auc[i]))
+    plt.plot([0, 1], [1, 0], 'k--', lw=lw)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title(tf_name + ' Precision-recall Curve')
+    #plt.legend(loc="lower left")
+    #plt.show()
+    plt.savefig(prefix + "PRC.png")
+
+def write_tsv(prefix, stats):
+    import pandas as pd
+    df_auroc = pd.DataFrame({'auROC': stats['per_output_auROC']})
+    df_auprc = pd.DataFrame({'auPRC': stats['per_output_auPRC']})
+    df_recall = pd.DataFrame(stats['per_output_recall_at_fdr'])
+    df_all = pd.concat([df_auroc, df_auprc, df_recall], axis=1)
+    df_all.to_csv(prefix + "Tsv.tsv", sep='\t')
+
+def save_predictions(prefix, all_y, all_predictions):
+    pred = np.concatenate((all_y, all_predictions), axis=1)
+    np.save(prefix + "predictions.npy", pred)
+
+def load_predictions(prefix):
+    pred = np.load(prefix + "predictions.npy")
+    assert(pred.shape[1] % 2 ==0)
+    n_cols = int(pred.shape[1] / 2)
+    all_y = pred[:, :n_cols]
+    all_predictions = pred[:, n_cols:]
+    return all_y, all_predictions
+
+def momma_dragonn_eval(options):
+
+    if (options.load_predictions):
+        all_y, all_predictions = load_predictions(options.model_prefix)
+    else:
+        valid_data_loader = momma_dragonn.loaders.load_data_loader(
+                                config=options.valid_data_loader_config)
+
+        keras_model_json = options.model_prefix + "Json.json"
+        keras_model_weights = options.model_prefix + "Weights.h5"
+        from keras.models import model_from_json
+        # load the keras model
+        keras_model = model_from_json(open(keras_model_json).read())
+        keras_model.load_weights(keras_model_weights)
+
+        all_y, all_predictions = gen_predictions(keras_model, valid_data_loader)
+        save_predictions(options.model_prefix, all_y, all_predictions)
+
+    model_evaluator = SequentialAccuracyStats(all_metrics=['auROC', 'auPRC', 'recall_at_fdr'], key_metric=[])
+    valid_all_stats = model_evaluator.compute_all_stats_from_predictions(all_y, all_predictions)
+    write_tsv(options.model_prefix, valid_all_stats)
+    draw_roc_curves(options.model_prefix, all_y, all_predictions,  options.task_id, options.tf_name)
+    draw_prc_curves(options.model_prefix, all_y, all_predictions,  options.task_id, options.tf_name)
+
+
+if __name__ == "__main__":
+    '''
+    Example: 
+    momma_dragonn_eval --tf_name MAX
+    Inputs:   model and weights from 
+        model_files/record_1_Json.json
+        model_files_record_1_Weights.h5
+    Outputs:  
+        model_files/record_1_Tsv.tsv         # stats
+        model_files/record_1_ROC.png         # ROC curve
+        model_files/record_1_PRC.png         # PRC curve
+        model_files/record_1_predictions.npy # predictions
+    '''
+    import argparse;
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--valid_data_loader_config", default="config/valid_data_loader_config.yaml",
+                        help="config file for validation data loader. Default: config/valid_data_loader_config.yaml.")
+    parser.add_argument("--model_prefix", default="model_files/record_1_", 
+                        help="prefix for the model json and weights files. Default: model_files/record_1_")
+    parser.add_argument("--task_id", type=int, default=-1, help="id of the task to plot. Default: -1, to plot all tasks.")
+    parser.add_argument("--tf_name", default="", help="name of the TF being evaluated, will be included in the plot titles.")
+    parser.add_argument("--load_predictions", type=bool, default=False, help="load the predictions from <model_prefix>predictions.npy, default: False, do not load predictions")
+    options = parser.parse_args();
+    momma_dragonn_eval(options)
