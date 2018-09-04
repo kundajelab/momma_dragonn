@@ -359,7 +359,7 @@ class FlexibleKerasSequential(FlexibleKeras):
     def __init__(self, layers_config,
                        optimizer_config,
                        loss,
-                       pretrained_model_config=None
+                       pretrained_model_config=None,
                        metrics=[]):
         self.layers_config = layers_config
         self.optimizer_config = optimizer_config
@@ -374,6 +374,7 @@ class FlexibleKerasSequential(FlexibleKeras):
 
     def get_jsonable_object(self):
         return OrderedDict([
+                ('pretrained_model_config', self.pretrained_model_config),
                 ('layers_config', self.layers_config),
                 ('optimizer_config', self.optimizer_config),
                 ('loss', self.loss)])
@@ -394,14 +395,14 @@ class FlexibleKerasSequential(FlexibleKeras):
         model = Sequential()
 
         if (self.pretrained_model_config is not None):
-            pretrained_model_weights = self.pretrained_model_config["weights"]
-            pretrained_model_json = self.pretrained_model_config["json"]
+            pretrained_model_weights = self.pretrained_model_config["weight_file"]
+            pretrained_model_json = self.pretrained_model_config["json_file"]
             last_layer_to_take =\
                 self.pretrained_model_config["last_layer_to_take"]
             if (pretrained_model_json is not None):
                 from keras.models import model_from_json
                 pre_model =\
-                    model_from_json(open(pretrained_model_json_file).read())
+                    model_from_json(open(pretrained_model_json).read())
                 pre_model.load_weights(pretrained_model_weights)
             else:
                 from keras.models import load_model 
