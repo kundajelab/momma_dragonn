@@ -133,8 +133,7 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
         bed_fh = fp.get_file_handle(self.bed_source)
         data = []
         print("Reading bed file "+self.bed_source+" into memory")
-
-	for a_row in bed_fh:
+        for a_row in bed_fh:
             a_row = a_row.rstrip().split("\t")
             data.append(Interval(
                 chrom=a_row[0], start=int(a_row[1]), stop=int(a_row[2]),
