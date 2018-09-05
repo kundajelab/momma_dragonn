@@ -156,8 +156,6 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
         while (idx < len(data)):
 
             to_extract = data[idx:idx+1]
-            if (idx % 1000 == 0):
-                print(to_extract)
             to_yield = f[to_extract[0].chrom][to_extract[0].start:to_extract[0].stop]
             to_yield = np.array([one_hot_encode[x] for x in to_yield])
             yield (to_yield, to_extract[0].labels,

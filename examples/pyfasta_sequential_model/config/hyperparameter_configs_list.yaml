@@ -125,7 +125,7 @@
                 "kwargs": {
                    "batch_size": 50,
                    "bed_source": "train.bed.gz",
-                   "fasta_data_source": "/scratch/users/jocelins/momma_dragonn/examples/pyfasta_sequential_model/hg19.fa",
+                   "fasta_data_source": "/mnt/data/annotations/by_organism/human/hg19.GRCh37/hg19.genome.fa",
                    "rc_augment": true,
                    "num_to_load_for_eval": 5000,
                    "labels_dtype": "int"

@@ -84,6 +84,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
         try:
 
             epochs_trained = 0
+            batch_generator = train_data_loader.get_batch_generator()
 
             while stopping_criterion.stop_training()==False:
 
@@ -93,7 +94,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                         model_wrapper=model_wrapper)
 
                 model_wrapper.get_model().fit_generator(
-                    train_data_loader.get_batch_generator(),
+                    batch_generator,
                     samples_per_epoch=self.samples_per_epoch,
                     nb_epoch=1,
                     class_weight=self.class_weight,
