@@ -1,9 +1,9 @@
 {
     "splits": {
         "split_name_to_split_files": {
-            "train": "splits/train.txt.gz"
-            ,"valid": "splits/valid.txt.gz"
-            ,"test": "splits/test.txt.gz"
+            "train": "splits/GM12878.mixed.10K.labelsonly.train.txt.gz"
+            ,"valid": "splits/GM12878.mixed.10K.labelsonly.valid.txt.gz"
+            ,"test": "splits/GM12878.mixed.10K.labelsonly.test.txt.gz"
         }
     }
 }

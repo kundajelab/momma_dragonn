@@ -24,7 +24,7 @@
                     "class": "keras.layers.convolutional.Convolution1D", 
                     "kwargs": {
                         #"input_shape": [1,4,200],
-                        "input_shape": [200,4],
+                        "input_shape": [1000,4],
                         "nb_filter": 51,
                         "filter_length": 11,
                         #"nb_col":11,
@@ -75,7 +75,7 @@
                 },
                 {
                     "class": "keras.layers.core.Dense", 
-                    "kwargs": {"output_dim": 2}
+                    "kwargs": {"output_dim": 1}
                 },
                 {
                     "class": "keras.layers.core.Activation", 
@@ -132,7 +132,7 @@
                     "class": "keras.layers.convolutional.Convolution1D", 
                     "kwargs": {
                         #"input_shape": [1,4,200],
-                        "input_shape": [200,4],
+                        "input_shape": [1000,4],
                         "nb_filter": 51,
                         "filter_length": 11,
                         #"nb_col":11,
@@ -183,7 +183,7 @@
                 },
                 {
                     "class": "keras.layers.core.Dense", 
-                    "kwargs": {"output_dim": 2}
+                    "kwargs": {"output_dim": 1}
                 },
                 {
                     "class": "keras.layers.core.Activation", 
