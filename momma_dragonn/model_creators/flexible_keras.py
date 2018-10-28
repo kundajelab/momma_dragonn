@@ -45,6 +45,10 @@ class KerasModelFromSavedFile(AbstractModelCreator):
     def get_model(self, seed):
         print("Preparing uncompiled model")
         model = self._get_uncompiled_model(seed) 
+        try:
+            model = multi_gpu_model(model)
+        except:
+            pass
         print("Compiling model")
         self._compile_model(model)
         print("Done compiling model")
@@ -116,6 +120,10 @@ class FlexibleKeras(AbstractModelCreator):
     def get_model(self, seed):
         print("Preparing uncompiled model")
         model = self._get_uncompiled_model(seed) 
+        try:
+            model = multi_gpu_model(model)
+        except:
+            pass
         print("Compiling model")
         self._compile_model(model)
         print("Done compiling model")
