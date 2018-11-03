@@ -57,6 +57,19 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
                 if (self.rc_augment):
                     x_batch.append(x[::-1,::-1])
                     y_batch.append(y)
+            if (len(set([len(x) for x in x_batch])) > 1):
+                #weed out examples that are shorter than they should be 
+                max_len = max([len(x) for x in x_batch])
+                new_x = []
+                new_y = []
+                for x,y in zip(x_batch, y_batch):
+                    if (len(x) == max_len):
+                        new_x.append(x)
+                        new_y.append(y) 
+                    else:
+                        print("Skipping",coor,"with length",len(x))
+                x_batch = new_x
+                y_batch = new_y
             x_batch = np.array(x_batch)
             y_batch = np.array(y_batch)
             self.to_load_for_eval_x.extend(x_batch)
@@ -106,7 +119,8 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
                        randomize_after_pass=True,
                        random_seed=1,
                        labels_dtype="int",
-                       wrap_in_keys=None):
+                       wrap_in_keys=None,
+                       append_chrom_number=False):
         super(SingleStreamSeqOnly, self).__init__(
             batch_size=batch_size,
             rc_augment=rc_augment,
@@ -118,6 +132,7 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
         self.randomize_after_pass = randomize_after_pass
         self.random_seed = random_seed
         self.labels_dtype=eval(labels_dtype)
+        self.append_chrom_number = append_chrom_number
 
     def get_jsonable_object(self):
         the_dict = super(SingleStreamSeqOnly, self).get_jsonable_object()
@@ -154,9 +169,11 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
 
         idx = 0
         while (idx < len(data)):
-
             to_extract = data[idx:idx+1]
-            to_yield = f[to_extract[0].chrom][to_extract[0].start:to_extract[0].stop]
+            chrom = to_extract[0].chrom
+            if (self.append_chrom_number == True):
+                chrom = chrom+" "+chrom[3:]
+            to_yield = f[chrom][to_extract[0].start:to_extract[0].stop]
             to_yield = np.array([one_hot_encode[x] for x in to_yield])
             yield (to_yield, to_extract[0].labels,
                    (to_extract[0].chrom,

@@ -144,6 +144,7 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                                     batch_size=train_data_loader.batch_size)
                     else:
                         self.valid_all_stats = this_epoch_valid_all_stats
+                    print("Valid all stats:\n",self.valid_all_stats)
                     performance_history.update_best_valid_epoch_perf_info(
                         epoch=epochs_trained,
                         valid_key_metric=valid_key_metric,

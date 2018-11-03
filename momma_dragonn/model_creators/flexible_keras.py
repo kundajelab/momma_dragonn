@@ -399,6 +399,10 @@ class FlexibleKerasSequential(FlexibleKeras):
             pretrained_model_json = self.pretrained_model_config["json_file"]
             last_layer_to_take =\
                 self.pretrained_model_config["last_layer_to_take"]
+            last_layer_to_fix =\
+                (self.pretrained_model_config["last_layer_to_fix"]
+                 if "last_layer_to_fix" in self.pretrained_model_config
+                 else None)
             if (pretrained_model_json is not None):
                 from keras.models import model_from_json
                 pre_model =\
@@ -407,7 +411,12 @@ class FlexibleKerasSequential(FlexibleKeras):
             else:
                 from keras.models import load_model 
                 pre_model = load_model(pretrained_model_weights)
-            for a_layer in pre_model.layers[:last_layer_to_take]:
+            for idx,a_layer in enumerate(
+                                pre_model.layers[:last_layer_to_take]):
+                if (last_layer_to_fix is not None):
+                    if idx <= ((len(pre_model.layers)+last_layer_to_fix)
+                               if last_layer_to_fix else last_layer_to_take): 
+                        a_layer.trainable=False
                 model.add(a_layer) 
 
         for layer_config in self.layers_config:
