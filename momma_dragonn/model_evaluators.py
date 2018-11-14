@@ -54,6 +54,13 @@ def binarycrossent_func(predictions, true_y):
     return binary_crossents
 
 
+def binarycrossent_fromlogits_func(predictions, true_y):
+    import scipy
+    predictions = scipy.special.expit(np.array(predictions))
+    return binarycrossent_func(predictions=predictions,
+                               true_y=true_y)
+    
+
 def auroc_func(predictions, true_y):
     [num_rows, num_cols] = true_y.shape 
     aurocs=[]
@@ -86,6 +93,7 @@ def auprc_func(predictions, true_y):
         task_auprc = average_precision_score(true_y_for_task_filtered, predictions_for_task_filtered)
         auprcs.append(task_auprc) 
     return auprcs
+
 
 def get_accuracy_stats_for_task(predictions, true_y, c):
     true_y_for_task=np.squeeze(true_y[:,c])
@@ -155,6 +163,7 @@ def spearman_corr(predictions, true_y):
         task_pvalues_all.append(task_p) 
     return task_correlations_all
 
+
 def pearson_corr(predictions, true_y):
     import scipy.stats
     #first return val is correlation, second return val is a p-value
@@ -168,6 +177,7 @@ def pearson_corr(predictions, true_y):
         task_pvalues_all.append(np.asscalar(task_p))
     return task_correlations_all
 
+
 def mean_squared_error(predictions, true_y):
     from sklearn.metrics import mean_squared_error
     #first return val is correlation, second return val is a p-value
@@ -178,6 +188,17 @@ def mean_squared_error(predictions, true_y):
         task_mse=mean_squared_error(true_y[:,t],predictions[:,t])
         task_mses_all.append(np.asscalar(task_mse))
     return task_mses_all
+
+
+def hybrid_mean_squared_error(predictions, true_y):
+    assert len(predictions.shape)==2
+    assert len(true_y.shape)==2
+    assert predictions.shape[1]==2
+    assert true_y.shape[1]==2
+    #first col should be binary predictions
+    assert np.max(true_y[:,0]) <= 1.0
+    assert np.min(true_y[:,0]) >= 0.0
+    return [np.mean(np.square(true_y[:,1]-predictions[:,1])*true_y[:,0])]
 
 
 #for autoencoders
