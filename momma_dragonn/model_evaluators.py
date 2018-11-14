@@ -71,7 +71,7 @@ def auroc_func(predictions, true_y):
          remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
         #in case true_y_for_task_filtered is continuous "prob pos",
         # turn it into binary labels
-        true_y_for_task_filtered = np.array([1 if x > 0.5 else 0 for x in
+        true_y_for_task_filtered = np.array([1 if x > 0.95 else 0 for x in
                                              true_y_for_task_filtered])
         task_auroc = roc_auc_score(y_true=true_y_for_task_filtered,
                                    y_score=predictions_for_task_filtered)
@@ -88,7 +88,7 @@ def auprc_func(predictions, true_y):
         predictions_for_task=np.squeeze(predictions[:,c])
         predictions_for_task_filtered,true_y_for_task_filtered = \
          remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
-        true_y_for_task_filtered = np.array([1 if x > 0.5 else 0 for x in
+        true_y_for_task_filtered = np.array([1 if x > 0.95 else 0 for x in
                                              true_y_for_task_filtered])
         task_auprc = average_precision_score(true_y_for_task_filtered, predictions_for_task_filtered)
         auprcs.append(task_auprc) 
@@ -190,6 +190,18 @@ def mean_squared_error(predictions, true_y):
     return task_mses_all
 
 
+def hybrid_spearman_corr(predictions, true_y):
+    import scipy.stats
+    assert len(predictions.shape)==2
+    assert len(true_y.shape)==2
+    assert predictions.shape[1]==2
+    assert true_y.shape[1]==2
+    #first col should be binary predictions
+    assert np.max(true_y[:,0]) <= 1.0
+    assert np.min(true_y[:,0]) >= 0.0
+    return [scipy.stats.spearmanr(predictions[:,1][true_y[:,0] > 0.95],true_y[:,1][true_y[:,0] > 0.95])
+
+
 def hybrid_mean_squared_error(predictions, true_y):
     assert len(predictions.shape)==2
     assert len(true_y.shape)==2
@@ -227,6 +239,7 @@ AccuracyStats = util.enum(
     balanced_accuracy="balanced_accuracy",
     unbalanced_accuracy="unbalanced_accuracy",
     spearman_corr="spearman_corr",
+    hybrid_spearman_corr="hybrid_spearman_corr",
     pearson_corr="pearson_corr",
     mean_squared_error="mean_squared_error",
     hybrid_mean_squared_error="hybrid_mean_squared_error",
@@ -239,6 +252,7 @@ compute_func_lookup = {
     AccuracyStats.balanced_accuracy: balanced_accuracy,
     AccuracyStats.unbalanced_accuracy: unbalanced_accuracy,
     AccuracyStats.spearman_corr: spearman_corr,
+    AccuracyStats.hybrid_spearman_corr: hybrid_spearman_corr,
     AccuracyStats.pearson_corr: pearson_corr,
     AccuracyStats.mean_squared_error: mean_squared_error,
     AccuracyStats.hybrid_mean_squared_error: hybrid_mean_squared_error,
@@ -253,6 +267,7 @@ is_larger_better_lookup = {
     AccuracyStats.balanced_accuracy: True,
     AccuracyStats.unbalanced_accuracy: True,
     AccuracyStats.spearman_corr: True,
+    AccuracyStats.hybrid_spearman_corr: True,
     AccuracyStats.pearson_corr: True,
     AccuracyStats.mean_squared_error: False,
     AccuracyStats.hybrid_mean_squared_error: False,
@@ -352,7 +367,7 @@ class SequentialAccuracyStats(AbstractModelEvaluator):
             if (":" in metric_name):
                 core_metric_name =  metric_name.split(":")[0]
                 tasks_subset = [int(x) for x in
-                                metric_name.split(":")[0].split(",")]
+                                metric_name.split(":")[1].split(",")]
             else:
                 core_metric_name = metric_name
             if (tasks_subset is None):
