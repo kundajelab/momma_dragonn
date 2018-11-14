@@ -199,7 +199,7 @@ def hybrid_spearman_corr(predictions, true_y):
     #first col should be binary predictions
     assert np.max(true_y[:,0]) <= 1.0
     assert np.min(true_y[:,0]) >= 0.0
-    return [scipy.stats.spearmanr(predictions[:,1][true_y[:,0] > 0.95],true_y[:,1][true_y[:,0] > 0.95])
+    return [scipy.stats.spearmanr(predictions[:,1][true_y[:,0] > 0.95],true_y[:,1][true_y[:,0] > 0.95])[0]]
 
 
 def hybrid_mean_squared_error(predictions, true_y):
@@ -210,7 +210,9 @@ def hybrid_mean_squared_error(predictions, true_y):
     #first col should be binary predictions
     assert np.max(true_y[:,0]) <= 1.0
     assert np.min(true_y[:,0]) >= 0.0
-    return [np.mean(np.square(true_y[:,1]-predictions[:,1])*true_y[:,0])]
+    positives_upweight_factor = np.sum(true_y[:,0])/(np.sum(1-true_y[:,0]))
+    mse_weight = true_y[:,0]*positives_upweight_factor + (1-true_y[:,0])
+    return [np.mean(np.square(true_y[:,1]-predictions[:,1])*mse_weight)]
 
 
 #for autoencoders
