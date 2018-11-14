@@ -221,6 +221,7 @@ def onehot_rows_crossent_func(predictions, true_y):
 
 AccuracyStats = util.enum(
     binary_crossent="binary_crossent",
+    binary_crossent_fromlogits="binary_crossent_fromlogits",
     auROC="auROC",
     auPRC="auPRC",
     balanced_accuracy="balanced_accuracy",
@@ -228,9 +229,11 @@ AccuracyStats = util.enum(
     spearman_corr="spearman_corr",
     pearson_corr="pearson_corr",
     mean_squared_error="mean_squared_error",
+    hybrid_mean_squared_error="hybrid_mean_squared_error",
     onehot_rows_crossent="onehot_rows_crossent")
 compute_func_lookup = {
     AccuracyStats.binary_crossent: binarycrossent_func,
+    AccuracyStats.binary_crossent_fromlogits: binarycrossent_fromlogits_func,
     AccuracyStats.auROC: auroc_func,
     AccuracyStats.auPRC: auprc_func,
     AccuracyStats.balanced_accuracy: balanced_accuracy,
@@ -238,11 +241,13 @@ compute_func_lookup = {
     AccuracyStats.spearman_corr: spearman_corr,
     AccuracyStats.pearson_corr: pearson_corr,
     AccuracyStats.mean_squared_error: mean_squared_error,
+    AccuracyStats.hybrid_mean_squared_error: hybrid_mean_squared_error,
     AccuracyStats.onehot_rows_crossent:
         onehot_rows_crossent_func
 }
 is_larger_better_lookup = {
     AccuracyStats.binary_crossent: False,
+    AccuracyStats.binary_crossent_fromlogits: False,
     AccuracyStats.auROC: True,
     AccuracyStats.auPRC: True,
     AccuracyStats.balanced_accuracy: True,
@@ -250,6 +255,7 @@ is_larger_better_lookup = {
     AccuracyStats.spearman_corr: True,
     AccuracyStats.pearson_corr: True,
     AccuracyStats.mean_squared_error: False,
+    AccuracyStats.hybrid_mean_squared_error: False,
     AccuracyStats.onehot_rows_crossent: False,
 }
 
