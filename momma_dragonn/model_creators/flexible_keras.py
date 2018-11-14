@@ -119,6 +119,7 @@ class FlexibleKeras(AbstractModelCreator):
         print("Compiling model")
         self._compile_model(model)
         print("Done compiling model")
+        print(model.summary())
         return model
 
     def _compile_model(self, model):
