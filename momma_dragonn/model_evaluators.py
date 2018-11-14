@@ -83,22 +83,22 @@ def auprc_func(predictions, true_y):
          remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
         true_y_for_task_filtered = np.array([1 if x > 0.5 else 0 for x in
                                              true_y_for_task_filtered])
-        task_auprc = average_precision_score(true_y_for_task_filtered, predictions_for_task_filtered);
+        task_auprc = average_precision_score(true_y_for_task_filtered, predictions_for_task_filtered)
         auprcs.append(task_auprc) 
-    return auprcs;
+    return auprcs
 
 def get_accuracy_stats_for_task(predictions, true_y, c):
     true_y_for_task=np.squeeze(true_y[:,c])
     predictions_for_task=np.squeeze(predictions[:,c])
     predictions_for_task_filtered,true_y_for_task_filtered = remove_ambiguous_peaks(predictions_for_task,true_y_for_task)
     predictions_for_task_filtered_round = np.array([round(el) for el in predictions_for_task_filtered])
-    accuratePredictions = predictions_for_task_filtered_round==true_y_for_task_filtered;
+    accuratePredictions = predictions_for_task_filtered_round==true_y_for_task_filtered
 
-    numPositives_forTask=np.sum(true_y_for_task_filtered==1,axis=0,dtype="float");
-    numNegatives_forTask=np.sum(true_y_for_task_filtered==0,axis=0,dtype="float"); 
+    numPositives_forTask=np.sum(true_y_for_task_filtered==1,axis=0,dtype="float")
+    numNegatives_forTask=np.sum(true_y_for_task_filtered==0,axis=0,dtype="float")
 
-    accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0);
-    accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0);
+    accuratePredictions_positives = np.sum(accuratePredictions*(true_y_for_task_filtered==1),axis=0)
+    accuratePredictions_negatives = np.sum(accuratePredictions*(true_y_for_task_filtered==0),axis=0)
 
     returnDict = {
         'accuratePredictions': accuratePredictions,
@@ -113,14 +113,14 @@ def get_accuracy_stats_for_task(predictions, true_y, c):
 
 
 def unbalanced_accuracy(predictions, true_y):
-    assert predictions.shape==true_y.shape;
-    assert len(predictions.shape)==2;
+    assert predictions.shape==true_y.shape
+    assert len(predictions.shape)==2
     [num_rows, num_cols]=true_y.shape 
     unbalanced_accuracies = []
     for c in range(num_cols): 
         r = get_accuracy_stats_for_task(predictions, true_y, c)
 
-        unbalancedAccuracy_forTask = (r['accuratePredictions_positives'] + r['accuratePredictions_negatives'])/(r['numPositives_forTask']+r['numNegatives_forTask']).astype("float");
+        unbalancedAccuracy_forTask = (r['accuratePredictions_positives'] + r['accuratePredictions_negatives'])/(r['numPositives_forTask']+r['numNegatives_forTask']).astype("float")
         unbalanced_accuracies.append(unbalancedAccuracy_forTask) 
     return unbalanced_accuracies
 
@@ -128,16 +128,16 @@ def unbalanced_accuracy(predictions, true_y):
 def balanced_accuracy(predictions, true_y):
     assert predictions.shape==true_y.shape, ("Did you make sure your label "
            "data have the same dims as the model's output?")
-    assert len(predictions.shape)==2;
+    assert len(predictions.shape)==2
     [num_rows, num_cols]=true_y.shape 
     balanced_accuracies = [] 
     for c in range(num_cols): 
         r = get_accuracy_stats_for_task(predictions, true_y, c)
     
-        positivesAccuracy_forTask = r['accuratePredictions_positives']/r['numPositives_forTask'];
-        negativesAccuracy_forTask = r['accuratePredictions_negatives']/r['numNegatives_forTask'];
+        positivesAccuracy_forTask = r['accuratePredictions_positives']/r['numPositives_forTask']
+        negativesAccuracy_forTask = r['accuratePredictions_negatives']/r['numNegatives_forTask']
 
-        balancedAccuracy_forTask= (positivesAccuracy_forTask+negativesAccuracy_forTask)/2;
+        balancedAccuracy_forTask= (positivesAccuracy_forTask+negativesAccuracy_forTask)/2
         balanced_accuracies.append(balancedAccuracy_forTask) 
     return balanced_accuracies
 
@@ -289,6 +289,10 @@ class SequentialAccuracyStats(AbstractModelEvaluator):
 
     def __init__(self, key_metric, all_metrics, tasks_subset=None):
         self.key_metric = key_metric 
+        if (":" in self.key_metric):
+            self.core_key_metric_name = key_metric.split(":")[0]
+        else:
+            self.core_key_metric_name = key_metric
         self.all_metrics = all_metrics 
         self.tasks_subset = tasks_subset
 
@@ -296,31 +300,42 @@ class SequentialAccuracyStats(AbstractModelEvaluator):
         return self.key_metric
 
     def is_larger_better_for_key_metric(self):
-        return is_larger_better_lookup[self.key_metric]
+        return is_larger_better_lookup[self.core_key_metric_name]
 
     def compute_key_metric(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
-        if (self.tasks_subset is None):
-            return np.mean(compute_func_lookup[self.key_metric](
+        tasks_subset = self.tasks_subset
+        if (":" in self.key_metric):
+            tasks_subset = [int(x) for x in
+                            self.key_metric.split(":")[1].split(",")]
+        if (tasks_subset is None):
+            return np.mean(compute_func_lookup[self.core_key_metric_name](
                 predictions=predictions,
                 true_y=data.Y))
         else:
-            return np.mean(compute_func_lookup[self.key_metric](
-                            predictions=predictions[:,self.tasks_subset],
-                            true_y=data.Y[:,self.tasks_subset]))
+            return np.mean(compute_func_lookup[self.core_key_metric_name](
+                            predictions=predictions[:,tasks_subset],
+                            true_y=data.Y[:,tasks_subset]))
 
     def compute_all_stats(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
         all_stats = OrderedDict()
         for metric_name in self.all_metrics:
-            if (self.tasks_subset is None):
-                per_output = compute_func_lookup[metric_name](
+            tasks_subset = self.tasks_subset
+            if (":" in metric_name):
+                core_metric_name =  metric_name.split(":")[0]
+                tasks_subset = [int(x) for x in
+                                metric_name.split(":")[0].split(",")]
+            else:
+                core_metric_name = metric_name
+            if (tasks_subset is None):
+                per_output = compute_func_lookup[core_metric_name](
                                 predictions=predictions[:,:],
                                 true_y=data.Y[:,:])
             else:
-                per_output = compute_func_lookup[metric_name](
-                                predictions=predictions[:,self.tasks_subset],
-                                true_y=data.Y[:,self.tasks_subset])
+                per_output = compute_func_lookup[core_metric_name](
+                                predictions=predictions[:,tasks_subset],
+                                true_y=data.Y[:,tasks_subset])
             mean = np.mean(per_output) 
             all_stats["per_output_"+metric_name] = per_output
             all_stats["mean_"+metric_name] = mean
