@@ -150,8 +150,8 @@ class WriteToDbCallback(AbstractEndOfTrainingCallback):
                 current_best_valid_perf_info.get_jsonable_object()
             entry[self.record_keys.k.key_metric_history] =\
                 [('train','valid')]+\
-                zip(performance_history.get_train_key_metric_history(),
-                    performance_history.get_valid_key_metric_history())
+                list(zip(performance_history.get_train_key_metric_history(),
+                     performance_history.get_valid_key_metric_history()))
             entry[self.record_keys.k.all_valid_metrics_history] =\
                 performance_history.get_all_metrics_valid_history() 
             entry[self.record_keys.k.saved_files_config] =\
