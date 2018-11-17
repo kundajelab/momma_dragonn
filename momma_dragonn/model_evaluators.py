@@ -150,6 +150,22 @@ def balanced_accuracy(predictions, true_y):
     return balanced_accuracies
 
 
+def spearman_corr_on_positives(predictions, true_y):
+    import scipy.stats
+    #first return val is correlation, second return val is a p-value
+    #get task-specific correlations 
+    num_tasks=predictions.shape[1] 
+    task_correlations_all=[] 
+    task_pvalues_all=[] 
+    for t in range(num_tasks): 
+        task_cor,task_p=scipy.stats.spearmanr(
+                         predictions[:,t][true_y > 0.0],
+                         true_y[:,t][true_y > 0.0])
+        task_correlations_all.append(task_cor) 
+        task_pvalues_all.append(task_p) 
+    return task_correlations_all
+
+
 def spearman_corr(predictions, true_y):
     import scipy.stats
     #first return val is correlation, second return val is a p-value
@@ -241,6 +257,7 @@ AccuracyStats = util.enum(
     balanced_accuracy="balanced_accuracy",
     unbalanced_accuracy="unbalanced_accuracy",
     spearman_corr="spearman_corr",
+    spearman_corr_on_positives="spearman_corr_on_positives",
     hybrid_spearman_corr="hybrid_spearman_corr",
     pearson_corr="pearson_corr",
     mean_squared_error="mean_squared_error",
@@ -254,6 +271,7 @@ compute_func_lookup = {
     AccuracyStats.balanced_accuracy: balanced_accuracy,
     AccuracyStats.unbalanced_accuracy: unbalanced_accuracy,
     AccuracyStats.spearman_corr: spearman_corr,
+    AccuracyStats.spearman_corr_on_positives: spearman_corr_on_positives,
     AccuracyStats.hybrid_spearman_corr: hybrid_spearman_corr,
     AccuracyStats.pearson_corr: pearson_corr,
     AccuracyStats.mean_squared_error: mean_squared_error,
@@ -269,6 +287,7 @@ is_larger_better_lookup = {
     AccuracyStats.balanced_accuracy: True,
     AccuracyStats.unbalanced_accuracy: True,
     AccuracyStats.spearman_corr: True,
+    AccuracyStats.spearman_corr_on_positives: True,
     AccuracyStats.hybrid_spearman_corr: True,
     AccuracyStats.pearson_corr: True,
     AccuracyStats.mean_squared_error: False,
