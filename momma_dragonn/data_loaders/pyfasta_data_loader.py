@@ -51,7 +51,10 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
             x_batch = []
             y_batch = []
             for i in range(self.batch_size):
-                x,y,coor = fasta_generator.next()
+                if (hasattr(fasta_generator, 'next')):
+                    x,y,coor = fasta_generator.next()
+                else:
+                    x,y,coor = fasta_generator.__next__()
                 x_batch.append(x)
                 y_batch.append(y)
                 if (self.rc_augment):
@@ -118,7 +121,7 @@ def get_pyfasta_generator(bed_source, fasta_data_source,
     data = []
     print("Reading bed file "+bed_source+" into memory")
     for a_row in bed_fh:
-        a_row = a_row.rstrip().split("\t")
+        a_row = a_row.decode("utf-8").rstrip().split("\t")
         data.append(Interval(
             chrom=a_row[0], start=int(a_row[1]), stop=int(a_row[2]),
             labels=[labels_dtype(x) for x in a_row[3:]]))
@@ -259,9 +262,15 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                     random_seed=self.random_seed,
                     loop_infinitely=loop_infinitely)
         while 1:
-            yield positives_generator.next() 
+            if (hasattr(positives_generator, 'next')):
+                yield positives_generator.next() 
+            else:
+                yield positives_generator.__next__()
             for i in range(self.negatives_to_positives_ratio):
-                yield negatives_generator.next()
+                if (hasattr(negatives_generator, 'next')):
+                    yield negatives_generator.next()
+                else:
+                    yield negatives_generator.__next__()
 
 
 #randomly shuffles the input array
