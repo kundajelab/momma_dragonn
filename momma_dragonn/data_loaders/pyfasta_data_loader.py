@@ -8,16 +8,18 @@ from collections import namedtuple
 
 Interval = namedtuple("Interval", ["chrom", "start", "stop", "labels"])
 one_hot_encode = {
-        'a':np.array([1,0,0,0]),
-        'c':np.array([0,1,0,0]),
-        'g':np.array([0,0,1,0]),
-        't':np.array([0,0,0,1]),
-        'n':np.array([0,0,0,0]),
-        'A':np.array([1,0,0,0]),
-        'C':np.array([0,1,0,0]),
-        'G':np.array([0,0,1,0]),
-        'T':np.array([0,0,0,1]),
-        'N':np.array([0,0,0,0])}
+        'a':[1,0,0,0],
+        'c':[0,1,0,0],
+        'g':[0,0,1,0],
+        't':[0,0,0,1],
+        'n':[0,0,0,0],
+        'A':[1,0,0,0],
+        'C':[0,1,0,0],
+        'G':[0,0,1,0],
+        'T':[0,0,0,1],
+        'N':[0,0,0,0]}
+rc_trans = {'a':'t', 'c':'g', 'g':'c', 't':'a', 'n':'n',
+            'A':'T', 'C':'G', 'G':'C', 'T':'A', 'N':'N'}
 
 class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
 
@@ -29,6 +31,8 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
         super(AbstractSeqOnlyDataLoader, self).__init__(batch_size=batch_size)
         self.rc_augment = rc_augment
         self.num_to_load_for_eval = num_to_load_for_eval
+        self.to_load_for_eval_coors = []
+        self.to_load_for_eval_fastastrs = []
         self.to_load_for_eval_x = []
         self.to_load_for_eval_y = []
         self.wrap_in_keys = wrap_in_keys
@@ -48,41 +52,66 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
         fasta_generator = self.get_generator(loop_infinitely=True)
 
         while True:
+            coor_batch = []
             x_batch = []
             y_batch = []
+            fastastr_batch = []
             for i in range(self.batch_size):
                 if (hasattr(fasta_generator, 'next')):
-                    x,y,coor = fasta_generator.next()
+                    x,y,coor,fastastr = fasta_generator.next()
                 else:
-                    x,y,coor = fasta_generator.__next__()
+                    x,y,coor,fastastr = fasta_generator.__next__()
+                fastastr_batch.append(fastastr)
+                coor_batch.append(coor)
                 x_batch.append(x)
                 y_batch.append(y)
                 if (self.rc_augment):
+                    fastastr_batch.append("".join([rc_trans[x] for x in fastastr]))
                     x_batch.append(x[::-1,::-1])
                     y_batch.append(y)
+                    coor_batch.append(coor)
             if (len(set([len(x) for x in x_batch])) > 1):
                 #weed out examples that are shorter than they should be 
                 max_len = max([len(x) for x in x_batch])
+                new_fastastr = []
+                new_coor = []
                 new_x = []
                 new_y = []
-                for x,y in zip(x_batch, y_batch):
+                for fastastr,coor,x,y in zip(fastastr_batch, coor_batch,
+                                             x_batch, y_batch):
                     if (len(x) == max_len):
+                        new_fastastr.append(fastastr)
+                        new_coor.append(coor)
                         new_x.append(x)
                         new_y.append(y) 
                     else:
                         print("Skipping",coor,"with length",len(x))
+                fastastr_batch = new_fastastr
+                coor_batch = new_coor
                 x_batch = new_x
                 y_batch = new_y
-            x_batch = np.array(x_batch)
-            y_batch = np.array(y_batch)
+            assert len(x_batch)==len(y_batch)
+            self.to_load_for_eval_fastastrs.extend(fastastr_batch)
+            self.to_load_for_eval_coors.extend(coor_batch)
             self.to_load_for_eval_x.extend(x_batch)
             self.to_load_for_eval_y.extend(y_batch)
             if (len(self.to_load_for_eval_x) > self.num_to_load_for_eval):
+                self.to_load_for_eval_fastastrs = self.to_load_for_eval_fastastrs[-self.num_to_load_for_eval:]
+                self.to_load_for_eval_coors = self.to_load_for_eval_coors[-self.num_to_load_for_eval:]
                 self.to_load_for_eval_x =\
                     self.to_load_for_eval_x[-self.num_to_load_for_eval:]
                 self.to_load_for_eval_y =\
                     self.to_load_for_eval_y[-self.num_to_load_for_eval:]
+                assert np.max(np.abs(
+                              np.array(self.to_load_for_eval_x[-self.num_to_load_for_eval:])-
+                              np.array(self.to_load_for_eval_x[len(self.to_load_for_eval_x)-self.num_to_load_for_eval:len(self.to_load_for_eval_x)])))==0
+                assert np.max(np.abs(
+                              np.array(self.to_load_for_eval_y[-self.num_to_load_for_eval:])-
+                              np.array(self.to_load_for_eval_y[len(self.to_load_for_eval_x)-self.num_to_load_for_eval:len(self.to_load_for_eval_x)])))==0
+            assert len(self.to_load_for_eval_x)==len(self.to_load_for_eval_y)
 
+            x_batch = np.array(x_batch)
+            y_batch = np.array(y_batch)
             if (self.wrap_in_keys is not None):
                 yield ({self.wrap_in_keys[0]: x_batch},
                        {self.wrap_in_keys[1]: y_batch})
@@ -95,14 +124,47 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
                 X={self.wrap_in_keys[0]: np.array(self.to_load_for_eval_x)},
                 Y={self.wrap_in_keys[1]: np.array(self.to_load_for_eval_y)})
         else:
+            #Studying weird side-effect...
+            #print("x",len(self.to_load_for_eval_x),
+            #      "y",len(self.to_load_for_eval_y))
+            #print("x",len(self.to_load_for_eval_x),
+            #      "y",len(self.to_load_for_eval_y))
+            #print("Call np.array on y")
+            #np.array(self.to_load_for_eval_y)
+            #print("x",len(self.to_load_for_eval_x),
+            #      "y",len(self.to_load_for_eval_y))
+            #print("x",len(self.to_load_for_eval_x),
+            #      "y",len(self.to_load_for_eval_y))
+            #print("Call np.array on y")
+            #np.array(self.to_load_for_eval_y)
+            #print("x",len(self.to_load_for_eval_x),
+            #      "y",len(self.to_load_for_eval_y))
+            #print("x",len(self.to_load_for_eval_x),
+            #      "y",len(self.to_load_for_eval_y))
+            #print("Call np.array on x")
+            #np.array(self.to_load_for_eval_x)
+            #print("x",len(self.to_load_for_eval_x),
+            #      "y",len(self.to_load_for_eval_y))
+            #print("x",len(self.to_load_for_eval_x),
+            #      "y",len(self.to_load_for_eval_y))
+            #print("Call np.array on x")
+            #np.array(self.to_load_for_eval_x)
+            #print("x",len(self.to_load_for_eval_x),
+            #      "y",len(self.to_load_for_eval_y))
+            #print("x",len(self.to_load_for_eval_x),
+            #      "y",len(self.to_load_for_eval_y))
+
+            assert len(np.array(self.to_load_for_eval_x))==len(np.array(self.to_load_for_eval_y))
             return util.enum(X=np.array(self.to_load_for_eval_x),
-                             Y=np.array(self.to_load_for_eval_y))
+                             Y=np.array(self.to_load_for_eval_y),
+                             coors=self.to_load_for_eval_coors,
+                             fastastr=self.to_load_for_eval_fastastrs)
 
     def get_data(self):
         fasta_generator = self.get_generator(loop_infinitely=False)
         X = []
         Y = []
-        for (x,y,coor) in fasta_generator:
+        for (x,y,coor,fastastr) in fasta_generator:
             X.append(x)
             Y.append(y)
         if (self.wrap_in_keys is not None):
@@ -141,17 +203,19 @@ def get_pyfasta_generator(bed_source, fasta_data_source,
         chrom = to_extract[0].chrom
         if (append_chrom_number == True):
             chrom = chrom+" "+chrom[3:]
-        to_yield = f[chrom][to_extract[0].start:to_extract[0].stop]
-        to_yield = np.array([one_hot_encode[x] for x in to_yield])
+        to_yield_str = f[chrom][to_extract[0].start:to_extract[0].stop]
+        to_yield = np.array([one_hot_encode[x] for x in to_yield_str])
         yield (to_yield, to_extract[0].labels,
                (to_extract[0].chrom,
                 to_extract[0].start,
-                to_extract[0].stop))
+                to_extract[0].stop),
+               to_yield_str)
 
         idx += 1
         if (idx==len(data)):
             if (loop_infinitely):
                 if (randomize_after_pass):
+                    #print("Commencing shuffle of ",bed_source)
                     data = shuffle_array(arr=data, random_obj=random_obj)
                 idx=0
             else:

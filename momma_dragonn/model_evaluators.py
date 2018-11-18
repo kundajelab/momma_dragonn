@@ -157,9 +157,9 @@ def spearman_corr_on_positives(predictions, true_y):
     num_tasks=predictions.shape[1] 
     task_correlations_all=[] 
     task_pvalues_all=[] 
-    for t in range(num_tasks): 
+    for t in range(num_tasks):
         task_cor,task_p=scipy.stats.spearmanr(
-                         predictions[:,t][true_y[:,t] > 0.0],
+                         np.maximum((predictions[:,t]*0.2 + 0.5),0.0)[true_y[:,t] > 0.0],
                          true_y[:,t][true_y[:,t] > 0.0])
         task_correlations_all.append(task_cor) 
         task_pvalues_all.append(task_p) 

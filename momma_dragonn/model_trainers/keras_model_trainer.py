@@ -111,6 +111,15 @@ class KerasFitGeneratorModelTrainer(AbstractModelTrainer):
                             self.reparameterizer(model_wrapper.get_model()))
 
                 train_data_for_eval = train_data_loader.get_data_for_eval()
+                #preds = model_wrapper.get_model().predict(train_data_for_eval.X)
+                #worst_predicted_positives = sorted([x for x,y in zip(enumerate(preds),train_data_for_eval.Y[:,0]) if y==1], key=lambda x: x[1])[:10]
+                #print(worst_predicted_positives)
+                #for idx,pred in worst_predicted_positives:
+                #    print(idx,pred)
+                #    print(train_data_for_eval.Y[idx])
+                #    print(train_data_for_eval.coors[idx])
+                #    print(train_data_for_eval.fastastr[idx])
+                #    print(train_data_for_eval.X[idx])
                 train_key_metric = model_evaluator.compute_key_metric(
                                     model_wrapper=model_wrapper,
                                     data=train_data_for_eval,
