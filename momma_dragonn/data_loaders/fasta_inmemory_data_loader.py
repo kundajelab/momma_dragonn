@@ -110,14 +110,16 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
 
 def get_fastaseq_generator(file_with_fasta, fasta_col,
                            randomize_after_pass,
-                           random_seed, loop_infinitely):
+                           random_seed, loop_infinitely,
+                           label_columns, labels_dtype):
     #read bed_source into memory
     bed_fh = fp.get_file_handle(file_with_fasta)
     data = []
     print("Reading file "+file_with_fasta+" into memory")
     for a_row in bed_fh:
         a_row = a_row.rstrip().split("\t")
-        data.append(a_row[fasta_col])
+        data.append((a_row[fasta_col], [labels_dtype(a_row[x]) for
+                                        x in label_columns)])
     print("Finished reading file into memory; got "
           +str(len(data))+"rows")
     random_obj = np.random.RandomState(random_seed)
@@ -147,6 +149,7 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                        negatives_to_positives_ratio,
                        rc_augment,
                        num_to_load_for_eval,
+                       label_columns=[],
                        randomize_after_pass=True,
                        random_seed=1,
                        labels_dtype="int",
@@ -163,7 +166,9 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
         assert isinstance(negatives_to_positives_ratio, int)
         self.randomize_after_pass = randomize_after_pass
         self.random_seed = random_seed
+        self.str_labels_dtype = labels_dtype
         self.labels_dtype=eval(labels_dtype)
+        self.label_columns = label_columns
 
     def get_jsonable_object(self):
         the_dict = super(TwoStreamSeqOnly, self).get_jsonable_object()
@@ -172,6 +177,9 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
         the_dict['fasta_col'] = self.fasta_col
         the_dict['randomize_after_pass'] = self.randomize_after_pass
         the_dict['random_seed'] = self.random_seed
+        the_dict['labels_dtype'] = self.str_labels_dtype
+        the_dict['label_columns'] = label_columns
+        
         return the_dict
 
     def get_generator(self, loop_infinitely):
@@ -182,17 +190,27 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                     fasta_col=self.fasta_col,
                     randomize_after_pass=self.randomize_after_pass,
                     random_seed=self.random_seed,
-                    loop_infinitely=loop_infinitely)
+                    loop_infinitely=loop_infinitely,
+                    label_columns=self.label_columns,
+                    labels_dtype=self.labels_dtype,
+                    label_columns=label_columns)
         negatives_generator = get_fastaseq_generator(
                     file_with_fasta=self.negatives_fasta_source,
                     fasta_col=self.fasta_col,
                     randomize_after_pass=self.randomize_after_pass,
                     random_seed=self.random_seed,
-                    loop_infinitely=loop_infinitely)
+                    loop_infinitely=loop_infinitely,
+                    label_columns=label_columns)
         while 1:
-            yield (positives_generator.next(), [1.0])
+            to_yield = (positives_generator.next()
+                        if hasattr(positives_generator, 'next')
+                        else positives_generator.__next__())
+            yield (to_yield if len(to_yield[1]) > 0 else (to_yield, [1.0]))
             for i in range(self.negatives_to_positives_ratio):
-                yield (negatives_generator.next(), [0.0])
+                to_yield = (negatives_generator.next()
+                            if hasattr(negatives_generator, 'next')
+                            else negatives_generator.__next__())
+                yield (to_yield if len(to_yield[1]) > 0 else (to_yield, [0.0]))
 
 
 #randomly shuffles the input array
