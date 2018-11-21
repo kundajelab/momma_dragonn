@@ -300,22 +300,31 @@ class GraphAccuracyStats(AbstractModelEvaluator):
 
     def __init__(self, key_metric, all_metrics):
         self.key_metric = key_metric 
+        if (":" in self.key_metric):
+            self.core_key_metric_name = key_metric.split(":")[0]
+        else:
+            self.core_key_metric_name = key_metric
         self.all_metrics = all_metrics 
 
     def get_key_metric_name(self):
         return self.key_metric
 
     def is_larger_better_for_key_metric(self):
-        return is_larger_better_lookup[self.key_metric]
+        return is_larger_better_lookup[self.core_key_metric_name]
 
     def compute_key_metric(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
+        tasks_subset = None
+        if (":" in self.key_metric):
+            tasks_subset = [int(x) for x in
+                            self.key_metric.split(":")[1].split(",")]
         return self.compute_summary_stat(
-                    per_output_stats=self.compute_per_output_stats(
-                                      predictions=predictions,
-                                      true_y=data.Y,
-                                      metric_name=self.key_metric),
-                    summary_op=np.mean) 
+                per_output_stats=self.compute_per_output_stats(
+                                  predictions=predictions,
+                                  true_y=data.Y,
+                                  metric_name=self.core_key_metric_name,
+                                  tasks_subset=tasks_subset),
+                summary_op=np.mean)
 
     def compute_summary_stat(self, per_output_stats, summary_op):
         to_summarise = [] 
@@ -323,23 +332,39 @@ class GraphAccuracyStats(AbstractModelEvaluator):
             to_summarise.extend(stats)
         return summary_op(to_summarise)
 
-    def compute_per_output_stats(self, predictions, true_y, metric_name):
+    def compute_per_output_stats(self, predictions,
+                                       true_y, metric_name, tasks_subset):
         func = compute_func_lookup[metric_name] 
         to_return = OrderedDict() 
         output_names = sorted(true_y.keys()) 
         for output_name in output_names:
-            to_return[output_name] = func(predictions=predictions[output_name],
-                                         true_y=true_y[output_name]) 
+            if (tasks_subset is None):
+                to_return[output_name] = func(
+                    predictions=predictions[output_name],
+                    true_y=true_y[output_name]) 
+            else:
+                to_return[output_name] = func(
+                    predictions=predictions[output_name][:, tasks_subset],
+                    true_y=true_y[output_name][:,tasks_subset]) 
+    
         return to_return
 
     def compute_all_stats(self, model_wrapper, data, batch_size):
         predictions = model_wrapper.predict(data.X, batch_size)
         all_stats = OrderedDict()
         for metric_name in self.all_metrics:
+            tasks_subset = None
+            if (":" in metric_name):
+                tasks_subset = [int(x) for x in
+                                metric_name.split(":")[1].split(",")]
+                core_metric_name = metric_name.split(":")[0]
+            else:
+                core_metric_name = metric_name
             per_output_stats = self.compute_per_output_stats( 
                                         predictions=predictions,
                                         true_y=data.Y,
-                                        metric_name=metric_name)
+                                        metric_name=core_metric_name,
+                                        tasks_subset=tasks_subset)
             mean = self.compute_summary_stat(
                     per_output_stats=per_output_stats,
                     summary_op=np.mean)

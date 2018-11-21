@@ -119,7 +119,7 @@ def get_fastaseq_generator(file_with_fasta, fasta_col,
     for a_row in bed_fh:
         a_row = a_row.rstrip().split("\t")
         data.append((a_row[fasta_col], [labels_dtype(a_row[x]) for
-                                        x in label_columns)])
+                                        x in label_columns]))
     print("Finished reading file into memory; got "
           +str(len(data))+"rows")
     random_obj = np.random.RandomState(random_seed)
@@ -192,15 +192,13 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                     random_seed=self.random_seed,
                     loop_infinitely=loop_infinitely,
                     label_columns=self.label_columns,
-                    labels_dtype=self.labels_dtype,
-                    label_columns=label_columns)
+                    labels_dtype=self.labels_dtype)
         negatives_generator = get_fastaseq_generator(
                     file_with_fasta=self.negatives_fasta_source,
                     fasta_col=self.fasta_col,
                     randomize_after_pass=self.randomize_after_pass,
                     random_seed=self.random_seed,
-                    loop_infinitely=loop_infinitely,
-                    label_columns=label_columns)
+                    loop_infinitely=loop_infinitely)
         while 1:
             to_yield = (positives_generator.next()
                         if hasattr(positives_generator, 'next')

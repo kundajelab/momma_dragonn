@@ -66,7 +66,8 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
                 x_batch.append(x)
                 y_batch.append(y)
                 if (self.rc_augment):
-                    fastastr_batch.append("".join([rc_trans[x] for x in fastastr]))
+                    fastastr_batch.append("".join([rc_trans[l]
+                                                   for l in fastastr]))
                     x_batch.append(x[::-1,::-1])
                     y_batch.append(y)
                     coor_batch.append(coor)
