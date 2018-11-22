@@ -27,7 +27,7 @@ def remove_ambiguous_peaks(predictions, true_y):
     return predictions_filtered, true_y_filtered
 
 
-def binarycrossent_func(predictions, true_y):
+def binary_crossent_func(predictions, true_y):
     [num_rows, num_cols] = true_y.shape 
     binary_crossents=[]
     for c in range(num_cols): 
@@ -43,21 +43,21 @@ def binarycrossent_func(predictions, true_y):
         predictions_for_task_filtered =\
             np.minimum(0.9999999, predictions_for_task_filtered)
 
-        task_binarycrossent =\
+        task_binary_crossent =\
             -np.mean(
                 true_y_for_task_filtered
                 *np.log(predictions_for_task_filtered)
               + (1-true_y_for_task_filtered)
                 *np.log(1-predictions_for_task_filtered)) 
 
-        binary_crossents.append(float(task_binarycrossent)) 
+        binary_crossents.append(float(task_binary_crossent)) 
     return binary_crossents
 
 
-def binarycrossent_fromlogits_func(predictions, true_y):
+def binary_crossent_fromlogits_func(predictions, true_y):
     import scipy
     predictions = scipy.special.expit(np.array(predictions))
-    return binarycrossent_func(predictions=predictions,
+    return binary_crossent_func(predictions=predictions,
                                true_y=true_y)
     
 
@@ -206,6 +206,19 @@ def mean_squared_error(predictions, true_y):
     return task_mses_all
 
 
+def hybrid_binary_crossent_fromlogits_func(predictions, true_y):
+    assert len(predictions.shape)==2
+    assert len(true_y.shape)==2
+    assert predictions.shape[1]==2
+    assert true_y.shape[1]==2
+    #first col should be binary predictions
+    assert np.max(true_y[:,0]) <= 1.0
+    assert np.min(true_y[:,0]) >= 0.0
+    return binary_crossent_fromlogits_func(
+            predictions=predictions[:,1:2][true_y[:,0] > 0.95],
+            true_y=true_y[:,1:2][true_y[:,0] > 0.95]) 
+
+
 def hybrid_spearman_corr(predictions, true_y):
     import scipy.stats
     assert len(predictions.shape)==2
@@ -252,6 +265,7 @@ def onehot_rows_crossent_func(predictions, true_y):
 AccuracyStats = util.enum(
     binary_crossent="binary_crossent",
     binary_crossent_fromlogits="binary_crossent_fromlogits",
+    hybrid_binary_crossent_fromlogits="hybrid_binary_crossent_fromlogits",
     auROC="auROC",
     auPRC="auPRC",
     balanced_accuracy="balanced_accuracy",
@@ -264,8 +278,9 @@ AccuracyStats = util.enum(
     hybrid_mean_squared_error="hybrid_mean_squared_error",
     onehot_rows_crossent="onehot_rows_crossent")
 compute_func_lookup = {
-    AccuracyStats.binary_crossent: binarycrossent_func,
-    AccuracyStats.binary_crossent_fromlogits: binarycrossent_fromlogits_func,
+    AccuracyStats.binary_crossent: binary_crossent_func,
+    AccuracyStats.binary_crossent_fromlogits: binary_crossent_fromlogits_func,
+    AccuracyStats.hybrid_binary_crossent_fromlogits: hybrid_binary_crossent_fromlogits_func,
     AccuracyStats.auROC: auroc_func,
     AccuracyStats.auPRC: auprc_func,
     AccuracyStats.balanced_accuracy: balanced_accuracy,
@@ -282,6 +297,7 @@ compute_func_lookup = {
 is_larger_better_lookup = {
     AccuracyStats.binary_crossent: False,
     AccuracyStats.binary_crossent_fromlogits: False,
+    AccuracyStats.hybrid_binary_crossent_fromlogits: False,
     AccuracyStats.auROC: True,
     AccuracyStats.auPRC: True,
     AccuracyStats.balanced_accuracy: True,
