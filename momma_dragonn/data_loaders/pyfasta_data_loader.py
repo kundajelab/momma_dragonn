@@ -175,9 +175,26 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
             return util.enum(X=np.array(X), Y=np.array(Y))
 
 
+def get_stratified_shuffle(stratifications, random_obj):
+    stratifications = [
+        shuffle_array(arr=this_split,
+                      random_obj=random_obj)
+        for this_split in stratifications] 
+    shuffled_data = []
+    idx_within_split = 0
+    while len(shuffled_data) < sum([len(x) for x in stratifications]):
+        for split_idx in range(len(stratifications)):
+            if len(stratifications[split_idx]) > idx_within_split:
+                shuffled_data.append(
+                    stratifications[split_idx][idx_within_split]) 
+        idx_within_split += 1
+    return shuffled_data
+
+
 def get_pyfasta_generator(bed_source, fasta_data_source,
                           append_chrom_number, labels_dtype,
                           randomize_after_pass,
+                          stratification_settings,
                           random_seed, loop_infinitely):
     #read bed_source into memory
     bed_fh = fp.get_file_handle(bed_source)
@@ -191,8 +208,32 @@ def get_pyfasta_generator(bed_source, fasta_data_source,
     print("Finished reading bed file into memory; got "
           +str(len(data))+"rows")
     random_obj = np.random.RandomState(random_seed)
+
+    if (stratification_settings is not None):
+        stratification_type = stratification_settings["type"] 
+        stratification_column = stratification_settings["column"]
+        num_splits = stratification_settings['num_splits']
+        bin_sizes = int(np.ceil(len(data)/num_splits))
+        if (stratification_type=="continuous"):
+            sorted_data = sorted(
+                data, key=lambda x: x.labels[stratification_column]) 
+            stratifications = [
+                sorted_data[i*bin_sizes:
+                            min(len(data), (i+1)*bin_sizes)]
+                for i in range(num_splits)
+            ] 
+        else:
+            raise RuntimeError(
+                "Unrecognized stratification type",
+                stratification_type)
+
     if (randomize_after_pass):
-        data = shuffle_array(arr=data, random_obj=random_obj)
+        if (stratification_settings is not None):
+            data = get_stratified_shuffle(
+                    stratifications=stratifications,
+                    random_obj=random_obj)
+        else:
+            data = shuffle_array(arr=data, random_obj=random_obj)
 
     #fasta extraction
     import pyfasta
@@ -216,8 +257,12 @@ def get_pyfasta_generator(bed_source, fasta_data_source,
         if (idx==len(data)):
             if (loop_infinitely):
                 if (randomize_after_pass):
-                    #print("Commencing shuffle of ",bed_source)
-                    data = shuffle_array(arr=data, random_obj=random_obj)
+                    if (stratification_settings is not None):
+                        data = get_stratified_shuffle(
+                            stratifications=stratifications,
+                            random_obj=random_obj)
+                    else:
+                        data = shuffle_array(arr=data, random_obj=random_obj)
                 idx=0
             else:
                 raise StopIteration()
@@ -231,6 +276,7 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
                        rc_augment,
                        num_to_load_for_eval,
                        randomize_after_pass=True,
+                       stratification_settings=None,
                        random_seed=1,
                        labels_dtype="int",
                        wrap_in_keys=None,
@@ -244,6 +290,7 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
         self.fasta_data_source = fasta_data_source
         self.str_labels_dtype = labels_dtype
         self.randomize_after_pass = randomize_after_pass
+        self.stratification_settings = stratification_settings
         self.random_seed = random_seed
         self.labels_dtype=eval(labels_dtype)
         self.append_chrom_number = append_chrom_number
@@ -254,17 +301,20 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
         the_dict['fasta_data_source'] = self.fasta_data_source
         the_dict['labels_dtype'] = self.str_labels_dtype
         the_dict['randomize_after_pass'] = self.randomize_after_pass
+        the_dict['stratification_settings'] = self.stratification_settings
         the_dict['random_seed'] = self.random_seed
         return the_dict
 
     def get_generator(self, loop_infinitely):
-        return get_pyfasta_generator(bed_source=self.bed_source,
-                              fasta_data_source=self.fasta_data_source,
-                              append_chrom_number=self.append_chrom_number,
-                              labels_dtype=self.labels_dtype,
-                              randomize_after_pass=self.randomize_after_pass,
-                              random_seed=self.random_seed,
-                              loop_infinitely=loop_infinitely)
+        return get_pyfasta_generator(
+                    bed_source=self.bed_source,
+                    fasta_data_source=self.fasta_data_source,
+                    append_chrom_number=self.append_chrom_number,
+                    labels_dtype=self.labels_dtype,
+                    randomize_after_pass=self.randomize_after_pass,
+                    stratification_settings=self.stratification_settings,
+                    random_seed=self.random_seed,
+                    loop_infinitely=loop_infinitely)
 
 
 class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
@@ -277,6 +327,7 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                        rc_augment,
                        num_to_load_for_eval,
                        randomize_after_pass=True,
+                       stratification_settings=None,
                        random_seed=1,
                        labels_dtype="int",
                        wrap_in_keys=None,
@@ -293,6 +344,7 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
         self.fasta_data_source = fasta_data_source
         self.str_labels_dtype = labels_dtype
         self.randomize_after_pass = randomize_after_pass
+        self.stratification_settings = stratification_settings
         self.random_seed = random_seed
         self.labels_dtype=eval(labels_dtype)
         self.append_chrom_number = append_chrom_number
@@ -304,6 +356,7 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
         the_dict['fasta_data_source'] = self.fasta_data_source
         the_dict['labels_dtype'] = self.str_labels_dtype
         the_dict['randomize_after_pass'] = self.randomize_after_pass
+        the_dict['stratification_settings'] = self.stratification_settings
         the_dict['random_seed'] = self.random_seed
         return the_dict
 
@@ -316,6 +369,7 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                     append_chrom_number=self.append_chrom_number,
                     labels_dtype=self.labels_dtype,
                     randomize_after_pass=self.randomize_after_pass,
+                    stratification_settings=self.stratification_settings,
                     random_seed=self.random_seed,
                     loop_infinitely=loop_infinitely)
         negatives_generator = get_pyfasta_generator(
@@ -324,6 +378,7 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                     append_chrom_number=self.append_chrom_number,
                     labels_dtype=self.labels_dtype,
                     randomize_after_pass=self.randomize_after_pass,
+                    stratification_settings=self.stratification_settings,
                     random_seed=self.random_seed,
                     loop_infinitely=loop_infinitely)
         while 1:
