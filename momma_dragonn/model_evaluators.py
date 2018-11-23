@@ -262,12 +262,90 @@ def onehot_rows_crossent_func(predictions, true_y):
     return [-np.mean(np.sum(true_y*np.log(predictions),axis=-1))]
 
 
+def recallAtFDRs_singleTask(predictedY, trueY, fdr_threshold):
+    #group by predicted prob
+    from collections import defaultdict
+    predictedProbToLabels = defaultdict(list)
+    for predictedProb, single_true_y in zip(predictedY, trueY):
+        predictedProbToLabels[predictedProb].append(single_true_y)
+    #sort in ascending order of predicted prob
+    sortedRecallThresholds = sorted(predictedProbToLabels.keys())
+    toReturnDict = OrderedDict();
+    #iterate over possible recall-cutoff
+    # thresholds in descending order of fdr
+    totalPositives = np.sum(trueY)
+    totalNegatives = np.sum(1-trueY)
+    #start at 100% recall
+    confusionMatrixStatsSoFar = [[0,totalNegatives]
+                                ,[0,totalPositives]]
+    recallsForThresholds = []; #for debugging
+    fdrsForThresholds = [];
+    #iterate over thresholds in ascending order
+    #that way highest recall comes first
+    for recall_threshold in sortedRecallThresholds:
+        labelsAtThreshold = predictedProbToLabels[recall_threshold];
+        positivesAtThreshold = sum(labelsAtThreshold)
+        negativesAtThreshold = len(labelsAtThreshold)-positivesAtThreshold
+        #when you cross recall_threshold they
+        # all get predicted as negatives.
+        confusionMatrixStatsSoFar[0][0] += negativesAtThreshold
+        confusionMatrixStatsSoFar[0][1] -= negativesAtThreshold
+        confusionMatrixStatsSoFar[1][0] += positivesAtThreshold
+        confusionMatrixStatsSoFar[1][1] -= positivesAtThreshold
+        totalPredictedPositives = confusionMatrixStatsSoFar[0][1]\
+                                  + confusionMatrixStatsSoFar[1][1]
+        fdr = 1 - (confusionMatrixStatsSoFar[1][1]/
+                   float(totalPredictedPositives))\
+                   if totalPredictedPositives > 0 else 0.0
+        recall = confusionMatrixStatsSoFar[1][1]/float(totalPositives)
+        recallsForThresholds.append(recall)
+        fdrsForThresholds.append(fdr)
+        if (fdr <= fdr_threshold):
+            return recall
+
+
+def recall_at_fdr_func(predictions, true_y, fdr_threshold):
+    (num_rows, num_cols)=true_y.shape
+    all_recall_at_fdr=[]
+    for c in range(num_cols):
+        true_y_for_task=np.squeeze(true_y[:,c])
+        predictions_for_task=np.squeeze(predictions[:,c])
+        predictions_for_task_filtered,true_y_for_task_filtered = \
+         remove_ambiguous_peaks(predictions_for_task, true_y_for_task)
+        task_recall_at_fdr = recallAtFDRs_singleTask(
+          predictedY=predictions_for_task_filtered,
+          trueY=1.0*(true_y_for_task_filtered > 0.95),
+          fdr_threshold=fdr_threshold);
+        all_recall_at_fdr.append(task_recall_at_fdr)
+    return all_recall_at_fdr
+
+
+def recall_at_fdr_5_func(predictions, true_y):
+    return recall_at_fdr_func(predictions=predictions,
+                              true_y=true_y,
+                              fdr_threshold=0.05)
+
+
+def recall_at_fdr_10_func(predictions, true_y):
+    return recall_at_fdr_func(predictions=predictions,
+                              true_y=true_y,
+                              fdr_threshold=0.10)
+
+
+def recall_at_fdr_50_func(predictions, true_y):
+    return recall_at_fdr_func(predictions=predictions,
+                              true_y=true_y,
+                              fdr_threshold=0.50)
+
 AccuracyStats = util.enum(
     binary_crossent="binary_crossent",
     binary_crossent_fromlogits="binary_crossent_fromlogits",
     hybrid_binary_crossent_fromlogits="hybrid_binary_crossent_fromlogits",
     auROC="auROC",
     auPRC="auPRC",
+    recall_at_fdr_5="recall_at_fdr_5",
+    recall_at_fdr_10="recall_at_fdr_10",
+    recall_at_fdr_50="recall_at_fdr_50",
     balanced_accuracy="balanced_accuracy",
     unbalanced_accuracy="unbalanced_accuracy",
     spearman_corr="spearman_corr",
@@ -283,6 +361,9 @@ compute_func_lookup = {
     AccuracyStats.hybrid_binary_crossent_fromlogits: hybrid_binary_crossent_fromlogits_func,
     AccuracyStats.auROC: auroc_func,
     AccuracyStats.auPRC: auprc_func,
+    AccuracyStats.recall_at_fdr_5: recall_at_fdr_5_func,
+    AccuracyStats.recall_at_fdr_10: recall_at_fdr_10_func,
+    AccuracyStats.recall_at_fdr_50: recall_at_fdr_50_func,
     AccuracyStats.balanced_accuracy: balanced_accuracy,
     AccuracyStats.unbalanced_accuracy: unbalanced_accuracy,
     AccuracyStats.spearman_corr: spearman_corr,
@@ -300,6 +381,9 @@ is_larger_better_lookup = {
     AccuracyStats.hybrid_binary_crossent_fromlogits: False,
     AccuracyStats.auROC: True,
     AccuracyStats.auPRC: True,
+    AccuracyStats.recall_at_fdr_5: True,
+    AccuracyStats.recall_at_fdr_10: True,
+    AccuracyStats.recall_at_fdr_50: True,
     AccuracyStats.balanced_accuracy: True,
     AccuracyStats.unbalanced_accuracy: True,
     AccuracyStats.spearman_corr: True,
