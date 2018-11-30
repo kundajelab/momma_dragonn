@@ -284,6 +284,7 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
                        stratification_settings=None,
                        random_seed=1,
                        labels_dtype="int",
+                       labels_subset=None,
                        wrap_in_keys=None,
                        append_chrom_number=False):
         super(SingleStreamSeqOnly, self).__init__(
@@ -298,6 +299,7 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
         self.stratification_settings = stratification_settings
         self.random_seed = random_seed
         self.labels_dtype=eval(labels_dtype)
+        self.labels_subset=labels_subset
         self.append_chrom_number = append_chrom_number
 
     def get_jsonable_object(self):
@@ -305,6 +307,7 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
         the_dict['bed_source'] = self.bed_source
         the_dict['fasta_data_source'] = self.fasta_data_source
         the_dict['labels_dtype'] = self.str_labels_dtype
+        the_dict['labels_subset'] = self.labels_subset
         the_dict['randomize_after_pass'] = self.randomize_after_pass
         the_dict['stratification_settings'] = self.stratification_settings
         the_dict['random_seed'] = self.random_seed
@@ -316,6 +319,7 @@ class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
                     fasta_data_source=self.fasta_data_source,
                     append_chrom_number=self.append_chrom_number,
                     labels_dtype=self.labels_dtype,
+                    labels_subset=self.labels_subset,
                     randomize_after_pass=self.randomize_after_pass,
                     stratification_settings=self.stratification_settings,
                     random_seed=self.random_seed,
