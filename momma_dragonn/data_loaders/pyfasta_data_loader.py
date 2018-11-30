@@ -195,16 +195,20 @@ def get_pyfasta_generator(bed_source, fasta_data_source,
                           append_chrom_number, labels_dtype,
                           randomize_after_pass,
                           stratification_settings,
-                          random_seed, loop_infinitely):
+                          random_seed, loop_infinitely,
+                          labels_subset=None):
     #read bed_source into memory
     bed_fh = fp.get_file_handle(bed_source)
     data = []
     print("Reading bed file "+bed_source+" into memory")
     for a_row in bed_fh:
-        a_row = a_row.decode("utf-8").rstrip().split("\t")
+        a_row = (a_row.decode("utf-8")
+                 if hasattr(a_row, 'decode') else a_row).rstrip().split("\t")
         data.append(Interval(
             chrom=a_row[0], start=int(a_row[1]), stop=int(a_row[2]),
-            labels=[labels_dtype(x) for x in a_row[3:]]))
+            labels=[labels_dtype(x) for x
+                    in (a_row[3:] if labels_subset is None
+                        else [a_row[3+y] for y in labels_subset])]))
     print("Finished reading bed file into memory; got "
           +str(len(data))+"rows")
     random_obj = np.random.RandomState(random_seed)
@@ -247,7 +251,8 @@ def get_pyfasta_generator(bed_source, fasta_data_source,
             chrom = chrom+" "+chrom[3:]
         to_yield_str = f[chrom][to_extract[0].start:to_extract[0].stop]
         to_yield = np.array([one_hot_encode[x] for x in to_yield_str])
-        yield (to_yield, to_extract[0].labels,
+        to_yield_labels = to_extract[0].labels
+        yield (to_yield, to_yield_labels,
                (to_extract[0].chrom,
                 to_extract[0].start,
                 to_extract[0].stop),
@@ -265,7 +270,7 @@ def get_pyfasta_generator(bed_source, fasta_data_source,
                         data = shuffle_array(arr=data, random_obj=random_obj)
                 idx=0
             else:
-                raise StopIteration()
+                return
 
 
 class SingleStreamSeqOnly(AbstractSeqOnlyDataLoader):
@@ -330,6 +335,8 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                        stratification_settings=None,
                        random_seed=1,
                        labels_dtype="int",
+                       positives_labels_subset=None,
+                       negatives_labels_subset=None,
                        wrap_in_keys=None,
                        append_chrom_number=False):
         super(TwoStreamSeqOnly, self).__init__(
@@ -338,7 +345,9 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
             num_to_load_for_eval=num_to_load_for_eval,
             wrap_in_keys=wrap_in_keys)
         self.positives_bed_source = positives_bed_source
+        self.positives_labels_subset = positives_labels_subset
         self.negatives_bed_source = negatives_bed_source
+        self.negatives_labels_subset = negatives_labels_subset
         self.negatives_to_positives_ratio = negatives_to_positives_ratio
         assert isinstance(negatives_to_positives_ratio, int)
         self.fasta_data_source = fasta_data_source
@@ -352,7 +361,9 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
     def get_jsonable_object(self):
         the_dict = super(TwoStreamSeqOnly, self).get_jsonable_object()
         the_dict['positives_bed_source'] = self.positives_bed_source
+        the_dict['positives_labels_subset'] = self.positives_labels_subset
         the_dict['negatives_bed_source'] = self.negatives_bed_source
+        the_dict['negatives_labels_subset'] = self.negatives_labels_subset
         the_dict['fasta_data_source'] = self.fasta_data_source
         the_dict['labels_dtype'] = self.str_labels_dtype
         the_dict['randomize_after_pass'] = self.randomize_after_pass
@@ -371,7 +382,8 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                     randomize_after_pass=self.randomize_after_pass,
                     stratification_settings=self.stratification_settings,
                     random_seed=self.random_seed,
-                    loop_infinitely=loop_infinitely)
+                    loop_infinitely=loop_infinitely,
+                    labels_subset=self.positives_labels_subset)
         negatives_generator = get_pyfasta_generator(
                     bed_source=self.negatives_bed_source,
                     fasta_data_source=self.fasta_data_source,
@@ -380,7 +392,8 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                     randomize_after_pass=self.randomize_after_pass,
                     stratification_settings=self.stratification_settings,
                     random_seed=self.random_seed,
-                    loop_infinitely=loop_infinitely)
+                    loop_infinitely=loop_infinitely,
+                    labels_subset=self.negatives_labels_subset)
         while 1:
             if (hasattr(positives_generator, 'next')):
                 yield positives_generator.next() 

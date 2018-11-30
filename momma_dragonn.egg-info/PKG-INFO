@@ -1,11 +1,10 @@
-Metadata-Version: 1.1
+Metadata-Version: 1.0
 Name: momma-dragonn
-Version: 0.2.7
+Version: 0.2.7.1
 Summary: deep learning model training and tracking framework
-Home-page: NA
+Home-page: https://github.com/kundajelab/momma_dragonn
 Author: UNKNOWN
 Author-email: UNKNOWN
 License: UNKNOWN
-Download-URL: https://github.com/kundajelab/momma_dragonn
 Description: UNKNOWN
 Platform: UNKNOWN
