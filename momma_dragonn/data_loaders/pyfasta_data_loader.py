@@ -368,6 +368,7 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
         the_dict['positives_labels_subset'] = self.positives_labels_subset
         the_dict['negatives_bed_source'] = self.negatives_bed_source
         the_dict['negatives_labels_subset'] = self.negatives_labels_subset
+        the_dict['negatives_to_positives_ratio'] = self.negatives_to_positives_ratio
         the_dict['fasta_data_source'] = self.fasta_data_source
         the_dict['labels_dtype'] = self.str_labels_dtype
         the_dict['randomize_after_pass'] = self.randomize_after_pass
