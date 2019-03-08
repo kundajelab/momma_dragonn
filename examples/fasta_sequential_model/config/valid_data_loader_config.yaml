@@ -1,0 +1,13 @@
+{
+    "class": "fasta_inmemory_data_loader.TwoStreamSeqOnly",
+    "kwargs": {
+       "batch_size": 50,
+       "positives_fasta_source": "valid_positives.simdata.gz",
+       "negatives_fasta_source": "valid_negatives.simdata.gz",
+       "fasta_col": 1,
+       "negatives_to_positives_ratio": 5,
+       "rc_augment": true,
+       "num_to_load_for_eval": 5000, 
+       "labels_dtype": "int"
+    }
+}

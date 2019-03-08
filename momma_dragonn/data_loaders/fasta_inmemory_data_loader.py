@@ -111,15 +111,17 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
 def get_fastaseq_generator(file_with_fasta, fasta_col,
                            randomize_after_pass,
                            random_seed, loop_infinitely,
-                           label_columns, labels_dtype):
+                           label_columns, labels_dtype,
+                           title_present):
     #read bed_source into memory
     bed_fh = fp.get_file_handle(file_with_fasta)
     data = []
     print("Reading file "+file_with_fasta+" into memory")
-    for a_row in bed_fh:
-        a_row = a_row.rstrip().split("\t")
-        data.append((a_row[fasta_col], [labels_dtype(a_row[x]) for
-                                        x in label_columns]))
+    for (idx,a_row) in enumerate(bed_fh):
+        if (title_present==False or idx > 0):
+            a_row = a_row.rstrip().split("\t")
+            data.append((a_row[fasta_col], [labels_dtype(a_row[x]) for
+                                            x in label_columns]))
     print("Finished reading file into memory; got "
           +str(len(data))+"rows")
     random_obj = np.random.RandomState(random_seed)
@@ -128,7 +130,8 @@ def get_fastaseq_generator(file_with_fasta, fasta_col,
 
     idx = 0
     while (idx < len(data)):
-        to_yield = np.array([one_hot_encode[x] for x in data[idx]])
+        to_yield = (np.array([one_hot_encode[x] for x in data[idx][0]]),
+                    data[idx][1])
         yield to_yield
         idx += 1
         if (idx==len(data)):
@@ -153,7 +156,8 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                        randomize_after_pass=True,
                        random_seed=1,
                        labels_dtype="int",
-                       wrap_in_keys=None):
+                       wrap_in_keys=None,
+                       title_present=False):
         super(TwoStreamSeqOnly, self).__init__(
             batch_size=batch_size,
             rc_augment=rc_augment,
@@ -169,6 +173,7 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
         self.str_labels_dtype = labels_dtype
         self.labels_dtype=eval(labels_dtype)
         self.label_columns = label_columns
+        self.title_present = title_present
 
     def get_jsonable_object(self):
         the_dict = super(TwoStreamSeqOnly, self).get_jsonable_object()
@@ -178,13 +183,11 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
         the_dict['randomize_after_pass'] = self.randomize_after_pass
         the_dict['random_seed'] = self.random_seed
         the_dict['labels_dtype'] = self.str_labels_dtype
-        the_dict['label_columns'] = label_columns
+        the_dict['label_columns'] = self.label_columns
         
         return the_dict
 
     def get_generator(self, loop_infinitely):
-        assert loop_infinitely==True,\
-            "TwoStream not supported for no infinite looping"
         positives_generator = get_fastaseq_generator(
                     file_with_fasta=self.positives_fasta_source,
                     fasta_col=self.fasta_col,
@@ -192,23 +195,41 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                     random_seed=self.random_seed,
                     loop_infinitely=loop_infinitely,
                     label_columns=self.label_columns,
-                    labels_dtype=self.labels_dtype)
+                    labels_dtype=self.labels_dtype,
+                    title_present=self.title_present)
         negatives_generator = get_fastaseq_generator(
                     file_with_fasta=self.negatives_fasta_source,
                     fasta_col=self.fasta_col,
                     randomize_after_pass=self.randomize_after_pass,
                     random_seed=self.random_seed,
-                    loop_infinitely=loop_infinitely)
+                    loop_infinitely=loop_infinitely,
+                    label_columns=self.label_columns,
+                    labels_dtype=self.labels_dtype,
+                    title_present=self.title_present)
+        if (loop_infinitely==False):
+            num_loaded = 0
         while 1:
             to_yield = (positives_generator.next()
                         if hasattr(positives_generator, 'next')
                         else positives_generator.__next__())
-            yield (to_yield if len(to_yield[1]) > 0 else (to_yield, [1.0]))
+            yield (to_yield if len(to_yield[1]) > 0 else (to_yield[0], [1.0]))
+            if (loop_infinitely==False):
+                num_loaded += 1
+                if (num_loaded >= self.num_to_load_for_eval):
+                    break 
             for i in range(self.negatives_to_positives_ratio):
                 to_yield = (negatives_generator.next()
                             if hasattr(negatives_generator, 'next')
                             else negatives_generator.__next__())
-                yield (to_yield if len(to_yield[1]) > 0 else (to_yield, [0.0]))
+                yield (to_yield if len(to_yield[1]) > 0
+                       else (to_yield[0], [0.0]))
+                if (loop_infinitely==False):
+                    num_loaded += 1
+                    if (num_loaded >= self.num_to_load_for_eval):
+                        break
+            if (loop_infinitely==False):
+                if (num_loaded >= self.num_to_load_for_eval):
+                    break
 
 
 #randomly shuffles the input array
