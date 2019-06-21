@@ -412,13 +412,17 @@ class FlexibleKerasSequential(FlexibleKeras):
             else:
                 from keras.models import load_model 
                 pre_model = load_model(pretrained_model_weights)
-            for idx,a_layer in enumerate(
-                                pre_model.layers[:last_layer_to_take]):
-                if (last_layer_to_fix is not None):
-                    if idx <= ((len(pre_model.layers)+last_layer_to_fix)
-                               if last_layer_to_fix else last_layer_to_take): 
-                        a_layer.trainable=False
-                model.add(a_layer) 
+            if (last_layer_to_take is None):
+                last_layer_to_take = -1
+            if (last_layer_to_take < 0):
+                last_layer_to_take = len(pre_model.layers)+last_layer_to_take
+            for idx,a_layer in enumerate(pre_model.layers):
+                if (idx <= last_layer_to_take):
+                    if (last_layer_to_fix is not None):
+                        if idx <= ((len(pre_model.layers)+last_layer_to_fix)
+                                   if last_layer_to_fix else last_layer_to_take): 
+                            a_layer.trainable=False
+                    model.add(a_layer) 
 
         for layer_config in self.layers_config:
             model.add(load_class_from_config(layer_config)) 
