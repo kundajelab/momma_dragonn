@@ -50,7 +50,9 @@ class AbstractSeqOnlyDataLoader(AbstractBatchDataLoader):
             x_batch = []
             y_batch = []
             for i in range(self.batch_size):
-                x,y = fasta_generator.next()
+                x,y = (fasta_generator.next()
+                       if hasattr(fasta_generator, 'next')
+                       else fasta_generator.__next__())
                 x_batch.append(x)
                 y_batch.append(y)
                 if (self.rc_augment):
@@ -112,16 +114,24 @@ def get_fastaseq_generator(file_with_fasta, fasta_col,
                            randomize_after_pass,
                            random_seed, loop_infinitely,
                            label_columns, labels_dtype,
-                           title_present):
+                           title_present, pre_onehot=False):
     #read bed_source into memory
     bed_fh = fp.get_file_handle(file_with_fasta)
     data = []
     print("Reading file "+file_with_fasta+" into memory")
     for (idx,a_row) in enumerate(bed_fh):
+        if (hasattr(a_row, 'decode')):
+            a_row = a_row.decode("utf-8")
         if (title_present==False or idx > 0):
             a_row = a_row.rstrip().split("\t")
-            data.append((a_row[fasta_col], [labels_dtype(a_row[x]) for
-                                            x in label_columns]))
+            if (pre_onehot):
+                #the > 0 is to have x be boolean, to save space.
+                x = (np.array([one_hot_encode[x] for
+                               x in a_row[fasta_col]]) > 0)
+            else:
+                x = a_row[fasta_col]
+            y = [labels_dtype(a_row[x]) for x in label_columns]
+            data.append((x,y))
     print("Finished reading file into memory; got "
           +str(len(data))+"rows")
     random_obj = np.random.RandomState(random_seed)
@@ -130,8 +140,11 @@ def get_fastaseq_generator(file_with_fasta, fasta_col,
 
     idx = 0
     while (idx < len(data)):
-        to_yield = (np.array([one_hot_encode[x] for x in data[idx][0]]),
-                    data[idx][1])
+        if (pre_onehot):
+            to_yield = (1.0*(data[idx][0]), data[idx][1])
+        else:
+            to_yield = (np.array([one_hot_encode[x] for x in data[idx][0]]),
+                        data[idx][1])
         yield to_yield
         idx += 1
         if (idx==len(data)):
@@ -140,7 +153,7 @@ def get_fastaseq_generator(file_with_fasta, fasta_col,
                     data = shuffle_array(arr=data, random_obj=random_obj)
                 idx=0
             else:
-                raise StopIteration()
+                break
 
 
 class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
@@ -157,7 +170,8 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
                        random_seed=1,
                        labels_dtype="int",
                        wrap_in_keys=None,
-                       title_present=False):
+                       title_present=False,
+                       pre_onehot=False):
         super(TwoStreamSeqOnly, self).__init__(
             batch_size=batch_size,
             rc_augment=rc_augment,
@@ -174,6 +188,7 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
         self.labels_dtype=eval(labels_dtype)
         self.label_columns = label_columns
         self.title_present = title_present
+        self.pre_onehot = pre_onehot
 
     def get_jsonable_object(self):
         the_dict = super(TwoStreamSeqOnly, self).get_jsonable_object()
@@ -188,24 +203,28 @@ class TwoStreamSeqOnly(AbstractSeqOnlyDataLoader):
         return the_dict
 
     def get_generator(self, loop_infinitely):
+        #setting to True because loop_infinitely logic handled
+        # within the while loop...
         positives_generator = get_fastaseq_generator(
                     file_with_fasta=self.positives_fasta_source,
                     fasta_col=self.fasta_col,
                     randomize_after_pass=self.randomize_after_pass,
                     random_seed=self.random_seed,
-                    loop_infinitely=loop_infinitely,
+                    loop_infinitely=True, 
                     label_columns=self.label_columns,
                     labels_dtype=self.labels_dtype,
-                    title_present=self.title_present)
+                    title_present=self.title_present,
+                    pre_onehot=self.pre_onehot)
         negatives_generator = get_fastaseq_generator(
                     file_with_fasta=self.negatives_fasta_source,
                     fasta_col=self.fasta_col,
                     randomize_after_pass=self.randomize_after_pass,
                     random_seed=self.random_seed,
-                    loop_infinitely=loop_infinitely,
+                    loop_infinitely=True,
                     label_columns=self.label_columns,
                     labels_dtype=self.labels_dtype,
-                    title_present=self.title_present)
+                    title_present=self.title_present,
+                    pre_onehot=self.pre_onehot)
         if (loop_infinitely==False):
             num_loaded = 0
         while 1:
