@@ -5,7 +5,7 @@ config = {
     'include_package_data': True,
     'description': 'deep learning model training and tracking framework',
     'url': 'https://github.com/kundajelab/momma_dragonn',
-    'version': '0.2.8.1',
+    'version': '0.2.8.2',
     'packages': ['momma_dragonn',
                  'momma_dragonn.model_creators',
                  'momma_dragonn.model_trainers',

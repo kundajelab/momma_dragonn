@@ -9,7 +9,7 @@ class MultimodalBatchDataLoader(BatchDataLoader_XYDictAPI):
 
     def __init__(self, path_to_hdf5, **kwargs):
         self.path_to_hdf5 = path_to_hdf5
-        self.f = h5py.File(self.path_to_hdf5)
+        self.f = h5py.File(self.path_to_hdf5, "r")
         X = self.f['/X']
         Y = self.f['/Y']
         if ('weight' in self.f):
@@ -29,7 +29,7 @@ class MultimodalAtOnceDataLoader(AtOnceDataLoader_XYDictAPI):
 
     def __init__(self, path_to_hdf5, **kwargs):
         self.path_to_hdf5 = path_to_hdf5
-        self.f = h5py.File(self.path_to_hdf5)
+        self.f = h5py.File(self.path_to_hdf5, "r")
         X = self.f['/X']
         Y = self.f['/Y']
         super(MultimodalAtOnceDataLoader, self).__init__(
